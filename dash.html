@@ -494,7 +494,7 @@ var AuthGate = (function () {
     reset();
   }
   // on the fast front end (GitHub Pages) sign-in stays on that site; otherwise the Apps Script URL
-  var APP_URL = window.PT_SITE || 'https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';
+  var APP_URL = window.PT_SITE || (/github\.io$/.test(location.hostname) ? location.origin + location.pathname.replace(/[^\/]*$/, '') + 'index.html' : '') || 'https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';
   function wipe() {
     // drop the page and its in-memory data, then open the sign-in page in the whole tab
     token = null; user = null; save();
