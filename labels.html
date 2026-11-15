@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><script>/* Pharmacy Tracker by WaadAlwagdani — google.script.run over the JSON API */
+<head><link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>/* Pharmacy Tracker by WaadAlwagdani — google.script.run over the JSON API */
 (function(){var API='https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';var Q=new URLSearchParams(location.search);
 window.PT_SITE=location.origin+location.pathname.replace(/[^\/]*$/,'')+'index.html';
 function runner(s,f){return new Proxy({},{get:function(_,k){
@@ -521,7 +522,7 @@ var AuthGate = (function () {
         'border:1px solid #e4e4e7;border-radius:8px;background:#fff;color:#0a0a0a;font:600 13px IBM Plex Sans,Arial,sans-serif;cursor:pointer" class="no-print">Sign out · تسجيل الخروج</button>'+
         '<button type="button" onclick="AuthGate.open(\'home\')" style="position:fixed;bottom:14px;inset-inline-end:14px;z-index:9999;height:34px;padding:0 14px;'+
         'border:1px solid #e4e4e7;border-radius:8px;background:#fff;color:#0a0a0a;font:600 13px IBM Plex Sans,Arial,sans-serif;cursor:pointer" class="no-print">→ الرئيسية · Home</button>'+
-        '<style>@media print{.no-print{display:none!important}}</style>';
+        '<style>@media print{.no-print{display:none!important}}</style>' + (window.PT_SITE ? '<link rel="icon" type="image/svg+xml" href="favicon.svg">' : '');
       var at = html.lastIndexOf('</body>');
       html = at > -1 ? html.slice(0, at) + chip + html.slice(at) : html + chip;
       document.open(); document.write(html); document.close();
