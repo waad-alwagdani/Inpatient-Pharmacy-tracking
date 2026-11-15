@@ -327,8 +327,19 @@ var AuthGate = (function () {
     }
   }
 
+  // Fast front end (GitHub Pages): pages are static files, so moving between them needs no server round trip.
+  // The identity handed over is for display only; every data call is still validated by the server.
+  var STATIC = { owner: 'owner.html', supervisor: 'supervisor.html', pack: 'pack.html', inventory: 'inventory.html', invread: 'inventory.html?mode=invread',
+    dash: 'dash.html', labels: 'labels.html', schedule: 'schedule.html' };
+  function fastGo(page) {
+    if (!window.PT_SITE || PREVIEW || !STATIC[page] || !token || !user) return false;
+    if (!user.isOwner && (user.pages || []).indexOf(page) === -1) return false;
+    try { sessionStorage.setItem('pt_boot', JSON.stringify({ token: token, user: user, page: page, at: Date.now() })); } catch (e) { return false; }
+    location.href = STATIC[page]; return true;
+  }
   /** Loads the page of the account's own module, as decided by the server (unified sign-in). */
   function goHome() {
+    if (user && user.home && fastGo(user.home)) return;
     if (STATE !== 'AUTHENTICATED') { setState('INITIALIZING'); $('ag').hidden = false; }   // loader, not the form
     call('authHomePage', token).then(render, function (e) { if (codeOf(e) === 'AUTH_EXPIRED') { expire(); return; } show('forbidden'); });
   }
@@ -468,6 +479,8 @@ var AuthGate = (function () {
     // back / forward between pages of the app
     try { google.script.history.setChangeHandler(function (e) { var pg = (e && e.state && e.state.page) || (e && e.location && e.location.parameter && e.location.parameter.mode); if (pg && STATE === 'AUTHENTICATED' && pg !== cfg.page) open(pg, { noPush: true }); }); } catch (e) {}
     var boot = window.__IPQ_BOOT; window.__IPQ_BOOT = null;
+    if (!boot && window.PT_SITE) { try { var pb = JSON.parse(sessionStorage.getItem('pt_boot') || 'null'); sessionStorage.removeItem('pt_boot');
+      if (pb && pb.token && Date.now() - pb.at < 30000 && pb.page === cfg.page) boot = pb; } catch (e) {} }
     if (cfg.fresh && !PREVIEW) {                                   // the sign-in page never reuses a saved session
       if (stored) { try { call('authLogout', stored); } catch (e) {} }
       token = null; save(); stored = null; boot = null;
@@ -491,6 +504,7 @@ var AuthGate = (function () {
 
   /** Opens another page the account may see (server checks the role), with a "home" chip for supervisors. */
   function open(page, opts) {
+    if (fastGo(page)) return;
     call('authPage', token, page).then(function (r) { render(r, opts); },
       function (e) { if (codeOf(e) === 'AUTH_EXPIRED') expire(); else alertBox(); });
   }
