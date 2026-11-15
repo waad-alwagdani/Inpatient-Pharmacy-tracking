@@ -212,14 +212,39 @@ var AuthGate = (function () {
       r[fn].apply(r, args);
     });
   }
+  /* Instant pages: read-only data is kept in this browser per account and shown at once; the server is asked in the
+     background and a bar offers the newer data if it changed. Any save clears the copies; sign-out wipes them.
+     Pharmacy Tracker by WaadAlwagdani */
+  var READS = { dutyGet: 1, monitorSummary: 1, orgOverview: 1, orgGetProfile: 1, invGetData: 1, getDashboard: 1, getPackData: 1, mySchedule: 1,
+    exprGet: 1, authAdminListUsers: 1, getLabelsPage: 1 };
+  var CP = 'pt.c.', CMAX = 6 * 3600000;
+  function ckey(fn, args) { return CP + (user && user.id || '') + '.' + fn + '.' + JSON.stringify(args); }
+  function cacheClear() { try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf(CP) === 0) localStorage.removeItem(k); }); } catch (e) {} }
+  function freshBar() {
+    if (document.getElementById('pt-fresh')) return;
+    var b = document.createElement('div'); b.id = 'pt-fresh';
+    b.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:3000;background:#0a0a0a;color:#fff;border-radius:999px;padding:8px 8px 8px 16px;font:600 13px IBM Plex Sans,IBM Plex Sans Arabic,Arial,sans-serif;display:flex;gap:10px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.18)';
+    b.innerHTML = '<span>Newer data available · توجد بيانات أحدث</span><button type="button" style="border:0;border-radius:999px;background:#fff;color:#0a0a0a;font:700 12px inherit;font-family:inherit;padding:6px 12px;cursor:pointer">Refresh · تحديث</button>';
+    b.querySelector('button').onclick = function () { location.reload(); };
+    document.body.appendChild(b);
+  }
+  function guard(p) { return p.catch(function (e) { var c = codeOf(e); if (c === 'AUTH_EXPIRED') { expire(); } else if (c === 'PASSWORD_CHANGE_REQUIRED') { show('change'); } throw e; }); }
   function run(fn) {
     var args = Array.prototype.slice.call(arguments, 1);
-    return call.apply(null, [fn, token].concat(args)).catch(function (e) {
-      var c = codeOf(e);
-      if (c === 'AUTH_EXPIRED') { expire(); }
-      else if (c === 'PASSWORD_CHANGE_REQUIRED') { show('change'); }
-      throw e;
+    var live = guard(call.apply(null, [fn, token].concat(args)));
+    if (!READS[fn] || PREVIEW || !user) {
+      return live.then(function (v) { if (!READS[fn] && !PREVIEW) cacheClear(); return v; });   // a save: drop the copies so nothing stale is shown
+    }
+    var k = ckey(fn, args), old = null;
+    try { old = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) {}
+    var fresh = live.then(function (v) {
+      var txt = JSON.stringify(v);
+      try { localStorage.setItem(k, JSON.stringify({ at: Date.now(), v: v })); } catch (e) {}
+      if (old && JSON.stringify(old.v) !== txt) freshBar();
+      return v;
     });
+    if (old && Date.now() - old.at < CMAX) { fresh.catch(function () {}); return Promise.resolve(old.v); }
+    return fresh;
   }
 
   var IC_USER = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
@@ -373,6 +398,12 @@ var AuthGate = (function () {
     setState('AUTHENTICATED'); $('ag').hidden = true;
     bar(); watchIdle();
     if (cfg.onReady) { var cb = cfg.onReady; cfg.onReady = null; cb(user); }   // page loads its data once
+    setTimeout(function () {   // warm the copies of the heavy pages this account can open, so the first visit is instant too
+      if (PREVIEW || !user) return; var pg = user.isOwner ? ['labels', 'supervisor'] : (user.pages || []);
+      var d = new Date(), ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (pg.indexOf('labels') > -1 && cfg.page !== 'labels') run('getLabelsPage').catch(function () {});
+      if ((pg.indexOf('supervisor') > -1 || user.isOwner) && cfg.page !== 'supervisor' && cfg.page !== 'owner') run('dutyGet', ym).catch(function () {});
+    }, 2500);
   }
 
   /* Sidebar shell (monochrome): navigation to the pages this account may open (server re-checks every page). */
@@ -445,7 +476,7 @@ var AuthGate = (function () {
   var APP_URL = window.PT_SITE || (/github\.io$/.test(location.hostname) ? location.origin + location.pathname.replace(/[^\/]*$/, '') + 'index.html' : '') || 'https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';
   function wipe() {
     // drop the page and its in-memory data, then open the sign-in page in the whole tab
-    token = null; user = null; save();
+    token = null; user = null; save(); cacheClear();
     var u = APP_URL + '?mode=login';
     // visible fallback: if the browser blocks the automatic redirect, the page is never left blank
     document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f4f5;font-family:IBM Plex Sans,IBM Plex Sans Arabic,Arial,sans-serif">' +
