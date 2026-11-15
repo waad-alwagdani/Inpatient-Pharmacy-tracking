@@ -126,7 +126,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
 
   /* ======== Monochrome app shell (sidebar layout) · Pharmacy Tracker by WaadAlwagdani ======== */
   :root{--ink:#0a0a0a;--muted:#71717a;--paper:#f4f4f5;--panel:#fff;--line:#e4e4e7;--green:#0a0a0a;--green-tint:#f4f4f5;--green-t:#f4f4f5;--acc:#0a0a0a;--acc-t:#f4f4f5}
-  body.ag-shell{background:#f4f4f5!important;color:#0a0a0a;padding-inline-start:280px;padding-top:0}
+  body.ag-shell{background:#f4f4f5!important;color:#0a0a0a;padding-right:280px;padding-left:0;padding-top:0}/* the sidebar stays on the right in both languages; only text direction follows the language */
   body.ag-shell .wrap{max-width:1180px!important;padding:8px 24px 40px!important}
   body.ag-shell .banner{background:transparent!important;color:#0a0a0a!important;padding:6px 0 14px!important;border-radius:0!important;margin-bottom:8px!important;box-shadow:none!important}
   body.ag-shell .banner .bi,body.ag-shell .banner{font-size:26px!important;font-weight:700!important;letter-spacing:-.01em}
@@ -149,7 +149,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   body.ag-shell .ou .dg thead th{background:#0a0a0a!important;color:#fff!important}
   body.ag-shell .ou .dg thead tr+tr th{background:#27272a!important}
   body.ag-shell .ou .dg tbody .sd{background:#fafafa!important;color:#0a0a0a}
-  .ag-side{position:fixed;top:16px;bottom:16px;inset-inline-start:16px;width:248px;background:#fff;border:1px solid #e4e4e7;border-radius:20px;z-index:1000;
+  .ag-side{position:fixed;top:16px;bottom:16px;right:16px;left:auto;width:248px;background:#fff;border:1px solid #e4e4e7;border-radius:20px;z-index:1000;
     display:flex;flex-direction:column;padding:18px 14px;font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;color:#0a0a0a;box-sizing:border-box}
   .ag-side *{box-sizing:border-box}
   .ag-brand{display:flex;align-items:center;gap:10px;padding:2px 6px 18px}
@@ -177,7 +177,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .ag-scrim{display:none}
   @media (max-width:900px){
     body.ag-shell{padding-inline-start:0}
-    .ag-side{transform:translateX(calc(var(--dir,1) * 110%));transition:transform .2s ease;top:8px;bottom:8px;inset-inline-start:8px}
+    .ag-side{transform:translateX(110%);transition:transform .2s ease;top:8px;bottom:8px;right:8px;left:auto}
     html[dir=rtl] .ag-side,[dir=rtl] .ag-side{--dir:1} html:not([dir=rtl]) .ag-side{--dir:-1}
     body.ag-menu .ag-side{transform:none}
     body.ag-menu .ag-scrim{display:block;position:fixed;inset:0;background:rgba(10,10,10,.25);z-index:999}
