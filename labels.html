@@ -136,9 +136,18 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   }
 
   /* ---- Sign-in look: soft blurred backdrop, warm card, centred header (Pharmacy Tracker by WaadAlwagdani) ---- */
-  .ag:not([data-state="AUTHENTICATED"]){align-items:center;padding:24px 16px;
-    background:radial-gradient(60% 70% at 18% 78%,#3a3936 0%,rgba(58,57,54,0) 60%),radial-gradient(55% 65% at 88% 30%,#4a4844 0%,rgba(74,72,68,0) 62%),
-      radial-gradient(70% 80% at 55% 45%,#ece8e1 0%,rgba(236,232,225,0) 70%),linear-gradient(135deg,#d9d5ce 0%,#bfbab2 45%,#8f8b84 100%)}
+  .ag:not([data-state="AUTHENTICATED"]){align-items:center;padding:24px 16px;isolation:isolate;
+    background:linear-gradient(135deg,#ece7df 0%,#ddd6cb 50%,#cfc7bb 100%)}
+  /* soft taupe blobs blended into the beige, drifting slowly */
+  .ag:not([data-state="AUTHENTICATED"])::before,.ag:not([data-state="AUTHENTICATED"])::after{content:"";position:fixed;z-index:-1;border-radius:50%;
+    filter:blur(70px);opacity:.7;pointer-events:none;will-change:transform}
+  .ag:not([data-state="AUTHENTICATED"])::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;
+    background:radial-gradient(circle,#9a9187 0%,rgba(154,145,135,0) 68%);animation:agdrift1 26s ease-in-out infinite alternate}
+  .ag:not([data-state="AUTHENTICATED"])::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;
+    background:radial-gradient(circle,#a89e92 0%,rgba(168,158,146,0) 68%);animation:agdrift2 32s ease-in-out infinite alternate}
+  @keyframes agdrift1{0%{transform:translate(0,0) scale(1)}50%{transform:translate(8vmax,-5vmax) scale(1.08)}100%{transform:translate(3vmax,-10vmax) scale(.96)}}
+  @keyframes agdrift2{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-7vmax,6vmax) scale(1.06)}100%{transform:translate(-3vmax,11vmax) scale(.95)}}
+  @media (prefers-reduced-motion:reduce){.ag::before,.ag::after{animation:none!important}}
   .ag-box{max-width:400px;background:#f6f4f0;border:1px solid rgba(255,255,255,.7);border-radius:24px;padding:30px 30px 26px;
     box-shadow:0 30px 60px -20px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.08)}
   .ag-head{flex-direction:column;gap:2px;margin-bottom:22px;text-align:center}
