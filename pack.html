@@ -33,17 +33,17 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
   label.l{display:block;font-weight:700;font-size:14px;margin:0 0 6px}
   .field{position:relative}
-  input[type=text],input[type=number]{width:100%;padding:12px;font-size:16px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;color:var(--ink);font-family:inherit}
+  input[type=text],input[type=number]{width:100%;padding:12px;font-size:16px;border:1px solid #e4e4e7;border-radius:8px;background:var(--pt-card,#fff);color:var(--ink);font-family:inherit}
   input:focus{outline:2px solid var(--green);outline-offset:1px}
-  .sugg{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e4e4e7;border-radius:8px;margin-top:4px;max-height:240px;overflow:auto;z-index:5;box-shadow:0 8px 20px -10px rgba(0,0,0,.35)}
+  .sugg{position:absolute;top:100%;left:0;right:0;background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:8px;margin-top:4px;max-height:240px;overflow:auto;z-index:5;box-shadow:0 8px 20px -10px rgba(0,0,0,.35)}
   .sugg div{padding:11px 12px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;justify-content:space-between;gap:8px;direction:ltr;text-align:left}
   .sugg.emp div{direction:rtl;text-align:right}
   .sugg div:hover,.sugg div.on{background:var(--green-tint)}
   .sugg small{color:var(--muted);font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif}
   .picked{margin-top:6px;font-size:13px;color:var(--green);font-weight:700;min-height:18px}
-  .row{display:grid;grid-template-columns:minmax(0,1fr) 84px minmax(0,140px) 38px;grid-template-areas:'name name name name' 'lq qty exp x';gap:8px;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}.row .field{grid-area:name}.row .lq{grid-area:lq;font-size:12px;color:var(--muted);font-weight:700}.row input[type=number]{grid-area:qty}.row input[type=month]{grid-area:exp}.row .x{grid-area:x}input[type=month]{width:100%;padding:11px 8px;font-size:15px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;color:var(--ink);font-family:inherit}
+  .row{display:grid;grid-template-columns:minmax(0,1fr) 84px minmax(0,140px) 38px;grid-template-areas:'name name name name' 'lq qty exp x';gap:8px;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}.row .field{grid-area:name}.row .lq{grid-area:lq;font-size:12px;color:var(--muted);font-weight:700}.row input[type=number]{grid-area:qty}.row input[type=month]{grid-area:exp}.row .x{grid-area:x}input[type=month]{width:100%;padding:11px 8px;font-size:15px;border:1px solid #e4e4e7;border-radius:8px;background:var(--pt-card,#fff);color:var(--ink);font-family:inherit}
   .row .chosen{font-size:12px;color:var(--green);font-weight:700;margin-top:4px;direction:ltr;text-align:left;min-height:16px}
-  .x{height:46px;border:1px solid var(--line);background:#fff;border-radius:8px;font-size:20px;color:var(--muted);cursor:pointer}
+  .x{height:46px;border:1px solid var(--line);background:var(--pt-card,#fff);border-radius:8px;font-size:20px;color:var(--muted);cursor:pointer}
   .add{width:100%;padding:12px;border:2px dashed var(--green);background:transparent;color:var(--green);font-weight:700;border-radius:8px;font-size:15px;font-family:inherit;cursor:pointer}
   .hdr{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}
   .total{font-size:13px;color:var(--muted);margin-top:10px}
@@ -208,6 +208,22 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     display:flex;gap:2px;color:#1c1c1c;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
   .ag-lang span{display:grid;place-items:center;padding:0 12px;border-radius:9px;font-size:13px;font-weight:500}
   .ag-lang span.on{background:#e7e3dc;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+
+  /* ---- Platform theme: warm beige backdrop with soft drifting blobs, ivory surfaces (Pharmacy Tracker by WaadAlwagdani) ---- */
+  body.ag-shell{--pt-card:#f7f5f1;--panel:#f7f5f1;--paper:#efebe4;--line:#e2dcd2;--line-strong:#d3ccc0;--bg:transparent;
+    background:linear-gradient(135deg,#ece7df 0%,#ddd6cb 50%,#cfc7bb 100%) fixed!important;isolation:isolate}
+  body.ag-shell::before,body.ag-shell::after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(80px);opacity:.6;pointer-events:none;will-change:transform}
+  body.ag-shell::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;background:radial-gradient(circle,#9a9187 0%,rgba(154,145,135,0) 68%);animation:agdrift1 30s ease-in-out infinite alternate}
+  body.ag-shell::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;background:radial-gradient(circle,#a89e92 0%,rgba(168,158,146,0) 68%);animation:agdrift2 36s ease-in-out infinite alternate}
+  @media (prefers-reduced-motion:reduce){body.ag-shell::before,body.ag-shell::after{animation:none!important}}
+  body.ag-shell .ag-side{background:rgba(247,245,241,.92);border:1px solid rgba(255,255,255,.75);box-shadow:0 24px 48px -24px rgba(0,0,0,.28),0 4px 14px rgba(0,0,0,.05);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  body.ag-shell .ag-item:hover{background:#ebe6de}
+  body.ag-shell .ag-item[aria-current=page]{background:#1c1c1c}
+  body.ag-shell .ag-me{border-color:#e2dcd2;background:rgba(255,255,255,.35)}
+  body.ag-shell .ag-av{background:#ebe6de}
+  body.ag-shell .ag-brand i{background:#1c1c1c}
+  body.ag-shell .ag-chip,body.ag-shell .ag-burger{background:#f7f5f1;border-color:#d3ccc0}
 </style>
 
 <div class="ag" id="ag" data-state="INITIALIZING" role="dialog" aria-modal="true" aria-labelledby="ag-title">
@@ -632,7 +648,7 @@ var AuthGate = (function () {
   <div class="banner"><b>تسجيل إعادة التغليف · Re-packaging</b><span>لفريق التغليف — في نهاية المناوبة: عدد الوحدات المغلّفة وتاريخ انتهائها لكل صنف</span></div>
   <div class="ptabs" style="display:flex;gap:8px;margin-bottom:14px">
     <button type="button" class="ptab on" data-t="log" style="border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:999px;padding:8px 16px;font:600 14px inherit;font-family:inherit;cursor:pointer">Record · التسجيل</button>
-    <button type="button" class="ptab" data-t="stock" style="border:1px solid #d4d4d8;background:#fff;color:#0a0a0a;border-radius:999px;padding:8px 16px;font:600 14px inherit;font-family:inherit;cursor:pointer">Stock · الرصيد</button>
+    <button type="button" class="ptab" data-t="stock" style="border:1px solid #d4d4d8;background:var(--pt-card,#fff);color:#0a0a0a;border-radius:999px;padding:8px 16px;font:600 14px inherit;font-family:inherit;cursor:pointer">Stock · الرصيد</button>
   </div>
   <div id="app"><div style="text-align:center;color:#71717a;padding:40px 0">جاري التحميل…</div></div>
   <div id="stock" hidden></div>
@@ -767,7 +783,7 @@ var AuthGate = (function () {
     el.innerHTML='<div class="card">'+
       '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">'+['red','amber','green'].map(function(k){return '<button type="button" class="sf" data-f="'+k+'" style="flex:1;min-width:150px;text-align:start;border:2px solid '+(STF===k?C[k][0]:'transparent')+';background:'+C[k][1]+';border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit"><div style="font-size:24px;font-weight:700;color:'+C[k][0]+'">'+n[k]+'</div><div style="font-size:12px;font-weight:600">'+C[k][2]+'</div></button>';}).join('')+'</div>'+
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><input type="search" id="stq" value="'+esc(STQ)+'" placeholder="بحث بالصنف · Search item" style="flex:1;min-width:220px;height:40px;border:1px solid #d4d4d8;border-radius:8px;padding:0 12px;font:inherit">'+
-      (STF!=='all'?'<button type="button" id="stall" style="height:40px;border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:0 12px;cursor:pointer;font-family:inherit">Show all · عرض الكل</button>':'')+
+      (STF!=='all'?'<button type="button" id="stall" style="height:40px;border:1px solid #d4d4d8;background:var(--pt-card,#fff);border-radius:8px;padding:0 12px;cursor:pointer;font-family:inherit">Show all · عرض الكل</button>':'')+
       '<button type="button" id="strf" style="height:40px;border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:8px;padding:0 14px;cursor:pointer;font-family:inherit;font-weight:600">Refresh · تحديث</button></div>'+
       '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;direction:ltr"><thead><tr style="background:#f4f4f5">'+
       ['Item · الصنف','Packed · المغلّف','Dispensed · المصروف','Left · المتبقي','Today · اليوم','Avg/day · المعدل اليومي','Days left · يكفي (أيام)','Last packed · آخر تغليف'].map(function(h,i){return '<th style="padding:9px 10px;text-align:'+(i?'center':'left')+';font-size:12px;white-space:nowrap">'+h+'</th>';}).join('')+'</tr></thead><tbody>'+

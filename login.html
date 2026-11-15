@@ -177,6 +177,22 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     display:flex;gap:2px;color:#1c1c1c;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
   .ag-lang span{display:grid;place-items:center;padding:0 12px;border-radius:9px;font-size:13px;font-weight:500}
   .ag-lang span.on{background:#e7e3dc;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+
+  /* ---- Platform theme: warm beige backdrop with soft drifting blobs, ivory surfaces (Pharmacy Tracker by WaadAlwagdani) ---- */
+  body.ag-shell{--pt-card:#f7f5f1;--panel:#f7f5f1;--paper:#efebe4;--line:#e2dcd2;--line-strong:#d3ccc0;--bg:transparent;
+    background:linear-gradient(135deg,#ece7df 0%,#ddd6cb 50%,#cfc7bb 100%) fixed!important;isolation:isolate}
+  body.ag-shell::before,body.ag-shell::after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(80px);opacity:.6;pointer-events:none;will-change:transform}
+  body.ag-shell::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;background:radial-gradient(circle,#9a9187 0%,rgba(154,145,135,0) 68%);animation:agdrift1 30s ease-in-out infinite alternate}
+  body.ag-shell::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;background:radial-gradient(circle,#a89e92 0%,rgba(168,158,146,0) 68%);animation:agdrift2 36s ease-in-out infinite alternate}
+  @media (prefers-reduced-motion:reduce){body.ag-shell::before,body.ag-shell::after{animation:none!important}}
+  body.ag-shell .ag-side{background:rgba(247,245,241,.92);border:1px solid rgba(255,255,255,.75);box-shadow:0 24px 48px -24px rgba(0,0,0,.28),0 4px 14px rgba(0,0,0,.05);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  body.ag-shell .ag-item:hover{background:#ebe6de}
+  body.ag-shell .ag-item[aria-current=page]{background:#1c1c1c}
+  body.ag-shell .ag-me{border-color:#e2dcd2;background:rgba(255,255,255,.35)}
+  body.ag-shell .ag-av{background:#ebe6de}
+  body.ag-shell .ag-brand i{background:#1c1c1c}
+  body.ag-shell .ag-chip,body.ag-shell .ag-burger{background:#f7f5f1;border-color:#d3ccc0}
 </style>
 
 <div class="ag" id="ag" data-state="INITIALIZING" role="dialog" aria-modal="true" aria-labelledby="ag-title">
