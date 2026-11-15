@@ -134,6 +134,12 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     display:flex;flex-direction:column;padding:18px 14px;font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;color:#0a0a0a;box-sizing:border-box}
   .ag-side *{box-sizing:border-box}
   .ag-brand{display:flex;align-items:center;gap:10px;padding:2px 6px 18px}
+  .ag-brand>div{flex:1;min-width:0}
+  .ag-brand .ag-lchip{flex:none;margin-inline-start:auto}
+  .ag-brand b{white-space:nowrap;font-size:14px}
+  body.ag-shell .ag-brand{gap:8px;padding-inline:2px}
+  body.ag-shell .ag-brand i{width:32px;height:32px;font-size:12px}
+  .ag-brand .ag-lchip{padding:0!important}
   .ag-brand i{width:36px;height:36px;border-radius:10px;background:#0a0a0a;color:#fff;display:grid;place-items:center;font:700 13px/1 "IBM Plex Sans",Arial;font-style:normal;letter-spacing:.02em}
   .ag-brand b{display:block;font-size:14.5px;line-height:1.15}.ag-brand small{display:block;font-size:11px;color:#a1a1aa;margin-top:2px}
   .ag-sec{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa;padding:12px 10px 6px;display:flex;justify-content:space-between}
@@ -550,14 +556,13 @@ var AuthGate = (function () {
     }).join('');
     var nm = user.displayName || user.username, ini = nm.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
     var side = document.createElement('aside'); side.id = 'ag-side'; side.className = 'ag-side'; side.setAttribute('dir', LANG === 'en' ? 'ltr' : 'rtl');
-    side.innerHTML = '<div class="ag-brand"><i>PT</i><div><b>Pharmacy Tracker</b><small>by WaadAlwagdani</small></div></div>' +
+    side.innerHTML = '<div class="ag-brand"><i>PT</i><div><b>Pharmacy Tracker</b><small>by WaadAlwagdani</small></div>' + '<button type="button" class="ag-chip ag-lchip" id="ag-lang2" title="' + (LANG === 'en' ? 'العربية' : 'English') + '" aria-label="' + (LANG === 'en' ? 'التبديل إلى العربية' : 'Switch to English') + '">' + langIcon(40) + '</button>' + '</div>' +
       '<nav class="ag-nav-list" aria-label="Pages">' + nav + '</nav>' +
       '<div class="ag-me"><div class="ag-av">' + esc(ini) + '</div><div><b dir="auto">' + esc(nm) + '</b><small>' + L(ROLE[user.sysRole] || ['', '']) + '</small></div></div>' +
       (PREVIEW ? '' : '<button type="button" class="ag-item ag-out" id="ag-out"><svg viewBox="0 0 24 24"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/></svg><span>' + L(['Sign out', 'تسجيل الخروج']) + '<em>' + (LANG === 'en' ? 'تسجيل الخروج' : 'Sign out') + '</em></span></button>');
     var top = document.createElement('div'); top.id = 'ag-top'; top.className = 'ag-top';
     top.innerHTML = '<div class="ag-crumb"><button type="button" class="ag-burger" id="ag-burger" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0a0a0a" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
-      '<span>' + esc(nm) + '</span><span>/</span><b>' + esc(cfg.page && NAV[cfg.page] ? L(NAV[cfg.page]) : '') + '</b></div>' +
-      '<button type="button" class="ag-chip ag-lchip" id="ag-lang2" title="' + (LANG === 'en' ? 'العربية' : 'English') + '" aria-label="' + (LANG === 'en' ? 'التبديل إلى العربية' : 'Switch to English') + '">' + langIcon(38) + '</button>';
+      '<span>' + esc(nm) + '</span><span>/</span><b>' + esc(cfg.page && NAV[cfg.page] ? L(NAV[cfg.page]) : '') + '</b></div>';
     var scrim = document.createElement('div'); scrim.id = 'ag-scrim'; scrim.className = 'ag-scrim';
     document.body.insertBefore(top, document.body.firstChild);
     if (PREVIEW) {
