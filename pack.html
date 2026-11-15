@@ -20,7 +20,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Pharmacy Tracker by WaadAlwagdani — packing page -->
-<title>Pharmacy Tracker Packing by WaadAlwagdani</title>
+<title>Pharmacy Tracker Re-packaging by WaadAlwagdani</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <style>
   :root{--ink:#0a0a0a;--muted:#71717a;--paper:#f4f4f5;--panel:#fff;--line:#d3ddd6;--green:#276b3e;--green-tint:#e6f1ea;--red:#a3231b;}
@@ -417,7 +417,7 @@ var AuthGate = (function () {
     labels: '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
     schedule: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'
   };
-  var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Packing', 'التعبئة'],
+  var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
     inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], schedule: ['My tasks', 'مهامي'] };
   var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
   var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'] };
@@ -547,7 +547,7 @@ var AuthGate = (function () {
 </script>
 
 <div class="wrap">
-  <div class="banner"><b>تسجيل التعبئة</b><span>لفريق التغليف — في نهاية المناوبة: عدد الوحدات المغلّفة وتاريخ انتهائها لكل صنف</span></div>
+  <div class="banner"><b>تسجيل إعادة التغليف · Re-packaging</b><span>لفريق التغليف — في نهاية المناوبة: عدد الوحدات المغلّفة وتاريخ انتهائها لكل صنف</span></div>
   <div id="app"><div style="text-align:center;color:#71717a;padding:40px 0">جاري التحميل…</div></div>
   <footer>Pharmacy Tracker by WaadAlwagdani</footer>
 </div>
@@ -586,7 +586,7 @@ var AuthGate = (function () {
       '<div class="card"><div class="hdr"><span>الصنف المغلّف</span></div>'+
         '<div id="rows"></div><button class="add" id="add" type="button">+ إضافة صنف</button>'+
         '<div class="total" id="total"></div></div>'+
-      '<button class="submit" id="go" type="button">إرسال التعبئة</button><div class="msg" id="msg"></div>';
+      '<button class="submit" id="go" type="button">إرسال · Submit</button><div class="msg" id="msg"></div>';
     var eq=document.getElementById('empQ');
     bindAuto(eq,document.getElementById('empS'),function(q){
       q=q.trim().toLowerCase();if(!q)return[];
@@ -651,12 +651,12 @@ var AuthGate = (function () {
     var btn=document.getElementById('go');btn.disabled=true;btn.textContent='جاري الإرسال…';
     AuthGate.run('submitPack',{empName:emp.name,empId:emp.id,items:items})
       .then(function(res){
-        btn.disabled=false;btn.textContent='إرسال التعبئة';
+        btn.disabled=false;btn.textContent='إرسال · Submit';
         var e=emp;render();emp=e;
         document.getElementById('empQ').value=e.name;document.getElementById('empP').textContent='✓ '+e.name+(e.id?' — '+e.id:'');
-        msg('تم تسجيل تعبئة '+res.count+' صنف',true);
+        msg('تم تسجيل إعادة تغليف '+res.count+' صنف',true);
       })
-      .catch(function(e){btn.disabled=false;btn.textContent='إرسال التعبئة';msg('تعذّر الإرسال: '+(e&&e.message?e.message:'يُرجى المحاولة مرة أخرى'),false);});
+      .catch(function(e){btn.disabled=false;btn.textContent='إرسال · Submit';msg('تعذّر الإرسال: '+(e&&e.message?e.message:'يُرجى المحاولة مرة أخرى'),false);});
   }
 
   // Data loads only after a server-validated sign-in (Pharmacy Tracker by WaadAlwagdani)

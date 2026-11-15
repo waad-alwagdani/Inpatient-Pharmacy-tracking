@@ -404,7 +404,7 @@ var AuthGate = (function () {
     labels: '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
     schedule: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'
   };
-  var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Packing', 'التعبئة'],
+  var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
     inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], schedule: ['My tasks', 'مهامي'] };
   var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
   var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'] };
@@ -1203,10 +1203,11 @@ var OrgUI = (function () {
 (function(){
   var B=OrgUI.B,esc=OrgUI.esc;
   var ROLES=[['PHARMACIST','Pharmacist','صيدلي'],['DEPT_SUPERVISOR','Department supervisor','مشرف قسم'],['PHARMACY_SUPERVISOR','Pharmacy supervisor','مشرف الصيدلية']];
-  var STATIONS=[['pack','Packing','التعبئة'],['inventory','Inventory','المخزون']];
+  var STATIONS=[['pack','Re-packaging','إعادة التغليف'],['inventory','Inventory','المخزون']];
   var EXTRA=[['labels','Labels tool','أداة الليبلات'],['dash','Dashboard','المؤشرات'],['invread','Inventory balance (view)','رصيد المخزون (اطلاع)']];
-  var HOMES=[['','Automatic','تلقائي'],['supervisor','Supervision','الإشراف'],['pack','Packing','التعبئة'],['inventory','Inventory','المخزون'],['invread','Inventory balance','رصيد المخزون'],['dash','Dashboard','المؤشرات'],['labels','Labels','الليبلات'],['schedule','My tasks','مهامي']];
+  var HOMES=[['','Automatic','تلقائي'],['supervisor','Supervision','الإشراف'],['pack','Re-packaging','إعادة التغليف'],['inventory','Inventory','المخزون'],['invread','Inventory balance','رصيد المخزون'],['dash','Dashboard','المؤشرات'],['labels','Labels','الليبلات'],['schedule','My tasks','مهامي']];
   var RESP=null,CATS=null,USERS=[];
+  function pageLabel(p){var x=STATIONS.concat(EXTRA,HOMES).filter(function(y){return y[0]===p})[0];return x?x[1]:p;}
   function roleName(r){var x=ROLES.filter(function(y){return y[0]===r})[0];return r==='OWNER'?'Owner · المالك':x?x[1]+' · '+x[2]:r;}
   function stTag(u){var now=Date.now(),exp=u.validTo&&now>=Date.parse(u.validTo),pre=u.validFrom&&now<Date.parse(u.validFrom);
     if(u.status==='pending')return '<span class="tag t-warn">'+B('Awaiting approval','بانتظار الموافقة')+'</span>';
@@ -1226,9 +1227,9 @@ var OrgUI = (function () {
     function draw(){
       var q=(el.querySelector('#q').value||'').toLowerCase();
       el.querySelector('#tb').innerHTML=USERS.filter(function(u){return !q||(u.displayName+' '+u.username).toLowerCase().indexOf(q)>-1}).map(function(u){
-        var access=u.stations.concat(u.extraPages).map(function(p){return '<span class="tag t-n">'+p+'</span>'}).join(' ')+(u.resps.length?'<div style="font-size:11.5px;color:#71717a;margin-top:3px">'+u.resps.length+' responsibilities</div>':'');
+        var access=u.stations.concat(u.extraPages).map(function(p){return '<span class="tag t-n">'+esc(pageLabel(p))+'</span>'}).join(' ')+(u.resps.length?'<div style="font-size:11.5px;color:#71717a;margin-top:3px">'+u.resps.length+' responsibilities</div>':'');
         return '<tr data-id="'+esc(u.id)+'"><td><b>'+esc(u.displayName)+'</b><div class="ltr" style="font-size:12px;color:#71717a">@'+esc(u.username)+(u.empRef?' · #'+esc(u.empRef):'')+'</div></td>'+
-          '<td>'+esc(roleName(u.sysRole))+'<div style="font-size:11.5px;color:#71717a">home: '+esc(u.home)+'</div></td><td>'+(u.isOwner?'<span class="lock">🔒 full</span>':access)+'</td>'+
+          '<td>'+esc(roleName(u.sysRole))+'<div style="font-size:11.5px;color:#71717a">home: '+esc(pageLabel(u.home))+'</div></td><td>'+(u.isOwner?'<span class="lock">🔒 full</span>':access)+'</td>'+
           '<td class="ltr" style="font-size:12px">'+(u.isOwner?'∞':(u.validFrom?esc(u.validFrom.replace('T',' ')):'—')+' → '+(u.validTo?esc(u.validTo.replace('T',' ')):'—'))+'</td><td>'+stTag(u)+'</td>'+
           '<td>'+(u.isOwner?'<span class="lock">🔒 '+B('Protected','محمي')+'</span>':'<div class="acts">'+
             '<button class="sm" data-a="edit">'+B('Edit','تعديل')+'</button>'+(u.status!=='terminated'?'<button class="sm" data-a="preview">'+B('👁 Preview','👁 معاينة')+'</button>':'')+
