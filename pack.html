@@ -579,7 +579,12 @@ var AuthGate = (function () {
 
 <div class="wrap">
   <div class="banner"><b>تسجيل إعادة التغليف · Re-packaging</b><span>لفريق التغليف — في نهاية المناوبة: عدد الوحدات المغلّفة وتاريخ انتهائها لكل صنف</span></div>
+  <div class="ptabs" style="display:flex;gap:8px;margin-bottom:14px">
+    <button type="button" class="ptab on" data-t="log" style="border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:999px;padding:8px 16px;font:600 14px inherit;font-family:inherit;cursor:pointer">Record · التسجيل</button>
+    <button type="button" class="ptab" data-t="stock" style="border:1px solid #d4d4d8;background:#fff;color:#0a0a0a;border-radius:999px;padding:8px 16px;font:600 14px inherit;font-family:inherit;cursor:pointer">Stock · الرصيد</button>
+  </div>
   <div id="app"><div style="text-align:center;color:#71717a;padding:40px 0">جاري التحميل…</div></div>
+  <div id="stock" hidden></div>
   <footer>Pharmacy Tracker by WaadAlwagdani</footer>
 </div>
 
@@ -685,11 +690,48 @@ var AuthGate = (function () {
         btn.disabled=false;btn.textContent='إرسال · Submit';
         var e=emp;render();emp=e;
         document.getElementById('empQ').value=e.name;document.getElementById('empP').textContent='✓ '+e.name+(e.id?' — '+e.id:'');
-        msg('تم تسجيل إعادة تغليف '+res.count+' صنف',true);
+        msg('تم تسجيل إعادة تغليف '+res.count+' صنف',true);STK=null;
       })
       .catch(function(e){btn.disabled=false;btn.textContent='إرسال · Submit';msg('تعذّر الإرسال: '+(e&&e.message?e.message:'يُرجى المحاولة مرة أخرى'),false);});
   }
 
+
+  /* Stock view for the re-packer: packed, dispensed, left and days of cover per unit dose item — Pharmacy Tracker by WaadAlwagdani */
+  var STK=null,STQ='',STF='all';
+  function tabTo(t){
+    document.querySelectorAll('.ptab').forEach(function(b){var on=b.dataset.t===t;b.style.background=on?'#0a0a0a':'#fff';b.style.color=on?'#fff':'#0a0a0a';b.style.borderColor=on?'#0a0a0a':'#d4d4d8';});
+    document.getElementById('app').hidden=t!=='log';document.getElementById('stock').hidden=t!=='stock';
+    if(t==='stock')loadStock();
+  }
+  document.querySelectorAll('.ptab').forEach(function(b){b.onclick=function(){tabTo(b.dataset.t);};});
+  function loadStock(){
+    var el=document.getElementById('stock');
+    if(!STK)el.innerHTML='<div style="text-align:center;color:#71717a;padding:40px 0">جاري التحميل…</div>';
+    AuthGate.run('packStock').then(function(d){STK=d;drawStock();},function(e){el.innerHTML='<div class="msg err" style="display:block">تعذّر تحميل الرصيد</div>';});
+  }
+  function drawStock(){
+    var el=document.getElementById('stock'),C={red:['#dc2626','#fef2f2','Step in now · يلزم التغليف الآن'],amber:['#ca8a04','#fefce8','Soon · قريبًا'],green:['#16a34a','#f0fdf4','Enough · كافٍ']};
+    var n={red:0,amber:0,green:0};STK.items.forEach(function(x){n[x.st]++;});
+    var q=STQ.toLowerCase(),rows=STK.items.filter(function(x){return(STF==='all'||x.st===STF)&&(!q||(x.name+' '+x.strength+' '+x.no).toLowerCase().indexOf(q)>-1);});
+    el.innerHTML='<div class="card">'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">'+['red','amber','green'].map(function(k){return '<button type="button" class="sf" data-f="'+k+'" style="flex:1;min-width:150px;text-align:start;border:2px solid '+(STF===k?C[k][0]:'transparent')+';background:'+C[k][1]+';border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit"><div style="font-size:24px;font-weight:700;color:'+C[k][0]+'">'+n[k]+'</div><div style="font-size:12px;font-weight:600">'+C[k][2]+'</div></button>';}).join('')+'</div>'+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><input type="search" id="stq" value="'+esc(STQ)+'" placeholder="بحث بالصنف · Search item" style="flex:1;min-width:220px;height:40px;border:1px solid #d4d4d8;border-radius:8px;padding:0 12px;font:inherit">'+
+      (STF!=='all'?'<button type="button" id="stall" style="height:40px;border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:0 12px;cursor:pointer;font-family:inherit">Show all · عرض الكل</button>':'')+
+      '<button type="button" id="strf" style="height:40px;border:1px solid #0a0a0a;background:#0a0a0a;color:#fff;border-radius:8px;padding:0 14px;cursor:pointer;font-family:inherit;font-weight:600">Refresh · تحديث</button></div>'+
+      '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;direction:ltr"><thead><tr style="background:#f4f4f5">'+
+      ['Item · الصنف','Packed · المغلّف','Dispensed · المصروف','Left · المتبقي','Today · اليوم','Avg/day · المعدل اليومي','Days left · يكفي (أيام)','Last packed · آخر تغليف'].map(function(h,i){return '<th style="padding:9px 10px;text-align:'+(i?'center':'left')+';font-size:12px;white-space:nowrap">'+h+'</th>';}).join('')+'</tr></thead><tbody>'+
+      (rows.length?rows.map(function(x){var c=C[x.st];return '<tr style="border-top:1px solid #e4e4e7">'+
+        '<td style="padding:9px 10px;border-left:4px solid '+c[0]+'"><b>'+esc(x.name)+'</b> <span style="color:#71717a">'+esc(x.strength)+'</span></td>'+
+        '<td style="text-align:center">'+x.packed+'</td><td style="text-align:center">'+x.wd+'</td>'+
+        '<td style="text-align:center;font-weight:700;color:'+c[0]+'">'+x.bal+'</td><td style="text-align:center">'+x.wdToday+'</td>'+
+        '<td style="text-align:center">'+x.avg+'</td><td style="text-align:center;font-weight:600">'+(x.cover===null?'—':x.cover)+'</td>'+
+        '<td style="text-align:center;color:#71717a">'+(x.lastPack||'—')+'</td></tr>';}).join(''):'<tr><td colspan="8" style="padding:18px;text-align:center;color:#71717a">لا توجد أصناف مطابقة</td></tr>')+
+      '</tbody></table></div><div style="font-size:12px;color:#71717a;margin-top:8px">المتبقي = كل ما سُجّل تغليفه − كل ما سُجّل صرفه. المعدل اليومي من آخر 7 أيام. آخر تحديث: <span dir="ltr">'+esc(STK.at)+'</span></div></div>';
+    el.querySelectorAll('.sf').forEach(function(b){b.onclick=function(){STF=STF===b.dataset.f?'all':b.dataset.f;drawStock();};});
+    var a=document.getElementById('stall');if(a)a.onclick=function(){STF='all';drawStock();};
+    document.getElementById('strf').onclick=loadStock;
+    var i=document.getElementById('stq');i.oninput=function(){STQ=this.value;var pos=this.selectionStart;drawStock();var j=document.getElementById('stq');j.focus();try{j.setSelectionRange(pos,pos);}catch(e){}};
+  }
   // Data loads only after a server-validated sign-in (Pharmacy Tracker by WaadAlwagdani)
   AuthGate.start({accent:'#0a0a0a',bg:'#f4f4f5',page:'pack',onReady:function(){
     AuthGate.run('getPackData').then(function(d){
