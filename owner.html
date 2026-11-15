@@ -667,8 +667,8 @@ var OrgUI = (function () {
       '<button type="button" class="sm" data-v="grid" aria-pressed="false">' + B('Monthly', 'شهري') + '</button>' +
       '<button type="button" class="sm" data-v="emp" aria-pressed="false">' + B('Employee', 'جدول موظف') + '</button>' +
       '<button type="button" class="sm" data-v="sum" aria-pressed="false">' + B('Summary', 'الملخص') + '</button></div></div>' +
-      '<div class="row"><button type="button" class="sm d-cfg" hidden>' + B('Tasks', 'المهام') + '</button><button type="button" class="pri d-save" disabled>' + B('Save', 'حفظ') + '</button></div></div>' +
-      '<div class="msg d-msg"></div></div><div class="panel d-cfgp" hidden></div><div class="panel"><div class="d-body"><div class="empty">…</div></div>' +
+      '<div class="row"><button type="button" class="sm d-quick">' + B('Quick assign', 'تعيين سريع') + '</button><button type="button" class="sm d-cfg" hidden>' + B('Tasks', 'المهام') + '</button><button type="button" class="pri d-save" disabled>' + B('Save', 'حفظ') + '</button></div></div>' +
+      '<div class="msg d-msg"></div></div><div class="panel d-qp" hidden></div><div class="panel d-cfgp" hidden></div><datalist id="ou-wards"></datalist><div class="panel"><div class="d-body"><div class="empty">…</div></div>' +
       '<div class="xp" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><b style="font-size:12.5px">' + B('Export', 'تصدير') + '</b>' +
       '<button type="button" class="sm" data-x="xlsx">Excel</button><button type="button" class="sm" data-x="pdf">PDF</button><button type="button" class="sm" data-x="docx">Word</button><button type="button" class="sm" data-x="pptx">PowerPoint</button><button type="button" class="sm" data-x="screen">' + B('Screen deck', 'عرض الشاشة') + '</button>' +
       '<span class="d-xmsg" style="font-size:12px;color:var(--muted)"></span>' +
@@ -683,13 +683,14 @@ var OrgUI = (function () {
     mEl.onchange = function () { if (dirty() && !confirm('Unsaved changes will be lost · ستُفقد التعديلات غير المحفوظة')) { mEl.value = D.month; return; } load(); };
     el.querySelectorAll('[data-v]').forEach(function (b) { b.onclick = function () { view = b.dataset.v; el.querySelectorAll('[data-v]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); draw(); }; });
     saveB.onclick = doSave;
+    el.querySelector('.d-quick').onclick = function () { var p = el.querySelector('.d-qp'); p.hidden = !p.hidden; if (!p.hidden) quickForm(p, ''); };
     el.querySelector('.d-cfg').onclick = function () { var p = el.querySelector('.d-cfgp'); p.hidden = !p.hidden; if (!p.hidden) cfgForm(p); };
     el.querySelectorAll('[data-x]').forEach(function (b) { b.onclick = function () { doExport(b.dataset.x, b); }; });
     load();
     function dirty() { return Object.keys(edits).length + Object.keys(nedits).length > 0; }
     function load() {
       M.innerHTML = ''; M.className = 'msg d-msg';
-      return AuthGate.run('dutyGet', mEl.value).then(function (d) { D = d; edits = {}; nedits = {}; el.querySelector('.d-cfg').hidden = !d.canEditTasks; draw(); })
+      return AuthGate.run('dutyGet', mEl.value).then(function (d) { D = d; edits = {}; nedits = {}; var dl = el.querySelector('#ou-wards'); if (dl) dl.innerHTML = (d.adc || []).map(function (x) { return '<option value="' + esc(x) + '">'; }).join(''); el.querySelector('.d-cfg').hidden = !d.canEditTasks; draw(); })
         .catch(function (e) { el.querySelector('.d-body').innerHTML = '<div class="msg err">' + err(e) + '</div>'; });
     }
     function cell(k) { return k in edits ? edits[k] : (D.cells[k] || null); }
@@ -817,7 +818,7 @@ var OrgUI = (function () {
         '<div class="pl" style="max-height:220px;overflow:auto;border:1px solid #e4e4e7;border-radius:8px;padding:4px 6px;margin-bottom:8px">' +
         (list.length ? list.map(function (e) { return '<label style="display:flex;gap:8px;align-items:center;padding:5px 2px;cursor:pointer" data-n="' + esc(e.name.toLowerCase()) + '"><input type="checkbox" value="' + esc(e.id) + '">' + esc(e.name) + (e.noAccount ? ' <small style="color:#71717a">· بدون حساب</small>' : e.pending ? ' <small style="color:#71717a">· بانتظار التفعيل</small>' : '') + '</label>'; }).join('')
           : '<div style="color:#71717a;padding:8px">لا يوجد موظفون متاحون</div>') + '</div>' +
-        (t.adc ? '<select class="pd"><option value="">القسم · ADC dept</option>' + D.adc.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') + '</select>' : '') +
+        '<input class="pd" list="ou-wards" placeholder="Ward / ADC · الجناح أو ADC (اختياري)" style="width:100%;margin-bottom:8px">' +
         '<div class="row" style="justify-content:space-between"><button type="button" class="pri sm pa">' + B('Apply', 'تطبيق') + ' <span class="pn"></span></button><button type="button" class="sm px">✕</button></div>';
       el.querySelector('.ou').appendChild(pop);
       var r = btn.getBoundingClientRect(), w = 290, x = Math.min(Math.max(8, r.left), innerWidth - w - 8), y = r.bottom + 6;
@@ -845,7 +846,7 @@ var OrgUI = (function () {
       var opts = '<option value="">' + 'غير مُسند · Unassigned' + '</option>' + D.employees.filter(function (e) { return e.active; }).map(function (e) { return '<option value="' + esc(e.id) + '"' + (c && c.emp === e.id ? ' selected' : '') + '>' + esc(e.name) + (e.noAccount ? ' · بدون حساب' : e.pending ? ' · بانتظار التفعيل' : '') + '</option>'; }).join('');
       var pop = document.createElement('div'); pop.className = 'pop';
       pop.innerHTML = '<h5>' + esc(t.ar) + ' · <span class="ltr">' + esc(p[0]) + '</span></h5><select class="pe">' + opts + '</select>' +
-        (t.adc ? '<select class="pd"><option value="">القسم · ADC dept</option>' + D.adc.map(function (x) { return '<option' + (c && c.dept === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' : '') +
+        '<input class="pd" list="ou-wards" placeholder="Ward / ADC · الجناح أو ADC (اختياري)" value="' + esc(c && c.dept || '') + '" style="width:100%;margin:6px 0 8px">' +
         '<div class="row" style="justify-content:space-between"><button type="button" class="pri sm pa">' + B('Apply', 'تطبيق') + '</button>' +
         (c && c.emp ? '<button type="button" class="sm danger pc">' + B('Remove', 'إزالة') + '</button>' : '') + '<button type="button" class="sm px">✕</button></div>';
       el.querySelector('.ou').appendChild(pop);
@@ -868,6 +869,51 @@ var OrgUI = (function () {
       else edits[k] = emp ? { emp: emp, name: empName(emp), dept: nd } : null;
       var g0 = el.querySelector('.dg') || el.querySelector('.cg'), sc = g0 ? g0.scrollLeft : 0, st = g0 ? g0.scrollTop : 0; draw(); var g = el.querySelector('.dg') || el.querySelector('.cg'); if (g) { g.scrollLeft = sc; g.scrollTop = st; }
     }
+
+    /* ---- Quick assign: a team (or one employee) + a task + a period → every working day filled, then saved. ---- */
+    function quickForm(p, onlyEmp) {
+      var first = D.days[0] ? D.days[0].date : '', last = D.days.length ? D.days[D.days.length - 1].date : '';
+      var emps = D.employees.filter(function (e) { return e.active; });
+      p.innerHTML = '<h4 style="margin:0 0 10px">' + B(onlyEmp ? 'Custom schedule' : 'Quick assign', onlyEmp ? 'جدول مخصص' : 'تعيين سريع') + '</h4>' +
+        '<div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">' +
+          '<label style="font-size:12px">' + B('Task', 'المهمة') + '<br><select class="q-task" style="min-width:240px">' + D.tasks.map(function (t) { return '<option value="' + esc(t.id) + '">' + esc(t.ar) + ' · ' + esc(t.en) + '</option>'; }).join('') + '</select></label>' +
+          '<label style="font-size:12px">' + B('From', 'من') + '<br><input type="date" class="q-from" value="' + first + '" min="' + first + '" max="' + last + '"></label>' +
+          '<label style="font-size:12px">' + B('To', 'إلى') + '<br><input type="date" class="q-to" value="' + last + '" min="' + first + '" max="' + last + '"></label>' +
+          '<label style="font-size:12px">' + B('Ward / ADC', 'الجناح أو ADC') + '<br><input class="q-ward" list="ou-wards" placeholder="(اختياري)" style="min-width:200px"></label></div>' +
+        '<div style="margin-top:10px;font-size:12px;font-weight:600">' + B('Employees', 'الموظفون') + ' <span class="q-n" style="color:#71717a"></span></div>' +
+        '<input type="search" class="q-q" placeholder="بحث · Search" style="width:100%;max-width:420px;margin:6px 0">' +
+        '<div class="q-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 12px;max-height:220px;overflow:auto;border:1px solid #e4e4e7;border-radius:8px;padding:6px 10px">' +
+          emps.map(function (e) { return '<label style="display:flex;gap:8px;align-items:center;padding:4px 0;cursor:pointer" data-n="' + esc(e.name.toLowerCase()) + '"><input type="checkbox" value="' + esc(e.id) + '"' + (e.id === onlyEmp ? ' checked' : '') + '>' + esc(e.name) + '</label>'; }).join('') + '</div>' +
+        '<div class="row" style="margin-top:10px;gap:8px"><button type="button" class="pri q-go">' + B('Fill days and save', 'تعبئة الأيام وحفظ') + '</button><button type="button" class="sm q-x">' + B('Close', 'إغلاق') + '</button></div>' +
+        '<div class="q-msg" style="font-size:12px;margin-top:6px"></div>';
+      var n = function () { var k = p.querySelectorAll('.q-list input:checked').length; p.querySelector('.q-n').textContent = k ? '(' + k + ')' : ''; }; n();
+      p.querySelector('.q-list').onchange = n;
+      p.querySelector('.q-q').oninput = function () { var q = this.value.trim().toLowerCase(); p.querySelectorAll('.q-list label').forEach(function (l) { l.style.display = !q || l.dataset.n.indexOf(q) > -1 ? '' : 'none'; }); };
+      p.querySelector('.q-x').onclick = function () { p.hidden = true; };
+      p.querySelector('.q-go').onclick = function () {
+        var Q = p.querySelector('.q-msg'), tid = p.querySelector('.q-task').value, t = D.tasks.filter(function (x) { return x.id === tid; })[0];
+        var from = p.querySelector('.q-from').value, to = p.querySelector('.q-to').value, ward = p.querySelector('.q-ward').value.trim();
+        var ids = Array.prototype.map.call(p.querySelectorAll('.q-list input:checked'), function (i) { return i.value; });
+        if (!t || !ids.length || !from || !to || from > to) { Q.style.color = '#a3231b'; Q.textContent = 'يُرجى اختيار المهمة والموظفين وفترة صحيحة · Please choose a task, employees and a valid period'; return; }
+        var added = 0, full = 0;
+        D.days.forEach(function (d) {
+          if (d.date < from || d.date > to) return;
+          ids.forEach(function (id) {
+            for (var s0 = 0; s0 < 6; s0++) { var c0 = cell(d.date + '|' + t.id + '|' + s0); if (c0 && c0.emp === id) return; }      // already on this task that day
+            for (var s1 = 0; s1 < 6; s1++) {
+              var k = d.date + '|' + t.id + '|' + s1, c1 = cell(k);
+              if (!(c1 && c1.emp)) { if (s1 >= t.slots) t.slots = s1 + 1; var o = D.cells[k];
+                if (o && o.emp === id && (o.dept || '') === ward) delete edits[k]; else edits[k] = { emp: id, name: empName(id), dept: ward }; added++; return; }
+            }
+            full++;
+          });
+        });
+        draw();
+        if (!added) { Q.style.color = '#a3231b'; Q.textContent = 'لا توجد أيام جديدة للتعبئة · Nothing new to fill'; return; }
+        Q.style.color = '#16a34a'; Q.textContent = 'تمت تعبئة ' + added + ' خانة' + (full ? ' · تجاوز ' + full + ' (المهمة ممتلئة: 6 موظفين)' : '') + ' — جاري الحفظ…';
+        doSave();
+      };
+    }
     function doSave() {
       var ch = Object.keys(edits).map(function (k) { var p = k.split('|'), c = edits[k]; return { date: p[0], task: p[1], slot: +p[2], emp: c ? c.emp : '', dept: c ? c.dept : '' }; });
       var nt = Object.keys(nedits).map(function (d) { return { date: d, note: nedits[d] }; });
@@ -882,8 +928,9 @@ var OrgUI = (function () {
     function drawEmp() {
       var list = D.employees; EMP = EMP && list.some(function (e) { return e.id === EMP; }) ? EMP : (list[0] && list[0].id || '');
       var rows = model('employee', EMP);
-      el.querySelector('.d-body').innerHTML = '<div class="row" style="margin-bottom:8px"><select class="d-emp">' + list.map(function (e) { return '<option value="' + esc(e.id) + '"' + (e.id === EMP ? ' selected' : '') + '>' + esc(e.name) + '</option>'; }).join('') + '</select></div>' + tableHtml(rows);
+      el.querySelector('.d-body').innerHTML = '<div class="row" style="margin-bottom:8px"><select class="d-emp">' + list.map(function (e) { return '<option value="' + esc(e.id) + '"' + (e.id === EMP ? ' selected' : '') + '>' + esc(e.name) + '</option>'; }).join('') + '</select>' + (D.canEdit === false ? '' : '<button type="button" class="pri sm d-own">' + B('Custom schedule for this employee', 'جدول مخصص لهذا الموظف') + '</button>') + '</div>' + tableHtml(rows);
       el.querySelector('.d-emp').onchange = function () { EMP = this.value; drawEmp(); };
+      var ob = el.querySelector('.d-own'); if (ob) ob.onclick = function () { var p = el.querySelector('.d-qp'); p.hidden = false; quickForm(p, EMP); p.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     }
     function drawSum() { el.querySelector('.d-body').innerHTML = tableHtml(model('summary')); }
     function tableHtml(m) { return '<div style="overflow:auto"><table><thead><tr>' + m.head.map(function (h) { return '<th>' + B(esc(h[0]), esc(h[1])) + '</th>'; }).join('') + '</tr></thead><tbody>' +
