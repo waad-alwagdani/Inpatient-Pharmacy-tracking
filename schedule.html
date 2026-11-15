@@ -657,8 +657,15 @@ var OrgUI = (function () {
       '<div class="row"><button type="button" class="sm d-cfg" hidden>' + B('Tasks', 'المهام') + '</button><button type="button" class="pri d-save" disabled>' + B('Save', 'حفظ') + '</button></div></div>' +
       '<div class="msg d-msg"></div></div><div class="panel d-cfgp" hidden></div><div class="panel"><div class="d-body"><div class="empty">…</div></div>' +
       '<div class="xp" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><b style="font-size:12.5px">' + B('Export', 'تصدير') + '</b>' +
-      '<button type="button" class="sm" data-x="xlsx">Excel</button><button type="button" class="sm" data-x="pdf">PDF</button><button type="button" class="sm" data-x="docx">Word</button><button type="button" class="sm" data-x="pptx">PowerPoint</button>' +
-      '<span class="d-xmsg" style="font-size:12px;color:var(--muted)"></span></div></div></div>';
+      '<button type="button" class="sm" data-x="xlsx">Excel</button><button type="button" class="sm" data-x="pdf">PDF</button><button type="button" class="sm" data-x="docx">Word</button><button type="button" class="sm" data-x="pptx">PowerPoint</button><button type="button" class="sm" data-x="screen">' + B('Screen deck', 'عرض الشاشة') + '</button>' +
+      '<span class="d-xmsg" style="font-size:12px;color:var(--muted)"></span>' +
+      '<div class="d-scr" hidden style="margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fafafa">' +
+        '<b style="font-size:13px">' + B('Pharmacy screen deck (A3)', 'عرض شاشة الصيدلية (A3)') + '</b>' +
+        '<div class="row" style="margin-top:8px;gap:10px;flex-wrap:wrap;align-items:flex-end">' +
+          '<label style="font-size:12px">' + B('Tasks from', 'المهام من') + '<br><input type="date" class="sc-tf"></label><label style="font-size:12px">' + B('to', 'إلى') + '<br><input type="date" class="sc-tt"></label>' +
+          '<label style="font-size:12px">' + B('Unavailable drugs from', 'عدم التوفر من') + '<br><input type="date" class="sc-of"></label><label style="font-size:12px">' + B('to', 'إلى') + '<br><input type="date" class="sc-ot"></label>' +
+          '<button type="button" class="pri sm sc-go">' + B('Create deck', 'إنشاء العرض') + '</button></div>' +
+        '<div class="sc-msg" style="font-size:12px;margin-top:6px;color:var(--muted)"></div></div></div></div></div>';
     var mEl = el.querySelector('.d-m'), saveB = el.querySelector('.d-save'), M = el.querySelector('.d-msg');
     mEl.onchange = function () { if (dirty() && !confirm('Unsaved changes will be lost · ستُفقد التعديلات غير المحفوظة')) { mEl.value = D.month; return; } load(); };
     el.querySelectorAll('[data-v]').forEach(function (b) { b.onclick = function () { view = b.dataset.v; el.querySelectorAll('[data-v]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); draw(); }; });
@@ -891,6 +898,7 @@ var OrgUI = (function () {
     function current() { return view === 'emp' ? ['employee', EMP] : view === 'sum' ? ['summary', ''] : ['month', '']; }
     function doExport(fmt, btn) {
       var X = el.querySelector('.d-xmsg');
+      if (fmt === 'screen') { var P0 = el.querySelector('.d-scr'); P0.hidden = !P0.hidden; if (!P0.hidden) screenInit(P0); return; }
       if (dirty()) { X.innerHTML = B('Save first', 'يُرجى الحفظ أولًا'); return; }
       var k = current(), m = model(k[0], k[1]), base = 'Pharmacy_Tracker_Roster_' + D.month + (k[0] === 'employee' ? '_' + (m.sub.split(' — ')[0] || '').replace(/\s+/g, '_') : k[0] === 'summary' ? '_summary' : '') + '_by_WaadAlwagdani';
       btn.disabled = true; X.textContent = '…';
@@ -902,6 +910,75 @@ var OrgUI = (function () {
       if (fmt === 'xlsx') return loadLib('xlsx').then(function () { return a3Xlsx(A || a3Model()).then(function (b) { save(base + '.xlsx', b); done(); }); }).catch(fail);
       if (fmt === 'docx') return loadLib('docx').then(function () { return (A ? a3Docx(A) : toDocx(m)).then(function (b) { save(base + '.docx', b); done(); }); }).catch(fail);
       if (fmt === 'pptx') return loadLib('pptx').then(function () { return (A ? a3Pptx(A, base) : toPptx(m, base)).then(done); }).catch(fail);
+    }
+
+    /* ---- Pharmacy screen deck: A3 slides for the display video — tasks + unavailable drugs, period chosen by the supervisor ---- */
+    function screenInit(P0) {
+      var t = new Date(), iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }, today = iso(t);
+      ['.sc-tf', '.sc-tt', '.sc-of', '.sc-ot'].forEach(function (q) { var i = P0.querySelector(q); if (!i.value) i.value = today; });
+      P0.querySelector('.sc-go').onclick = function () {
+        var g = function (q) { return P0.querySelector(q).value; }, M0 = P0.querySelector('.sc-msg'), b = this;
+        var tf = g('.sc-tf'), tt = g('.sc-tt'), of = g('.sc-of'), ot = g('.sc-ot');
+        if (!tf || !tt || !of || !ot || tf > tt || of > ot) { M0.textContent = 'يُرجى تحديد فترة صحيحة · Please set a valid period'; return; }
+        b.disabled = true; M0.textContent = '…';
+        var months = [], d0 = new Date(tf + 'T00:00:00'), d1 = new Date(tt + 'T00:00:00');
+        for (var y = d0.getFullYear(), m = d0.getMonth(); y < d1.getFullYear() || (y === d1.getFullYear() && m <= d1.getMonth()); m++) { if (m > 11) { m = 0; y++; } months.push(y + '-' + String(m + 1).padStart(2, '0')); if (months.length > 3) break; }
+        Promise.all([loadLib('pptx'), AuthGate.run('oosReport', of, ot)].concat(months.map(function (ym) { return ym === D.month && !dirty() ? Promise.resolve(D) : AuthGate.run('dutyGet', ym); })))
+          .then(function (r) { return screenDeck(r.slice(2), r[1], tf, tt, of, ot); })
+          .then(function () { b.disabled = false; M0.textContent = B('Deck downloaded — export it to video from PowerPoint', 'نزل العرض — يُحوَّل إلى فيديو من PowerPoint').replace(/<[^>]+>/g, ' '); },
+            function (e) { b.disabled = false; M0.innerHTML = err(e); });
+      };
+    }
+    function screenDeck(dataList, oos, tf, tt, of, ot) {
+      var p = new window.PptxGenJS(); p.defineLayout({ name: 'A3L', width: 16.54, height: 11.69 }); p.layout = 'A3L';
+      p.author = 'Pharmacy Tracker by WaadAlwagdani'; p.title = 'Pharmacy screen deck';
+      var EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      var F = 'Calibri', X0 = 0.4, WT = 15.74, TOP = 1.65, BOTTOM = 10.9, LINE = 0.3;
+      function frame(s, title, sub, page, pages) {
+        s.background = { color: 'FFFFFF' };
+        s.addText('PHARMACEUTICAL CARE OPERATIONS', { x: X0, y: 0.25, w: 10, h: 0.3, fontFace: F, fontSize: 11, bold: true, color: A3.BLUE });
+        s.addText(title, { x: X0, y: 0.55, w: 12, h: 0.6, fontFace: F, fontSize: 28, bold: true, color: A3.NAVY });
+        s.addText(sub, { x: X0, y: 1.12, w: 12, h: 0.35, fontFace: F, fontSize: 14, color: A3.MUTED });
+        if (pages > 1) s.addText(page + ' / ' + pages, { x: 13.6, y: 0.6, w: 2.54, h: 0.4, fontFace: F, fontSize: 14, bold: true, color: A3.MUTED, align: 'right' });
+        s.addText('Pharmacy Tracker by WaadAlwagdani', { x: X0, y: 11.2, w: 6, h: 0.25, fontFace: F, fontSize: 9, color: '94A3B8' });
+      }
+      var hc = function (t) { return { text: t, options: { bold: true, color: 'FFFFFF', fill: { color: A3.NAVY }, fontSize: 12, align: 'center', valign: 'middle' } }; };
+      // 1) tasks: one row per day, one column per task; rows move to a new slide when the A3 page is full
+      var D0 = dataList[0], tasks = D0.tasks.map(function (t) { var mx = t.slots; dataList.forEach(function (dd) { var x = dd.tasks.filter(function (y) { return y.id === t.id; })[0]; if (x) mx = Math.max(mx, x.slots); }); return { id: t.id, en: t.en, ar: t.ar, slots: mx }; });
+      var days = [];
+      dataList.forEach(function (dd) { dd.days.forEach(function (day) { if (day.date < tf || day.date > tt) return;
+        var dow = new Date(day.date + 'T00:00:00').getDay();
+        var cells = tasks.map(function (t) { var v = []; for (var s2 = 0; s2 < t.slots; s2++) { var c = dd.cells[day.date + '|' + t.id + '|' + s2]; if (c) v.push(c.name + (c.dept ? ' (' + c.dept + ')' : '')); } return v; });
+        days.push({ date: day.date, dow: dow, cells: cells, lines: Math.max(1, Math.max.apply(null, cells.map(function (v) { return v.length; }))) }); }); });
+      // page budget in inches: header row ≈ 0.75 in, each day ≈ 0.22 in per name line + padding
+      var pagesT = [], cur = [], used = 0, budget = (BOTTOM - TOP) - 0.75;
+      days.forEach(function (d) { var need = d.lines * 0.22 + 0.14; if (cur.length && used + need > budget) { pagesT.push(cur); cur = []; used = 0; } cur.push(d); used += need; });
+      if (cur.length || !pagesT.length) pagesT.push(cur);
+      var cwT = [1.3, 1.3].concat(tasks.map(function () { return (WT - 2.6) / tasks.length; }));
+      var subT = (tf === tt ? tf : tf + '  →  ' + tt);
+      pagesT.forEach(function (pg, pi) {
+        var s = p.addSlide(); frame(s, 'Task Distribution · توزيع المهام', subT, pi + 1, pagesT.length);
+        var rows = [[hc('Date'), hc('Day')].concat(tasks.map(function (t) { return { text: t.ar + '\n' + t.en, options: { bold: true, color: 'FFFFFF', fill: { color: A3.NAVY }, fontSize: 9, align: 'center', valign: 'middle' } }; }))];
+        if (!pg.length) rows.push([{ text: 'لا توجد بيانات للفترة المحددة · No assignments in this period', options: { colspan: 2 + tasks.length, align: 'center', fontSize: 14, color: A3.MUTED } }]);
+        pg.forEach(function (d) { var wk = !(D0.workdays || [0, 1, 2, 3, 4]).some(function (w) { return w === d.dow; });
+          rows.push([{ text: d.date.slice(5), options: { bold: true, fontSize: 13, color: A3.NAVY, fill: { color: A3.DATE_BG }, align: 'center', valign: 'middle' } },
+                     { text: AR[d.dow] + '\n' + EN[d.dow], options: { bold: true, fontSize: 11, color: A3.NAVY, fill: { color: A3.DATE_BG }, align: 'center', valign: 'middle' } }]
+            .concat(d.cells.map(function (v) { return { text: v.join('\n'), options: { fontSize: 12, color: A3.INK, fill: { color: wk ? A3.WKND : A3.CELL }, align: 'center', valign: 'middle' } }; }))); });
+        s.addTable(rows, { x: X0, y: TOP, w: WT, colW: cwT, fontFace: F, border: { type: 'solid', pt: 1.5, color: 'FFFFFF' }, rowH: LINE, autoPage: false });
+      });
+      // 2) unavailable drugs: fixed rows per A3 page, the rest continues on the next slide
+      var PER = 20, pagesO = []; for (var i = 0; i < Math.max(1, oos.length); i += PER) pagesO.push(oos.slice(i, i + PER));
+      var subO = (of === ot ? of : of + '  →  ' + ot) + '  ·  ' + oos.length + ' ' + 'items · صنف';
+      pagesO.forEach(function (pg, pi) {
+        var s = p.addSlide(); frame(s, 'Unavailable Drugs · الأدوية غير المتوفرة', subO, pi + 1, pagesO.length);
+        var rows = [[hc('#'), hc('Item · الصنف'), hc('Strength · التركيز'), hc('Group · الفئة'), hc('Reports · البلاغات'), hc('Departments · الأقسام'), hc('Last report · آخر بلاغ')]];
+        if (!pg.length) rows.push([{ text: 'لا توجد بلاغات في الفترة المحددة · No reports in this period', options: { colspan: 7, align: 'center', fontSize: 14, color: A3.MUTED } }]);
+        pg.forEach(function (r, k) { var z = k % 2 ? 'FFFFFF' : A3.CELL;
+          rows.push([String(pi * PER + k + 1), r.item, r.strength, r.group, String(r.n), r.depts, r.last].map(function (v, j) {
+            return { text: v || '', options: { fontSize: 13, bold: j === 1, color: A3.INK, fill: { color: z }, align: j === 1 || j === 5 ? 'left' : 'center', valign: 'middle' } }; })); });
+        s.addTable(rows, { x: X0, y: TOP, w: WT, colW: [0.6, 4.6, 1.9, 1.5, 1.4, 3.6, 2.14], fontFace: F, border: { type: 'solid', pt: 1, color: 'E2E8F0' }, rowH: 0.42, autoPage: false });
+      });
+      return p.writeFile({ fileName: 'Pharmacy_Screen_Deck_' + tf + '_by_WaadAlwagdani.pptx' });
     }
     /* ---- A3 template (monthly distribution): same layout for Excel, Word and PowerPoint as the PDF ---- */
     var A3 = { NAVY: '1E293B', INK: '0F172A', BLUE: '3B5998', MUTED: '64748B', WEEK_BG: 'DBEAFE', WEEK_FG: '1E3A8A', DATE_BG: 'EFF6FF', CELL: 'F1F5F9', WKND: 'F8FAFC', FOOT: '334155' };
