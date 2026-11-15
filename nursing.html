@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script>/* Pharmacy Tracker by WaadAlwagdani — google.script.run over the JSON API */
+(function(){var API='https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';var Q=new URLSearchParams(location.search);
+window.PT_SITE=location.origin+location.pathname.replace(/[^\/]*$/,'')+'index.html';
+function runner(s,f){return new Proxy({},{get:function(_,k){
+ if(k==='withSuccessHandler')return function(h){return runner(h,f);};
+ if(k==='withFailureHandler')return function(h){return runner(s,h);};
+ if(k==='withUserObject')return function(){return runner(s,f);};
+ return function(){var a=Array.prototype.slice.call(arguments);
+  fetch(API,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:k,args:a})})
+  .then(function(r){return r.json();}).then(function(j){if(j&&j.ok){if(s)s(j.v);}else if(f)f(new Error(j&&j.err||'NETWORK'));})
+  .catch(function(){if(f)f(new Error('NETWORK'));});};}});}
+var P={},PS={};Q.forEach(function(v,k){P[k]=v;(PS[k]=PS[k]||[]).push(v);});
+window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({parameter:P,parameters:PS,hash:location.hash.slice(1)});}},host:{close:function(){}}}};
+})();</script>
+
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Pharmacy Tracker by WaadAlwagdani — Nursing withdrawal page (central QR at the dispensing window) -->
+<title>Medication Withdrawal · Nursing — Pharmacy Tracker by WaadAlwagdani</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+  :root{--ink:#0a0a0a;--muted:#71717a;--paper:#f4f4f5;--panel:#fff;--line:#dcd8d0;--acc:#0a0a0a;--acc-t:#f4f4f5;--red:#a3231b;--red-t:#f8e9e8;--green:#276b3e;--green-t:#e6f1ea}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;font-size:16px;-webkit-text-size-adjust:100%}
+  .wrap{max-width:560px;margin:0 auto;padding:12px 12px calc(24px + env(safe-area-inset-bottom))}
+  .bi{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .bi .en{direction:ltr;text-align:left} .bi .ar{direction:rtl;text-align:right;font-family:"IBM Plex Sans Arabic","IBM Plex Sans",Arial,sans-serif}
+  header{background:var(--acc);color:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  header .t{font-size:19px;font-weight:700} header .s{font-size:13.5px;opacity:.9;margin-top:2px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .lbl{font-size:14px;font-weight:700;margin-bottom:8px}
+  .grp{font-size:12.5px;font-weight:600;color:var(--muted);margin:10px 0 6px;direction:ltr;text-align:left}
+  .grp:first-of-type{margin-top:0}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;direction:ltr}
+  .pill{min-height:44px;padding:0 14px;border:1.5px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-size:15px;font-weight:600;cursor:pointer;
+        -webkit-tap-highlight-color:transparent;direction:ltr;text-align:left}
+  .pill[aria-checked="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+  .pill:focus-visible{outline:3px solid #8f80f0;outline-offset:2px}
+  .row{display:grid;grid-template-columns:1fr 88px;gap:8px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0;padding-top:0}
+  .row .head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted);font-weight:600;direction:ltr}
+  .fld{position:relative}
+  .fld .cap{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .fld .cap .ar{direction:rtl}
+  input{width:100%;height:48px;padding:0 12px;font:inherit;font-size:16px;border:1.5px solid #e4e4e7;border-radius:10px;background:#fff;color:var(--ink);direction:ltr;text-align:left}
+  input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-t)}
+  input.bad{border-color:var(--red);background:var(--red-t)}
+  .err{font-size:12.5px;color:var(--red);font-weight:600;margin-top:4px;min-height:0}
+  .err:empty{display:none}
+  .sugg{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid #e4e4e7;border-radius:10px;max-height:260px;overflow:auto;z-index:10;box-shadow:0 10px 24px -12px rgba(0,0,0,.4)}
+  .sugg div{padding:12px;border-bottom:1px solid var(--line);cursor:pointer;direction:ltr;text-align:left}
+  .sugg div:last-child{border-bottom:0} .sugg div.on,.sugg div:hover{background:var(--acc-t)} .sugg small{color:var(--muted)}
+  .rm{height:32px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit;font-size:12.5px;font-weight:600;color:var(--red);cursor:pointer}
+  .add{width:100%;min-height:48px;border:2px dashed var(--acc);border-radius:10px;background:transparent;color:var(--acc);font:inherit;font-weight:700;font-size:15px;cursor:pointer;margin-top:8px;padding:0 14px}
+  .go{width:100%;min-height:56px;border:0;border-radius:12px;background:var(--acc);color:#fff;font:inherit;font-size:18px;font-weight:700;cursor:pointer;padding:0 16px}
+  .go:disabled{opacity:.6}
+  .btnbi{display:flex;justify-content:space-between;align-items:center;width:100%} .btnbi .ar{direction:rtl}
+  .msg{border-radius:12px;padding:12px 14px;font-weight:700;margin-bottom:10px}
+  .msg.ok{background:var(--green-t);color:var(--green)} .msg.bad{background:var(--red-t);color:var(--red)}
+  .msg small{display:block;font-weight:500;margin-top:2px;opacity:.9}
+  .msg .retry{margin-top:8px;min-height:40px;border:1px solid var(--red);background:#fff;color:var(--red);border-radius:8px;font:inherit;font-weight:700;width:100%;cursor:pointer}
+  .msg[hidden]{display:none}
+  .loading{text-align:center;color:var(--muted);padding:40px 0}
+  footer{text-align:center;font-size:11px;color:var(--muted);margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="bi t"><span class="en">Medication Withdrawal</span><span class="ar">تسجيل سحب الأدوية</span></div>
+    <div class="bi s"><span class="en">Nursing</span><span class="ar">التمريض</span></div>
+  </header>
+  <div class="msg" id="msg" role="status" aria-live="polite" hidden></div>
+  <div id="app"><div class="loading">Loading · جاري التحميل</div></div>
+  <footer>Pharmacy Tracker by WaadAlwagdani</footer>
+</div>
+<script>
+/* Nursing withdrawal — Pharmacy Tracker by WaadAlwagdani.
+   No sign-in. Department + one or more medications, one Submit. */
+(function(){
+  var CFG=null, SEL=null, ROWS=[], SUB=null, BUSY=false, rid=0;
+  var ERR={NAME_REQUIRED:['Enter medication','اسم الدواء مطلوب'],QTY_INVALID:['Whole number ≥ 1','رقم صحيح ١ أو أكثر'],UNKNOWN_DRUG:['Not in list','غير موجود في القائمة'],
+    DEPT_REQUIRED:['Select department','القسم مطلوب'],TRY_LATER:['Too many submissions — try again shortly','عمليات كثيرة — يُرجى المحاولة بعد قليل'],
+    NET:['Not saved — check connection','لم يُحفظ — يُرجى التحقق من الاتصال'],TOO_MANY_ITEMS:['Too many items','عدد الأصناف كبير']};
+  function bi(k){var v=ERR[k]||ERR.NET;return '<span class="bi"><span class="en">'+v[0]+'</span><span class="ar">'+v[1]+'</span></span>';}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function $(id){return document.getElementById(id);}
+  function newSub(){SUB=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2));}
+  function dirty(){SUB=null;}
+
+  function render(){
+    var h='<div class="card"><div class="lbl bi" id="deptLbl"><span class="en">Department</span><span class="ar">القسم المستلم</span></div>'+
+      '<div class="err" id="deptErr"></div>';
+    if(!CFG.hospitals.length)h+='<div class="err" style="display:block">Departments are not set up yet · لم تُعدّ الأقسام بعد، يُرجى مراجعة الصيدلية</div>';
+    CFG.hospitals.forEach(function(H){
+      h+='<div class="grp" id="g-'+H.key+'">'+esc(H.name)+'</div><div class="pills" role="radiogroup" aria-labelledby="g-'+H.key+'">'+
+        H.depts.map(function(d){return '<button type="button" class="pill" role="radio" aria-checked="false" data-h="'+H.key+'" data-d="'+esc(d)+'">'+esc(d)+'</button>';}).join('')+'</div>';
+    });
+    h+='</div><div class="card"><div class="lbl bi"><span class="en">Medications</span><span class="ar">الأصناف المسحوبة</span></div><div id="rows"></div>'+
+      '<button type="button" class="add" id="add"><span class="btnbi"><span class="en">+ Add Item</span><span class="ar">إضافة صنف</span></span></button></div>'+
+      '<button type="button" class="go" id="go"><span class="btnbi"><span class="en">Submit</span><span class="ar">إرسال</span></span></button>';
+    $('app').innerHTML=h;
+    document.querySelectorAll('.pill').forEach(function(p){p.onclick=function(){pick(p);};});
+    $('add').onclick=function(){addRow(true);};
+    $('go').onclick=send;
+    ROWS=[];addRow(false);
+  }
+  function pick(p){
+    SEL={h:p.dataset.h,d:p.dataset.d};dirty();
+    document.querySelectorAll('.pill').forEach(function(x){x.setAttribute('aria-checked',x===p?'true':'false');});
+    $('deptErr').innerHTML='';
+  }
+  function addRow(focus){
+    var r={id:++rid,drugNo:''};ROWS.push(r);
+    var el=document.createElement('div');el.className='row';el.dataset.id=r.id;
+    el.innerHTML='<div class="head"><span>#'+ROWS.length+'</span>'+(ROWS.length>1?'<button type="button" class="rm"><span class="en">Remove</span> | <span class="ar">حذف</span></button>':'<span></span>')+'</div>'+
+      '<div class="fld"><div class="cap"><span>Medication Name</span><span class="ar">اسم الدواء</span></div>'+
+        '<input type="text" class="nm" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="80" aria-label="Medication Name / اسم الدواء"><div class="sugg" hidden></div><div class="err"></div></div>'+
+      '<div class="fld"><div class="cap"><span>Quantity</span><span class="ar">الكمية</span></div>'+
+        '<input type="text" class="qt" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="off" aria-label="Quantity / الكمية"><div class="err"></div></div>';
+    $('rows').appendChild(el);r.el=el;
+    var nm=el.querySelector('.nm'),qt=el.querySelector('.qt'),box=el.querySelector('.sugg');
+    auto(nm,box,function(d){r.drugNo=d.no;nm.value=d.name+(d.strength?' '+d.strength:'');clearErr(nm);dirty();qt.focus();});
+    nm.addEventListener('input',function(){r.drugNo='';clearErr(nm);dirty();});
+    qt.addEventListener('input',function(){qt.value=qt.value.replace(/[^0-9]/g,'');clearErr(qt);dirty();});
+    var rm=el.querySelector('.rm');if(rm)rm.onclick=function(){ROWS=ROWS.filter(function(x){return x!==r;});el.remove();renumber();dirty();};
+    if(focus)nm.focus();
+  }
+  function renumber(){ROWS.forEach(function(r,i){r.el.querySelector('.head span').textContent='#'+(i+1);});}
+  function clearErr(inp){inp.classList.remove('bad');inp.parentNode.querySelector('.err').innerHTML='';}
+  function setErr(inp,k){inp.classList.add('bad');inp.parentNode.querySelector('.err').innerHTML=bi(k);}
+
+  function auto(inp,box,onPick){
+    var list=[],idx=-1;
+    function show(){var q=inp.value.trim().toLowerCase();idx=-1;
+      list=q.length<2?[]:CFG.drugs.filter(function(d){return d.name.toLowerCase().indexOf(q)===0;})
+        .concat(CFG.drugs.filter(function(d){var n=d.name.toLowerCase();return n.indexOf(q)>0;})).slice(0,8);
+      if(!list.length){box.hidden=true;return;}
+      box.innerHTML=list.map(function(d,i){return '<div data-i="'+i+'">'+esc(d.name)+' <small>'+esc(d.strength||'')+'</small></div>';}).join('');box.hidden=false;
+      box.querySelectorAll('div').forEach(function(el){el.onmousedown=function(e){e.preventDefault();onPick(list[+el.dataset.i]);box.hidden=true;};});}
+    inp.addEventListener('input',show);inp.addEventListener('blur',function(){setTimeout(function(){box.hidden=true;},150);});
+    inp.addEventListener('keydown',function(e){if(box.hidden)return;
+      if(e.key==='ArrowDown')idx=Math.min(idx+1,list.length-1);else if(e.key==='ArrowUp')idx=Math.max(idx-1,0);
+      else if(e.key==='Enter'){e.preventDefault();onPick(list[Math.max(idx,0)]);box.hidden=true;return;}else return;
+      box.querySelectorAll('div').forEach(function(el,i){el.classList.toggle('on',i===idx);});});
+  }
+
+  function msg(html,ok,retry){var m=$('msg');m.className='msg '+(ok?'ok':'bad');m.innerHTML=html+(retry?'<button type="button" class="retry"><span class="btnbi"><span class="en">Retry</span><span class="ar">إعادة المحاولة</span></span></button>':'');m.hidden=false;
+    if(retry)m.querySelector('.retry').onclick=send;}
+
+  function send(){
+    if(BUSY)return;
+    $('msg').hidden=true;
+    var bad=false,items=[];
+    if(!SEL){$('deptErr').innerHTML=bi('DEPT_REQUIRED');bad=true;}
+    ROWS.forEach(function(r){
+      var nm=r.el.querySelector('.nm'),qt=r.el.querySelector('.qt'),n=nm.value.trim(),q=qt.value.trim();
+      if(!n){setErr(nm,'NAME_REQUIRED');bad=true;}
+      if(!/^\d+$/.test(q)||+q<1||+q>10000){setErr(qt,'QTY_INVALID');bad=true;}
+      items.push({drugNo:r.drugNo,name:n,qty:q===''?'':+q});
+    });
+    if(bad){var f=document.querySelector('.bad')||$('deptLbl');if(f.scrollIntoView)f.scrollIntoView({block:'center',behavior:'smooth'});return;}
+    if(!SUB)newSub();
+    BUSY=true;$('go').disabled=true;
+    google.script.run.withSuccessHandler(function(r){
+      BUSY=false;$('go').disabled=false;SUB=null;SEL=null;
+      render();
+      msg('<span class="bi"><span class="en">Saved ✓</span><span class="ar">تم الحفظ ✓</span></span><small style="direction:ltr;text-align:left">'+
+        esc(r.dept)+' · '+r.count+' item'+(r.count>1?'s':'')+' · '+r.units+' units · '+esc(r.txn)+'</small>',true,false);
+      window.scrollTo(0,0);
+    }).withFailureHandler(function(e){
+      BUSY=false;$('go').disabled=false;
+      var m=String(e&&e.message||''),v=m.match(/VALIDATION:(\[.*\])/);
+      if(v){try{JSON.parse(v[1]).forEach(function(x){var r=ROWS[x.i];if(r)setErr(r.el.querySelector(x.f==='qty'?'.qt':'.nm'),x.e);});}catch(z){} return;}
+      var k=(m.match(/DEPT_REQUIRED|TRY_LATER|TOO_MANY_ITEMS/)||['NET'])[0];
+      msg(bi(k),false,k==='NET'||k==='TRY_LATER');window.scrollTo(0,0);     // form data kept; retry reuses the same submission id
+    }).submitNursing({submissionId:SUB,hospital:SEL.h,dept:SEL.d,items:items});
+  }
+
+  google.script.run.withSuccessHandler(function(c){CFG=c;render();})
+    .withFailureHandler(function(){$('app').innerHTML='<div class="msg bad">'+bi('NET')+'</div>';}).getNursingConfig();
+})();
+</script>
+</body>
+</html>
