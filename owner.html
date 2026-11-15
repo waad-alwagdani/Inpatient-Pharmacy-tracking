@@ -155,19 +155,19 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
 
   /* ---- Sign-in look: soft blurred backdrop, warm card, centred header (Pharmacy Tracker by WaadAlwagdani) ---- */
   .ag:not([data-state="AUTHENTICATED"]){align-items:center;padding:24px 16px;isolation:isolate;
-    background:linear-gradient(135deg,#ece7df 0%,#ddd6cb 50%,#cfc7bb 100%)}
+    background:linear-gradient(135deg,#fbfaf8 0%,#f6f5f2 55%,#f1efeb 100%)}
   /* soft taupe blobs blended into the beige, drifting slowly */
   .ag:not([data-state="AUTHENTICATED"])::before,.ag:not([data-state="AUTHENTICATED"])::after{content:"";position:fixed;z-index:-1;border-radius:50%;
-    filter:blur(70px);opacity:.7;pointer-events:none;will-change:transform}
+    filter:blur(90px);opacity:.45;pointer-events:none;will-change:transform}
   .ag:not([data-state="AUTHENTICATED"])::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;
-    background:radial-gradient(circle,#9a9187 0%,rgba(154,145,135,0) 68%);animation:agdrift1 26s ease-in-out infinite alternate}
+    background:radial-gradient(circle,#d8d3cb 0%,rgba(216,211,203,0) 68%);animation:agdrift1 26s ease-in-out infinite alternate}
   .ag:not([data-state="AUTHENTICATED"])::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;
-    background:radial-gradient(circle,#a89e92 0%,rgba(168,158,146,0) 68%);animation:agdrift2 32s ease-in-out infinite alternate}
+    background:radial-gradient(circle,#dcd7cf 0%,rgba(220,215,207,0) 68%);animation:agdrift2 32s ease-in-out infinite alternate}
   @keyframes agdrift1{0%{transform:translate(0,0) scale(1)}50%{transform:translate(8vmax,-5vmax) scale(1.08)}100%{transform:translate(3vmax,-10vmax) scale(.96)}}
   @keyframes agdrift2{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-7vmax,6vmax) scale(1.06)}100%{transform:translate(-3vmax,11vmax) scale(.95)}}
   @media (prefers-reduced-motion:reduce){.ag::before,.ag::after{animation:none!important}}
-  .ag-box{max-width:400px;background:#f6f4f0;border:1px solid rgba(255,255,255,.7);border-radius:24px;padding:30px 30px 26px;
-    box-shadow:0 30px 60px -20px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.08)}
+  .ag-box{max-width:400px;background:#fdfdfb;border:1px solid #ebe8e3;border-radius:24px;padding:30px 30px 26px;
+    box-shadow:0 30px 60px -24px rgba(0,0,0,.18),0 6px 20px rgba(0,0,0,.05)}
   .ag-head{flex-direction:column;gap:2px;margin-bottom:22px;text-align:center}
   .ag-head .ag-logo{display:none}
   .ag-name{font-size:20px;font-weight:600;letter-spacing:.01em;color:#141414}
@@ -175,7 +175,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .ag-title{font-size:21px;font-weight:700;text-align:center;margin:0 0 6px;color:#141414}
   .ag-sub{font-size:13.5px;color:#2f2f2f;text-align:center;margin:0 0 22px}
   .ag-f label{font-size:13.5px;color:#1c1c1c}
-  .ag-in input{height:44px;border:1px solid #d9d5ce;border-radius:10px;background:#fbfaf8;font-size:15px;color:#141414}
+  .ag-in input{height:44px;border:1px solid #e3e0da;border-radius:10px;background:#fff;font-size:15px;color:#141414}
   .ag-in input::placeholder{color:#8a867f}
   .ag .ag-in input:placeholder-shown{direction:rtl}
   .ag-f label{text-align:right}
@@ -191,10 +191,10 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z'/%3E%3C/svg%3E") center/contain no-repeat;
     mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z'/%3E%3C/svg%3E") center/contain no-repeat}
   .ag-link{display:block;margin:10px auto 0;color:#4a4742}
-  .ag-lang{top:18px;left:18px;right:auto;height:34px;padding:3px;border:1px solid #1c1c1c;border-radius:12px;background:rgba(246,244,240,.6);
+  .ag-lang{top:18px;left:18px;right:auto;height:34px;padding:3px;border:1px solid #1c1c1c;border-radius:12px;background:rgba(253,253,251,.7);
     display:flex;gap:2px;color:#1c1c1c;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
   .ag-lang span{display:grid;place-items:center;padding:0 12px;border-radius:9px;font-size:13px;font-weight:500}
-  .ag-lang span.on{background:#e7e3dc;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+  .ag-lang span.on{background:#f0eee9;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
 
   /* ---- Platform theme: warm beige backdrop with soft drifting blobs, ivory surfaces (Pharmacy Tracker by WaadAlwagdani) ---- */
   body.ag-shell{--pt-card:#fdfdfb;--panel:#fdfdfb;--paper:#f6f5f2;--line:#ebe8e3;--line-strong:#dedad3;--bg:transparent;
