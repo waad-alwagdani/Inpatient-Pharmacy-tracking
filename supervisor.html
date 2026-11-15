@@ -763,6 +763,7 @@ var OrgUI = (function () {
             h += '<button type="button" class="ev' + (dup[c.emp] ? ' dup' : '') + (k in edits ? ' chg' : '') + (c.locked ? ' lk' : '') + '" data-ck="' + k + '" style="background:' + SHADE[ti % SHADE.length] + '"' + (c.locked ? ' disabled' : '') + '>' +
               '<i class="av" style="font-style:normal">' + esc(ini(c.name)) + '</i><span>' + esc(c.name) + (c.dept ? '<small class="ltr">' + esc(c.dept) + '</small>' : '') + '</span></button>';
           }
+          if (!free.length && t.slots < 6 && D.canEdit !== false) free.push(d.date + '|' + t.id + '|' + t.slots);   // room for one more employee
           if (free.length) h += '<button type="button" class="ev add' + (free.some(function (x) { return x in edits; }) ? ' chg' : '') + '" data-ck="' + free[0] + '" title="' + free.length + '">+' + (free.length > 1 ? ' <small style="display:inline;margin-inline-start:4px">' + free.length + '</small>' : '') + '</button>';
           g += '<div>' + h + '</div>';
         });
@@ -785,7 +786,41 @@ var OrgUI = (function () {
       el.querySelectorAll('.ev[data-ck]:not([disabled])').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); popover(b); }; });
     }
     function LANG_AR() { try { return localStorage.getItem('ipq_lang') !== 'en'; } catch (e) { return true; } }
+    // "+" on a task-day: several employees can be ticked at once, then applied together
+    function popMulti(btn) {
+      var old = el.querySelector('.pop'); if (old) old.remove();
+      var k = btn.dataset.ck, p = k.split('|'), t = D.tasks.filter(function (x) { return x.id === p[1]; })[0];
+      var taken = {}; for (var s0 = 0; s0 < 6; s0++) { var c0 = cell(p[0] + '|' + t.id + '|' + s0); if (c0 && c0.emp) taken[c0.emp] = 1; }
+      var list = D.employees.filter(function (e) { return e.active && !taken[e.id]; });
+      var pop = document.createElement('div'); pop.className = 'pop';
+      pop.innerHTML = '<h5>' + esc(t.ar) + ' · <span class="ltr">' + esc(p[0]) + '</span></h5>' +
+        '<input type="search" class="pq" placeholder="بحث · Search" style="width:100%;margin-bottom:6px">' +
+        '<div class="pl" style="max-height:220px;overflow:auto;border:1px solid #e4e4e7;border-radius:8px;padding:4px 6px;margin-bottom:8px">' +
+        (list.length ? list.map(function (e) { return '<label style="display:flex;gap:8px;align-items:center;padding:5px 2px;cursor:pointer" data-n="' + esc(e.name.toLowerCase()) + '"><input type="checkbox" value="' + esc(e.id) + '">' + esc(e.name) + (e.noAccount ? ' <small style="color:#71717a">· بدون حساب</small>' : e.pending ? ' <small style="color:#71717a">· بانتظار التفعيل</small>' : '') + '</label>'; }).join('')
+          : '<div style="color:#71717a;padding:8px">لا يوجد موظفون متاحون</div>') + '</div>' +
+        (t.adc ? '<select class="pd"><option value="">القسم · ADC dept</option>' + D.adc.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') + '</select>' : '') +
+        '<div class="row" style="justify-content:space-between"><button type="button" class="pri sm pa">' + B('Apply', 'تطبيق') + ' <span class="pn"></span></button><button type="button" class="sm px">✕</button></div>';
+      el.querySelector('.ou').appendChild(pop);
+      var r = btn.getBoundingClientRect(), w = 290, x = Math.min(Math.max(8, r.left), innerWidth - w - 8), y = r.bottom + 6;
+      if (y + 340 > innerHeight) y = Math.max(8, r.top - 346);
+      pop.style.left = x + 'px'; pop.style.top = y + 'px'; pop.style.width = w + 'px';
+      var close = function () { pop.remove(); document.removeEventListener('click', outside, true); };
+      var outside = function (e) { if (!pop.contains(e.target)) close(); };
+      setTimeout(function () { document.addEventListener('click', outside, true); }, 0);
+      var picked = function () { return Array.prototype.map.call(pop.querySelectorAll('.pl input:checked'), function (i) { return i.value; }); };
+      pop.querySelector('.pl').onchange = function () { var n = picked().length; pop.querySelector('.pn').textContent = n ? '(' + n + ')' : ''; };
+      pop.querySelector('.pq').oninput = function () { var q = this.value.trim().toLowerCase(); pop.querySelectorAll('.pl label').forEach(function (l) { l.style.display = !q || l.dataset.n.indexOf(q) > -1 ? '' : 'none'; }); };
+      pop.querySelector('.px').onclick = close;
+      pop.querySelector('.pa').onclick = function () {
+        var ids = picked(), dp = pop.querySelector('.pd'), dept = dp ? dp.value : null; close();
+        ids.forEach(function (id) {
+          for (var s1 = 0; s1 < 6; s1++) { var kk = p[0] + '|' + t.id + '|' + s1, cc = cell(kk); if (!(cc && cc.emp)) { if (s1 >= t.slots) t.slots = s1 + 1; setCell(kk, id, dept); return; } }
+        });
+      };
+      pop.querySelector('.pq').focus();
+    }
     function popover(btn) {
+      if (btn.classList.contains('add')) return popMulti(btn);
       var old = el.querySelector('.pop'); if (old) old.remove();
       var k = btn.dataset.ck, c = cell(k), p = k.split('|'), t = D.tasks.filter(function (x) { return x.id === p[1]; })[0];
       var opts = '<option value="">' + 'غير مُسند · Unassigned' + '</option>' + D.employees.filter(function (e) { return e.active; }).map(function (e) { return '<option value="' + esc(e.id) + '"' + (c && c.emp === e.id ? ' selected' : '') + '>' + esc(e.name) + (e.noAccount ? ' · بدون حساب' : e.pending ? ' · بانتظار التفعيل' : '') + '</option>'; }).join('');
