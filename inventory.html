@@ -9,8 +9,8 @@ function runner(s,f){return new Proxy({},{get:function(_,k){
  if(k==='withUserObject')return function(){return runner(s,f);};
  return function(){var a=Array.prototype.slice.call(arguments);
   fetch(API,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:k,args:a})})
-  .then(function(r){return r.json();}).then(function(j){if(j&&j.ok){if(s)s(j.v);}else if(f)f(new Error(j&&j.err||'NETWORK'));})
-  .catch(function(){if(f)f(new Error('NETWORK'));});};}});}
+  .then(function(r){return r.text();}).then(function(t){try{return JSON.parse(t);}catch(x){console.error('Pharmacy Tracker API: not JSON',t.slice(0,300));return {ok:false,err:'API_NOT_DEPLOYED'};}}).then(function(j){if(j&&j.ok){if(s)s(j.v);}else if(f)f(new Error(j&&j.err||'NETWORK'));})
+  .catch(function(e){console.error('Pharmacy Tracker API: request failed',e);if(f)f(new Error('NETWORK'));});};}});}
 var P={},PS={};Q.forEach(function(v,k){P[k]=v;(PS[k]=PS[k]||[]).push(v);});
 window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({parameter:P,parameters:PS,hash:location.hash.slice(1)});}},host:{close:function(){}}}};
 })();</script>
