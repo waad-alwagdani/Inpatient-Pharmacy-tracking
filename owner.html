@@ -168,7 +168,9 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .ag-f label{font-size:13.5px;color:#1c1c1c}
   .ag-in input{height:44px;border:1px solid #d9d5ce;border-radius:10px;background:#fbfaf8;font-size:15px;color:#141414}
   .ag-in input::placeholder{color:#8a867f}
-  .ag[dir=rtl] .ag-in input:placeholder-shown{direction:rtl}
+  .ag .ag-in input:placeholder-shown{direction:rtl}
+  .ag-f label{text-align:right}
+  .ag-err{unicode-bidi:plaintext}
   .ag-in input:focus{outline:2px solid #1c1c1c;outline-offset:1px;border-color:transparent}
   .ag-in svg.ic{color:#55524d}
   .ag-btn{height:46px;border-radius:12px;background:#1c1c1c;font-size:15.5px;margin-top:10px}
@@ -180,7 +182,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z'/%3E%3C/svg%3E") center/contain no-repeat;
     mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z'/%3E%3C/svg%3E") center/contain no-repeat}
   .ag-link{display:block;margin:10px auto 0;color:#4a4742}
-  .ag-lang{top:18px;left:18px;right:auto;inset-inline-end:auto;height:34px;padding:3px;border:1px solid #1c1c1c;border-radius:12px;background:rgba(246,244,240,.6);
+  .ag-lang{top:18px;left:18px;right:auto;height:34px;padding:3px;border:1px solid #1c1c1c;border-radius:12px;background:rgba(246,244,240,.6);
     display:flex;gap:2px;color:#1c1c1c;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
   .ag-lang span{display:grid;place-items:center;padding:0 12px;border-radius:9px;font-size:13px;font-weight:500}
   .ag-lang span.on{background:#e7e3dc;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
@@ -196,12 +198,12 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
       </div>
       <div><div class="ag-name">Pharmacy Tracker</div><div class="ag-by">by WaadAlwagdani</div></div>
     </div>
-    <h1 class="ag-title" id="ag-title"></h1>
-    <p class="ag-sub" id="ag-sub" hidden></p>
-    <p class="ag-note" id="ag-note" hidden></p>
+    <h1 class="ag-title" id="ag-title" dir="auto"></h1>
+    <p class="ag-sub" id="ag-sub" dir="auto" hidden></p>
+    <p class="ag-note" id="ag-note" dir="auto" hidden></p>
     <form id="ag-form" novalidate autocomplete="on"></form>
     <div class="ag-err" id="ag-err" role="alert" aria-live="assertive"></div>
-    <button class="ag-link" id="ag-alt" type="button" hidden></button>
+    <button class="ag-link" id="ag-alt" dir="auto" type="button" hidden></button>
   </div>
 </div>
 
@@ -310,7 +312,7 @@ var AuthGate = (function () {
 
   function field(id, label, type, icon, ac, extra) {
     var pw = type === 'password';
-    return '<div class="ag-f"><label for="' + id + '">' + esc(label) + '</label><div class="ag-in">' + icon +
+    return '<div class="ag-f"><label dir="auto" for="' + id + '">' + esc(label) + '</label><div class="ag-in">' + icon +
       '<input id="' + id + '" name="' + id + '" type="' + type + '" autocomplete="' + ac + '" ' + (extra || '') +
       ' autocapitalize="none" spellcheck="false" dir="ltr" maxlength="128">' +
       (pw ? '<button type="button" class="ag-eye" data-for="' + id + '" aria-label="' + esc(t('show')) + '" aria-pressed="false">' + IC_EYE + '</button>' : '') +
@@ -321,7 +323,7 @@ var AuthGate = (function () {
   function show(v, errKey) {
     view = v;
     setState(v === 'forbidden' ? 'ACCESS_DENIED' : (STATE === 'SESSION_EXPIRED' ? 'SESSION_EXPIRED' : 'UNAUTHENTICATED'));
-    document.documentElement.lang = LANG; $('ag').dir = LANG === 'en' ? 'ltr' : 'rtl';
+    document.documentElement.lang = LANG; $('ag').dir = 'rtl';   // layout never moves with the language; each text keeps its own reading direction (dir=auto)
     $('ag-lang').innerHTML = '<span' + (LANG === 'ar' ? ' class="on"' : '') + '>العربية</span><span' + (LANG === 'en' ? ' class="on"' : '') + '>English</span>';
     $('ag-sub').hidden = v !== 'login'; $('ag-sub').textContent = t('welcome');
     $('ag').hidden = false; $('ag-err').textContent = errKey ? t(errKey) : '';
@@ -330,7 +332,7 @@ var AuthGate = (function () {
     if (v === 'login') {
       $('ag-title').textContent = t('signin');
       f.innerHTML = field('ag-u', t('user'), 'text', IC_USER, 'username', 'required placeholder="' + esc(t('userPh')) + '"') + field('ag-p', t('pass'), 'password', IC_LOCK, 'current-password', 'required placeholder="' + esc(t('passPh')) + '"') +
-        '<div class="ag-row"><button type="button" class="ag-forgot" id="ag-forgot">' + t('forgot') + '</button></div>' + button(t('signin'));
+        '<div class="ag-row"><button type="button" class="ag-forgot" id="ag-forgot" dir="auto">' + t('forgot') + '</button></div>' + button(t('signin'));
       $('ag-forgot').onclick = function () { $('ag-err').textContent = t('forgotMsg'); };
       if (bootstrap && cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toSetup'); alt.onclick = function () { show('setup'); }; }
       else if (recovery && cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toRecover'); alt.onclick = function () { show('recover'); }; }
