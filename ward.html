@@ -1463,24 +1463,34 @@ var OrgUI = (function () {
 </script>
 
 <div class="wrap">
-  <div class="banner"><div><b>طلبات الأقسام · Ward Requests</b><br><small>Floor stock · Crash cart</small></div><button class="btn sec" id="rf" type="button">تحديث · Refresh</button></div>
+  <div class="banner"><div><b>طلبات الأقسام · Ward Requests</b><br><small>Floor stock · Crash cart</small></div></div>
+  <div class="ptabs" id="tt" style="display:flex;gap:8px;margin-bottom:10px"></div>
   <div id="main"><div class="card muted">Loading · جاري التحميل…</div></div>
   <footer>Pharmacy Tracker by WaadAlwagdani</footer>
 </div>
 <script>
   /* Ward request desk — Pharmacy Tracker by WaadAlwagdani */
-  var E = function (s) { return OrgUI.esc(s); }, D = null, F = 'open', TF = '';
+  var E = function (s) { return OrgUI.esc(s); }, D = null, F = 'open', TF = null;
   var AR = { New: 'جديد', Preparing: 'قيد التجهيز', Ready: 'جاهز للاستلام', Delivered: 'تم التسليم', Cancelled: 'ملغى' };
   var NEXT = { New: ['Preparing', 'Cancelled'], Preparing: ['Ready', 'Cancelled'], Ready: ['Delivered'], Delivered: [], Cancelled: [] };
   var TAR = { 'Floor stock': 'مخزون القسم', 'Crash cart': 'عربة الطوارئ' };
   function load() { return AuthGate.run('wardQueue').then(function (d) { D = d; draw(); }, function (e) { document.getElementById('main').innerHTML = '<div class="card msg err">' + E(OrgUI.err(e)) + '</div>'; }); }
+  function typeTabs() {
+    var tt = document.getElementById('tt');
+    if (TF === null || D.types.indexOf(TF) === -1) TF = D.types[0] || '';
+    if (tt.dataset.k === D.types.join('|')) return;
+    tt.dataset.k = D.types.join('|'); tt.style.display = D.types.length < 2 ? 'none' : 'flex';
+    tt.innerHTML = D.types.map(function (t) { return '<button type="button" class="ptab' + (t === TF ? ' on' : '') + '" data-tt="' + E(t) + '" style="height:36px;border:1px solid #d3cfc8;border-radius:999px;background:' + (t === TF ? '#1c1c1c;color:#fff' : '#fff') + ';padding:0 14px;cursor:pointer;font-weight:600">' + E(t) + ' · ' + E(TAR[t] || t) + '</button>'; }).join('');
+    tt.querySelectorAll('[data-tt]').forEach(function (b) { b.onclick = function () { TF = b.dataset.tt; tt.querySelectorAll('[data-tt]').forEach(function (x) { var on = x === b; x.classList.toggle('on', on); x.style.background = on ? '#1c1c1c' : '#fff'; x.style.color = on ? '#fff' : ''; }); draw(); }; });
+  }
   function draw() {
+    typeTabs();
+    var bt = document.querySelector('.banner b'), bs = document.querySelector('.banner small'); if (bt && TF) { bt.textContent = (TAR[TF] || TF) + ' · ' + TF; if (bs) bs.textContent = 'طلبات الأقسام · Ward requests'; }
     var m = document.getElementById('main');
     var cnt = function (st) { return D.rows.filter(function (r) { return (!TF || r.type === TF) && st.indexOf(r.status) > -1; }).length; };
     var h = '<div class="k"><div><b>' + cnt(['New']) + '</b><span>جديد · New</span></div><div><b>' + cnt(['Preparing']) + '</b><span>قيد التجهيز · Preparing</span></div><div><b>' + cnt(['Ready']) + '</b><span>جاهز · Ready</span></div></div>';
     h += '<div class="filt">' + [['open', 'المفتوحة · Open'], ['done', 'المنتهية · Closed'], ['all', 'الكل · All']].map(function (f) { return '<button type="button" data-f="' + f[0] + '" class="' + (F === f[0] ? 'on' : '') + '">' + f[1] + '</button>'; }).join('');
-    if (D.types.length > 1) h += '<span style="width:12px"></span>' + [['', 'كل الأنواع · All types']].concat(D.types.map(function (t) { return [t, TAR[t] + ' · ' + t]; })).map(function (t) { return '<button type="button" data-t="' + E(t[0]) + '" class="' + (TF === t[0] ? 'on' : '') + '">' + E(t[1]) + '</button>'; }).join('');
-    h += '</div>';
+    h += '<button type="button" id="rf" style="margin-inline-start:auto">↻ تحديث · Refresh</button></div>';
     var rows = D.rows.filter(function (r) { var open = ['New', 'Preparing', 'Ready'].indexOf(r.status) > -1; return (!TF || r.type === TF) && (F === 'all' || (F === 'open' ? open : !open)); });
     if (F === 'open') { rows.reverse(); rows.sort(function (a, b) { return (a.needBy || a.at) < (b.needBy || b.at) ? -1 : (a.needBy || a.at) > (b.needBy || b.at) ? 1 : 0; }); }   // earliest needed first
     h += rows.length ? rows.map(function (r) {
@@ -1494,7 +1504,7 @@ var OrgUI = (function () {
     }).join('') : '<div class="card muted">لا توجد طلبات · No requests</div>';
     m.innerHTML = h;
     m.querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { F = b.dataset.f; draw(); }; });
-    m.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { TF = b.dataset.t; draw(); }; });
+    m.querySelector('#rf').onclick = load;
     m.querySelectorAll('[data-s]').forEach(function (b) { b.onclick = function () {
       if (b.dataset.s === 'Cancelled' && !confirmCancel(b)) return;
       b.disabled = true; AuthGate.run('wardSetStatus', b.dataset.id, b.dataset.s).then(load, function (e) { b.disabled = false; alertMsg(OrgUI.err(e)); });
@@ -1503,7 +1513,7 @@ var OrgUI = (function () {
   function confirmCancel(b) { if (b.dataset.sure) return true; b.dataset.sure = '1'; b.textContent = 'تأكيد الإلغاء · Confirm'; return false; }
   function alertMsg(t) { var m = document.getElementById('main'); var d = document.createElement('div'); d.className = 'card msg err'; d.textContent = t; m.prepend(d); }
   AuthGate.start({ accent: '#1c1c1c', bg: '#f6f5f2', barWidth: '1180px', page: 'ward', onReady: function () {
-    document.getElementById('rf').onclick = load; load(); setInterval(function () { if (!document.hidden) load(); }, 60000);
+    load(); setInterval(function () { if (!document.hidden) load(); }, 60000);
   } });
 </script>
 </body>
