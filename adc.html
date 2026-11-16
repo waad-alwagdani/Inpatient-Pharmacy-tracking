@@ -1620,13 +1620,38 @@ var OrgUI = (function () {
         function (e) { b.disabled = false; m.className = 'msg err'; m.textContent = OrgUI.err(e); });
     };
   }
+  /* monthly count — item by item, for the month or range of months the supervisor picks */
+  function countDetail(host) {
+    var F = '', T = '';
+    function go() {
+      host.innerHTML = '<div class="card muted">…</div>';
+      AuthGate.run('adcCountDetail', F, T).then(function (d) {
+        F = d.from; T = d.to;
+        var opt = function (v) { return d.months.map(function (m) { return '<option' + (m === v ? ' selected' : '') + '>' + E(m) + '</option>'; }).join(''); };
+        var net = 0, zero = 0; d.rows.forEach(function (r) { net += r.variance; if (!r.variance) zero++; });
+        var prog = d.open.progress.map(function (p) { return '<div><b dir="ltr" style="text-align:right">' + p.counted + ' / ' + p.total + '</b><span>' + E(p.adc.slice(0, 6)) + ' · عُدّ في ' + E(d.open.period) + '</span></div>'; }).join('');
+        host.innerHTML = '<div class="card"><div class="row" style="justify-content:space-between"><b>الجرد الشهري — التفاصيل · Monthly count details</b>' +
+          (d.months.length ? '<div class="row"><label>من · From<select id="cd-f">' + opt(F) + '</select></label><label>إلى · To<select id="cd-t">' + opt(T) + '</select></label></div>' : '') + '</div>' +
+          '<div class="muted" style="margin:8px 0">الجرد المفتوح الآن · Open count (' + E(d.open.period) + ')</div><div class="k">' + prog + '</div>' +
+          (d.rows.length ? '<div class="k"><div><b>' + d.rows.length + '</b><span>أصناف معدودة · Items</span></div><div><b>' + (d.rows.length ? Math.round(zero / d.rows.length * 1000) / 10 : 0) + '%</b><span>دقة الجرد · Accuracy</span></div><div><b style="color:' + (net < 0 ? '#b91c1c' : '#15803d') + '">' + net + '</b><span>صافي الفارق · Net variance</span></div></div>' +
+            '<div class="tw"><table><tr><th>الشهر · Month</th><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>الافتتاحي</th><th>المُدخل</th><th>المسحوب</th><th>الدفتري · System</th><th>الفعلي · Physical</th><th>الفارق · Var.</th>' + (D.priced ? '<th>SAR</th>' : '') + '<th class="l">السبب الجذري · Root cause</th><th>عدّه · Counted by</th></tr>' +
+            d.rows.map(function (r) { return '<tr><td>' + E(r.month) + '</td><td class="l" dir="ltr"><b>' + E(r.name) + '</b> <span class="muted">' + E(r.code) + '</span></td><td class="muted">' + E(r.adc.slice(0, 6)) + '</td><td>' + r.opening + '</td><td>' + r.rec + '</td><td>' + r.out + '</td><td>' + r.system + '</td><td><b>' + r.physical + '</b></td>' +
+              '<td style="font-weight:700;color:' + (r.variance < 0 ? '#b91c1c' : r.variance > 0 ? '#a16207' : '#15803d') + '">' + r.variance + '</td>' + (D.priced ? '<td>' + (r.sar === '' ? '' : sar(r.sar)) + '</td>' : '') +
+              '<td class="l">' + E(r.cause) + '</td><td class="muted">' + E(r.by) + '</td></tr>'; }).join('') + '</table></div>'
+            : '<div class="muted" style="padding:10px 0">لا يوجد جرد معتمد بعد · No approved count yet</div>') + '</div>';
+        var f = host.querySelector('#cd-f'), t = host.querySelector('#cd-t');
+        if (f) { f.onchange = function () { F = f.value; go(); }; t.onchange = function () { T = t.value; go(); }; }
+      }, function (e) { host.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; });
+    }
+    go();
+  }
   function sup(el) {
     var M = 'all', C = 'all';
     function go() {
       el.innerHTML = '<div class="card muted">…</div>';
       AuthGate.run('adcSummary', M, C).then(function (s) {
         var t = s.totals;
-        el.innerHTML = assignCard() + '<div class="card"><div class="row" style="justify-content:space-between"><div class="row"><label>الفترة · Period<select id="s-m"><option value="all">كل الأشهر · All</option>' + s.months.map(function (m) { return '<option' + (m === M ? ' selected' : '') + '>' + E(m) + '</option>'; }).join('') + '</select></label>' +
+        el.innerHTML = assignCard() + '<div id="cd"></div>' + '<div class="card"><div class="row" style="justify-content:space-between"><div class="row"><label>الفترة · Period<select id="s-m"><option value="all">كل الأشهر · All</option>' + s.months.map(function (m) { return '<option' + (m === M ? ' selected' : '') + '>' + E(m) + '</option>'; }).join('') + '</select></label>' +
           '<label>الكابينة · Cabinet<select id="s-c"><option value="all">كل الكابينات · All</option>' + s.clusters.map(function (c) { return '<option' + (c === C ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label></div>' +
           '<button class="btn" id="s-x">تصدير الإكسل المحدّث · Download master Excel</button></div><div class="msg" id="s-msg"></div></div>' +
           '<div class="k"><div><b>' + t.rec + '</b><span>كم دخل · Received</span></div><div><b>' + t.scan + '</b><span>طلع بالباركود · Scanned out</span></div><div><b style="color:#b91c1c">' + t.over + '</b><span>طلع بدون مسح · Overrides</span></div>' +
@@ -1641,7 +1666,8 @@ var OrgUI = (function () {
         el.querySelector('#s-c').onchange = function () { C = this.value; go(); };
         el.querySelector('#s-x').onclick = exportExcel;
         bindAssign(el);
-      }, function (e) { el.innerHTML = '<div class="card msg err">' + E(OrgUI.err(e)) + '</div>'; });
+        countDetail(el.querySelector('#cd'));
+      }, function (e) { el.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; });
     }
     go();
   }
@@ -1726,7 +1752,7 @@ var OrgUI = (function () {
       if (d.scoped && !d.clusters.length) { main.innerHTML = '<div class="card msg err">لم تُسند إليك أي كابينة بعد — يُرجى مراجعة المشرف · No cabinet assigned to you yet</div>'; return; }
       if (!tabs.length) { main.innerHTML = '<div class="card msg err">لا توجد صلاحية على الكابينات · No ADC permission</div>'; return; }
       OrgUI.tabs(main, tabs);
-    }, function (e) { main.innerHTML = '<div class="card msg err">' + E(/ADC_NOT_INSTALLED/.test(String(e && e.message)) ? 'وحدة الكابينات غير مثبّتة — يُرجى تشغيل adcInstall من المحرر' : OrgUI.err(e)) + '</div>'; });
+    }, function (e) { main.innerHTML = '<div class="card msg err">' + (/ADC_NOT_INSTALLED/.test(String(e && e.message)) ? 'وحدة الكابينات غير مثبّتة — يُرجى تشغيل adcInstall من المحرر' : OrgUI.err(e)) + '</div>'; });
   } });
 </script>
 </body>
