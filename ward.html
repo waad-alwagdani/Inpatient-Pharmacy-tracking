@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>/* Pharmacy Tracker by WaadAlwagdani — google.script.run over the JSON API */
+(function(){var API='https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';var Q=new URLSearchParams(location.search);
+window.PT_SITE=location.origin+location.pathname.replace(/[^\/]*$/,'')+'index.html';
+function runner(s,f){return new Proxy({},{get:function(_,k){
+ if(k==='withSuccessHandler')return function(h){return runner(h,f);};
+ if(k==='withFailureHandler')return function(h){return runner(s,h);};
+ if(k==='withUserObject')return function(){return runner(s,f);};
+ return function(){var a=Array.prototype.slice.call(arguments);
+  fetch(API,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:k,args:a})})
+  .then(function(r){return r.text();}).then(function(t){try{return JSON.parse(t);}catch(x){console.error('Pharmacy Tracker API: not JSON',t.slice(0,300));return {ok:false,err:'API_NOT_DEPLOYED'};}}).then(function(j){if(j&&j.ok){if(s)s(j.v);}else if(f)f(new Error(j&&j.err||'NETWORK'));})
+  .catch(function(e){console.error('Pharmacy Tracker API: request failed',e);if(f)f(new Error('NETWORK'));});};}});}
+var P={},PS={};Q.forEach(function(v,k){P[k]=v;(PS[k]=PS[k]||[]).push(v);});
+window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({parameter:P,parameters:PS,hash:location.hash.slice(1)});}},host:{close:function(){}}}};
+})();</script>
+
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Pharmacy Tracker by WaadAlwagdani — Floor stock & Crash cart request desk -->
+<title>Pharmacy Tracker Ward Requests by WaadAlwagdani</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+  body{margin:0;background:#f6f5f2;color:#0a0a0a;font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;font-size:15px}
+  .wrap{max-width:1180px;margin:0 auto;padding:12px 16px 40px}
+  .banner{background:#1c1c1c;color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+  .banner b{font-size:19px}.banner small{opacity:.8;font-size:12.5px}
+  .card{background:var(--pt-card,#fff);border:1px solid #e7e4de;border-radius:12px;padding:14px;margin-bottom:12px}
+  .k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+  .k div{border-radius:10px;padding:10px 12px;background:var(--pt-card,#fff);border:1px solid #e7e4de}
+  .k b{display:block;font-size:22px}.k span{font-size:12px;color:#5f5c57}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{background:#f1efeb;font-size:12px;text-align:center;padding:8px 6px;white-space:nowrap}
+  td{border-top:1px solid #ece9e3;padding:7px 6px;text-align:center}
+  td.l,th.l{text-align:left}
+  .tw{overflow:auto}
+  input,select,button{font:inherit}
+  input[type=text],input[type=number],input[type=search],select{height:40px;border:1px solid #dedad3;border-radius:9px;padding:0 10px;background:#fff;color:#0a0a0a}
+  .btn{height:40px;border:0;border-radius:10px;background:#1c1c1c;color:#fff;font-weight:600;padding:0 16px;cursor:pointer}
+  .btn.sec{background:#fff;color:#1c1c1c;border:1px solid #d3cfc8}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row label{font-size:12.5px;font-weight:600;display:flex;flex-direction:column;gap:4px}
+  .pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .STAT{background:#fde8e8;color:#b91c1c}.REORDER{background:#fef6dc;color:#a16207}.OK{background:#e6f4ea;color:#15803d}
+  .alert{border-radius:10px;padding:10px 12px;font-weight:700;margin:8px 0;display:flex;gap:8px;align-items:center}
+  .alert.HIGH{background:#b91c1c;color:#fff}.alert.CONTROLLED{background:#5b21b6;color:#fff}
+  .msg{margin-top:8px;font-weight:600;min-height:20px}.msg.ok{color:#15803d}.msg.err{color:#b91c1c}
+  .scan{font-size:18px!important;height:52px!important;width:100%;direction:ltr;text-align:left}
+  .sugg{border:1px solid #e7e4de;border-radius:10px;margin-top:6px;max-height:260px;overflow:auto;background:#fff}
+  .sugg div{padding:9px 12px;border-bottom:1px solid #f0ede8;cursor:pointer;direction:ltr;text-align:left;display:flex;justify-content:space-between;gap:8px}
+  .sugg div:hover{background:#f6f5f2}
+  .big{font-size:26px;font-weight:700}
+  .muted{color:#6b6862;font-size:12.5px}
+  footer{text-align:center;font-size:11px;color:#8a867f;margin-top:24px}
+  @media print{body *{visibility:hidden}#pick,#pick *{visibility:visible}#pick{position:absolute;inset:0}}
+  .New{background:#fde8e8;color:#b91c1c}.Preparing{background:#fef6dc;color:#a16207}.Ready{background:#e8eefc;color:#1e40af}.Delivered{background:#e6f4ea;color:#15803d}.Cancelled{background:#eeeeec;color:#6b6862}
+  .req{border:1px solid #e7e4de;border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--pt-card,#fff)}
+  .req .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+  .req ul{margin:8px 0;padding:0 18px;direction:ltr;text-align:left}
+  .req .acts{display:flex;gap:8px;flex-wrap:wrap}
+  .filt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .filt button{height:36px;border:1px solid #d3cfc8;border-radius:999px;background:#fff;padding:0 14px;cursor:pointer;font-weight:600}
+  .filt button.on{background:#1c1c1c;color:#fff;border-color:#1c1c1c}
+</style>
+</head>
+<body>
+<!-- AuthGate — sign-in gate shared by protected pages · Pharmacy Tracker by WaadAlwagdani -->
+<style>
+  .ag{position:fixed;inset:0;z-index:2147483000;background:var(--ag-bg,#eef4f0);color:#171b1f;
+      font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:12vh 16px 32px}
+  .ag[hidden]{display:none}
+  /* INITIALIZING: neutral loader only — the login form is never shown while a session is being checked */
+  .ag[data-state="INITIALIZING"]{background:var(--ag-bg,#eef4f0);align-items:center;padding-top:0}
+  .ag[data-state="INITIALIZING"] .ag-box,.ag[data-state="INITIALIZING"] .ag-lang{display:none}
+  .ag-load{display:none;gap:6px}
+  .ag[data-state="INITIALIZING"] .ag-load{display:flex}
+  .ag-dot{width:8px;height:8px;border-radius:50%;background:var(--ag-accent,#276b3e);opacity:.35;animation:agdot 1s infinite ease-in-out}
+  .ag-dot:nth-child(2){animation-delay:.15s}.ag-dot:nth-child(3){animation-delay:.3s}
+  @keyframes agdot{50%{opacity:1}}
+  .ag *{box-sizing:border-box}
+  .ag-box{width:100%;max-width:360px}
+  .ag-lang{position:absolute;top:14px;inset-inline-end:16px;height:32px;padding:0 12px;border:1px solid #c9d3cc;background:transparent;border-radius:8px;
+           font-size:13px;font-weight:600;line-height:1;font-family:inherit;color:#5b6472;cursor:pointer}
+  .ag-head{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+  .ag-logo{width:44px;height:44px;border-radius:10px;background:var(--ag-accent,#276b3e);display:grid;place-items:center;flex:none}
+  .ag-logo svg{width:24px;height:24px}
+  .ag-name{font-weight:700;font-size:18px;line-height:1.2}
+  .ag-by{font-size:12px;color:#5b6472;margin-top:2px}
+  .ag-title{font-size:15px;font-weight:600;margin:0 0 16px}
+  .ag-f{margin-bottom:14px}
+  .ag-f label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#2d343c}
+  .ag-in{position:relative}
+  .ag-in svg.ic{position:absolute;top:50%;transform:translateY(-50%);inset-inline-start:13px;width:18px;height:18px;color:#7a8492;pointer-events:none}
+  .ag-in input{width:100%;height:48px;padding:0 44px;font-size:16px;font-weight:400;line-height:1;font-family:inherit;border:1px solid #b9c7bd;border-radius:8px;background:#fff;color:#171b1f}
+  .ag-in input:focus{outline:2px solid var(--ag-accent,#276b3e);outline-offset:1px;border-color:transparent}
+  .ag-eye{position:absolute;top:4px;inset-inline-end:4px;width:40px;height:40px;border:0;background:transparent;border-radius:6px;color:#7a8492;cursor:pointer;display:grid;place-items:center}
+  .ag-eye:focus-visible{outline:2px solid var(--ag-accent,#276b3e)}
+  .ag-eye svg{width:18px;height:18px}
+  .ag-btn{width:100%;height:48px;border:0;border-radius:8px;background:var(--ag-accent,#276b3e);color:#fff;font-size:16px;font-weight:700;line-height:1;font-family:inherit;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px}
+  .ag-btn:disabled{opacity:.7;cursor:default}
+  .ag-btn:focus-visible{outline:2px solid #171b1f;outline-offset:2px}
+  .ag-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:agspin .8s linear infinite;display:none}
+  .ag-btn.busy .ag-spin{display:block}
+  @keyframes agspin{to{transform:rotate(360deg)}}
+  .ag-err{min-height:20px;margin-top:12px;font-size:13.5px;font-weight:600;color:#a3231b}
+  .ag-link{background:none;border:0;padding:0;margin-top:14px;font-size:13px;font-weight:600;line-height:1.4;font-family:inherit;color:#5b6472;text-decoration:underline;cursor:pointer}
+  .ag-note{font-size:13px;color:#5b6472;margin:-6px 0 16px;line-height:1.5}
+  .ag-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:var(--ag-barw,520px);margin:0 auto;padding:8px 16px 0;
+          font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;font-size:13px;color:#5b6472}
+  .ag-bar b{color:#171b1f;font-weight:600}
+  .ag-links{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .ag-bar{flex-wrap:wrap}
+  .ag-bar button{white-space:nowrap;flex:none;height:30px;padding:0 12px;border:1px solid #c9d3cc;background:#fff;border-radius:8px;font-size:12.5px;font-weight:600;line-height:1;font-family:inherit;color:#2d343c;cursor:pointer}
+
+  /* ======== Monochrome app shell (sidebar layout) · Pharmacy Tracker by WaadAlwagdani ======== */
+  :root{--ink:#0a0a0a;--muted:#71717a;--paper:#f4f4f5;--panel:#fff;--line:#e4e4e7;--green:#0a0a0a;--green-tint:#f4f4f5;--green-t:#f4f4f5;--acc:#0a0a0a;--acc-t:#f4f4f5}
+  body.ag-shell{background:#f4f4f5!important;color:#0a0a0a;padding-right:280px;padding-left:0;padding-top:0}/* the sidebar stays on the right in both languages; only text direction follows the language */
+  body.ag-shell .wrap{max-width:1680px!important;padding:8px 32px 48px!important}
+  body.ag-shell .banner{background:transparent!important;color:#0a0a0a!important;padding:6px 0 14px!important;border-radius:0!important;margin-bottom:8px!important;box-shadow:none!important}
+  body.ag-shell .banner .bi,body.ag-shell .banner{font-size:26px!important;font-weight:700!important;letter-spacing:-.01em}
+  body.ag-shell .panel,body.ag-shell .card,body.ag-shell .kpi{border-radius:16px!important;border-color:#e4e4e7!important;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  body.ag-shell .ou{--ink:#0a0a0a;--muted:#71717a;--line:#e4e4e7;--acc:#0a0a0a;--acc-t:#f4f4f5}
+  body.ag-shell button.pri,body.ag-shell .btn.primary,body.ag-shell .pri{background:#0a0a0a!important;border-color:#0a0a0a!important;color:#fff!important}
+  body.ag-shell input,body.ag-shell select,body.ag-shell textarea{border-color:#d4d4d8!important;border-radius:10px!important}
+  body.ag-shell input:focus,body.ag-shell select:focus,body.ag-shell textarea:focus{outline:2px solid #0a0a0a!important;outline-offset:1px}
+  body.ag-shell footer{color:#a1a1aa}
+  /* dashboard page in the monochrome shell */
+  body.ag-shell .top{background:transparent!important;color:#0a0a0a!important;padding:4px 24px 0!important}
+  body.ag-shell .top .sub{opacity:1;color:#71717a}
+  body.ag-shell .top h1{font-size:26px!important}
+  body.ag-shell .picker button{background:#fff!important;color:#3f3f46!important;border:1px solid #e4e4e7!important;border-radius:10px!important}
+  body.ag-shell .picker button.on{background:#0a0a0a!important;color:#fff!important;border-color:#0a0a0a!important}
+  body.ag-shell .picker input{background:#fff!important;color:#0a0a0a!important;border:1px solid #e4e4e7!important;color-scheme:light!important;border-radius:10px!important}
+  body.ag-shell .card::before{background:#e4e4e7!important}
+  body.ag-shell .card.bad::before{background:#0a0a0a!important}
+  /* distribution grid header */
+  body.ag-shell .ou .dg thead th{background:#0a0a0a!important;color:#fff!important}
+  body.ag-shell .ou .dg thead tr+tr th{background:#27272a!important}
+  body.ag-shell .ou .dg tbody .sd{background:#fafafa!important;color:#0a0a0a}
+  .ag-side{position:fixed;top:16px;bottom:16px;right:16px;left:auto;width:248px;background:#fff;border:1px solid #e4e4e7;border-radius:20px;z-index:1000;
+    display:flex;flex-direction:column;padding:18px 14px;font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;color:#0a0a0a;box-sizing:border-box}
+  .ag-side *{box-sizing:border-box}
+  .ag-brand{display:flex;align-items:center;gap:10px;padding:2px 6px 18px}
+  .ag-brand>div{flex:1;min-width:0}
+  .ag-brand .ag-lchip{flex:none;margin-inline-start:auto}
+  .ag-brand b{white-space:nowrap;font-size:14px}
+  body.ag-shell .ag-brand{gap:8px;padding-inline:2px}
+  body.ag-shell .ag-brand i{width:32px;height:32px;font-size:12px}
+  .ag-brand .ag-lchip{padding:0!important}
+  .ag-brand i{width:36px;height:36px;border-radius:10px;background:#0a0a0a;color:#fff;display:grid;place-items:center;font:700 13px/1 "IBM Plex Sans",Arial;font-style:normal;letter-spacing:.02em}
+  .ag-brand b{display:block;font-size:14.5px;line-height:1.15}.ag-brand small{display:block;font-size:11px;color:#a1a1aa;margin-top:2px}
+  .ag-sec{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa;padding:12px 10px 6px;display:flex;justify-content:space-between}
+  .ag-item{display:flex;align-items:center;gap:10px;width:100%;height:40px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#3f3f46;
+    font:500 13.5px/1 "IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;cursor:pointer;text-align:start}
+  .ag-item svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .ag-item span{flex:1;display:flex;justify-content:space-between;align-items:center;gap:6px;min-width:0;white-space:nowrap}.ag-item span em{overflow:hidden;text-overflow:ellipsis}.ag-item span em{font-style:normal;color:#a1a1aa;font-size:12px}
+  .ag-item:hover{background:#f4f4f5;color:#0a0a0a}
+  .ag-item[aria-current=page]{background:#0a0a0a;color:#fff}.ag-item[aria-current=page] em{color:#d4d4d8}
+  .ag-nav-list{flex:1;overflow:auto;margin:0 -4px;padding:0 4px}
+  .ag-me{border:1px solid #e4e4e7;border-radius:14px;padding:10px;display:flex;align-items:center;gap:10px;margin-top:10px}
+  .ag-av{width:36px;height:36px;border-radius:10px;background:#f4f4f5;color:#0a0a0a;display:grid;place-items:center;font:700 13px/1 "IBM Plex Sans",Arial;flex:none}
+  .ag-me b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ag-me small{display:block;font-size:11.5px;color:#71717a}
+  .ag-me>div:not(.ag-av){min-width:0;flex:1}
+  .ag-out{margin-top:6px;color:#71717a}
+  .ag-top{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1180px;margin:0 auto;padding:22px 24px 6px;font:13px "IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;color:#71717a;box-sizing:border-box}
+  .ag-top b{color:#0a0a0a;font-weight:600}.ag-crumb{display:flex;gap:6px;align-items:center}
+  .ag-burger{display:none;width:38px;height:38px;border:1px solid #e4e4e7;border-radius:10px;background:#fff;cursor:pointer}
+  .ag-pv{max-width:1180px;margin:10px auto 0;padding:0 24px;box-sizing:border-box}
+  .ag-pv div{background:#fafafa;border:1px dashed #0a0a0a;color:#0a0a0a;border-radius:12px;padding:10px 14px;font:600 13px "IBM Plex Sans","IBM Plex Sans Arabic",Arial;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+  .ag-pv button,.ag-chip{height:32px;padding:0 12px;border:1px solid #d4d4d8;background:#fff;border-radius:10px;font:600 12.5px/1 inherit;color:#0a0a0a;cursor:pointer}
+  .ag-scrim{display:none}
+  @media (max-width:900px){
+    body.ag-shell{padding-inline-start:0}
+    .ag-side{transform:translateX(110%);transition:transform .2s ease;top:8px;bottom:8px;right:8px;left:auto}
+    html[dir=rtl] .ag-side,[dir=rtl] .ag-side{--dir:1} html:not([dir=rtl]) .ag-side{--dir:-1}
+    body.ag-menu .ag-side{transform:none}
+    body.ag-menu .ag-scrim{display:block;position:fixed;inset:0;background:rgba(10,10,10,.25);z-index:999}
+    .ag-burger{display:grid;place-items:center}
+    .ag-top{padding:14px 16px 4px}.ag-pv{padding:0 16px} body.ag-shell .wrap{padding:8px 16px 40px!important}
+  }
+
+  /* ---- Sign-in look: soft blurred backdrop, warm card, centred header (Pharmacy Tracker by WaadAlwagdani) ---- */
+  .ag:not([data-state="AUTHENTICATED"]){align-items:center;padding:24px 16px;isolation:isolate;
+    background:linear-gradient(135deg,#fbfaf8 0%,#f6f5f2 55%,#f1efeb 100%)}
+  /* soft taupe blobs blended into the beige, drifting slowly */
+  .ag:not([data-state="AUTHENTICATED"])::before,.ag:not([data-state="AUTHENTICATED"])::after{content:"";position:fixed;z-index:-1;border-radius:50%;
+    filter:blur(90px);opacity:.45;pointer-events:none;will-change:transform}
+  .ag:not([data-state="AUTHENTICATED"])::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;
+    background:radial-gradient(circle,#d8d3cb 0%,rgba(216,211,203,0) 68%);animation:agdrift1 26s ease-in-out infinite alternate}
+  .ag:not([data-state="AUTHENTICATED"])::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;
+    background:radial-gradient(circle,#dcd7cf 0%,rgba(220,215,207,0) 68%);animation:agdrift2 32s ease-in-out infinite alternate}
+  @keyframes agdrift1{0%{transform:translate(0,0) scale(1)}50%{transform:translate(8vmax,-5vmax) scale(1.08)}100%{transform:translate(3vmax,-10vmax) scale(.96)}}
+  @keyframes agdrift2{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-7vmax,6vmax) scale(1.06)}100%{transform:translate(-3vmax,11vmax) scale(.95)}}
+  @media (prefers-reduced-motion:reduce){.ag::before,.ag::after{animation:none!important}}
+  .ag-box{max-width:400px;background:#fdfdfb;border:1px solid #ebe8e3;border-radius:24px;padding:30px 30px 26px;
+    box-shadow:0 30px 60px -24px rgba(0,0,0,.18),0 6px 20px rgba(0,0,0,.05)}
+  .ag-head{flex-direction:column;gap:2px;margin-bottom:22px;text-align:center}
+  .ag-head .ag-logo{display:none}
+  .ag-name{font-size:20px;font-weight:600;letter-spacing:.01em;color:#141414}
+  .ag-by{font-size:12.5px;color:#3f3f3f;margin-top:0}
+  .ag-title{font-size:21px;font-weight:700;text-align:center;margin:0 0 6px;color:#141414}
+  .ag-sub{font-size:13.5px;color:#2f2f2f;text-align:center;margin:0 0 22px}
+  .ag-f label{font-size:13.5px;color:#1c1c1c}
+  .ag-in input{height:44px;border:1px solid #e3e0da;border-radius:10px;background:#fff;font-size:15px;color:#141414}
+  .ag-in input::placeholder{color:#8a867f}
+  .ag .ag-in input:placeholder-shown{direction:rtl}
+  .ag-f label{text-align:right}
+  .ag-err{unicode-bidi:plaintext}
+  .ag-in input:focus{outline:2px solid #1c1c1c;outline-offset:1px;border-color:transparent}
+  .ag-in svg.ic{color:#55524d}
+  .ag-btn{height:46px;border-radius:12px;background:#1c1c1c;font-size:15.5px;margin-top:10px}
+  .ag-row{display:flex;justify-content:flex-end;margin:-4px 0 4px}
+  .ag-forgot{border:0;background:none;padding:0;font:inherit;font-size:13px;color:#4a4742;cursor:pointer}
+  .ag-forgot:hover{text-decoration:underline}
+  .ag-err{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;color:#8f1d1d;font-weight:500}
+  .ag-err:not(:empty)::before{content:"";flex:none;width:16px;height:16px;background:#8f1d1d;
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z'/%3E%3C/svg%3E") center/contain no-repeat}
+  .ag-link{display:block;margin:10px auto 0;color:#4a4742}
+  .ag-lang{top:18px;left:18px;right:auto;height:34px;padding:3px;border:1px solid #1c1c1c;border-radius:12px;background:rgba(253,253,251,.7);
+    display:flex;gap:2px;color:#1c1c1c;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .ag-lang span{display:grid;place-items:center;padding:0 12px;border-radius:9px;font-size:13px;font-weight:500}
+  .ag-lang span.on{background:#f0eee9;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+
+  /* ---- Platform theme: warm beige backdrop with soft drifting blobs, ivory surfaces (Pharmacy Tracker by WaadAlwagdani) ---- */
+  body.ag-shell{--pt-card:#fdfdfb;--panel:#fdfdfb;--paper:#f6f5f2;--line:#ebe8e3;--line-strong:#dedad3;--bg:transparent;
+    background:linear-gradient(135deg,#fbfaf8 0%,#f6f5f2 55%,#f1efeb 100%) fixed!important;isolation:isolate}
+  body.ag-shell::before,body.ag-shell::after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(90px);opacity:.35;pointer-events:none;will-change:transform}
+  body.ag-shell::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;background:radial-gradient(circle,#d8d3cb 0%,rgba(216,211,203,0) 68%);animation:agdrift1 30s ease-in-out infinite alternate}
+  body.ag-shell::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;background:radial-gradient(circle,#dcd7cf 0%,rgba(220,215,207,0) 68%);animation:agdrift2 36s ease-in-out infinite alternate}
+  @media (prefers-reduced-motion:reduce){body.ag-shell::before,body.ag-shell::after{animation:none!important}}
+  body.ag-shell .ag-side{background:rgba(253,253,251,.94);border:1px solid rgba(255,255,255,.75);box-shadow:0 24px 48px -24px rgba(0,0,0,.28),0 4px 14px rgba(0,0,0,.05);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  body.ag-shell .ag-item:hover{background:#f1efeb}
+  body.ag-shell .ag-item[aria-current=page]{background:#1c1c1c}
+  body.ag-shell .ag-me{border-color:#ebe8e3;background:rgba(255,255,255,.35)}
+  body.ag-shell .ag-av{background:#f1efeb}
+  body.ag-shell .ag-brand i{background:#1c1c1c}
+  body.ag-shell .ag-chip,body.ag-shell .ag-burger{background:#fdfdfb;border-color:#dedad3}
+  .ag-lang{top:14px;left:16px;right:auto;height:auto;padding:4px;border:0!important;background:transparent!important;border-radius:12px;display:block;cursor:pointer;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .ag-lang:hover .ag-licon,.ag-lchip:hover .ag-licon{transform:scale(1.05)}
+  .ag-licon{display:block;transition:transform .15s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,.08))}
+  body.ag-shell .ag-chip.ag-lchip,.ag-chip.ag-lchip{height:auto;padding:2px;border:0;background:transparent}
+</style>
+
+<div class="ag" id="ag" data-state="INITIALIZING" role="dialog" aria-modal="true" aria-labelledby="ag-title">
+  <div class="ag-load" role="status" aria-live="polite"><span class="ag-dot"></span><span class="ag-dot"></span><span class="ag-dot"></span></div>
+  <button class="ag-lang" id="ag-lang" type="button">English</button>
+  <div class="ag-box">
+    <div class="ag-head">
+      <div class="ag-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>
+      </div>
+      <div><div class="ag-name">Pharmacy Tracker</div><div class="ag-by">by WaadAlwagdani</div></div>
+    </div>
+    <h1 class="ag-title" id="ag-title" dir="auto"></h1>
+    <p class="ag-sub" id="ag-sub" dir="auto" hidden></p>
+    <p class="ag-note" id="ag-note" dir="auto" hidden></p>
+    <form id="ag-form" novalidate autocomplete="on"></form>
+    <div class="ag-err" id="ag-err" role="alert" aria-live="assertive"></div>
+    <button class="ag-link" id="ag-alt" dir="auto" type="button" hidden></button>
+  </div>
+</div>
+
+<script>
+/* AuthGate — Pharmacy Tracker by WaadAlwagdani.
+   Holds only a short-lived session token (browser storage, ends at sign-out or after 12 h at most on the server). Every protected
+   server function re-validates the token; nothing here is a security control by itself. */
+var AuthGate = (function () {
+  var KEY = 'ipq_session', PKEY = 'ipq_preview', PREVIEW = null, cfg = {}, token = null, user = null, view = 'login', bootstrap = false, recovery = false;
+  var LANG = 'ar'; try { LANG = localStorage.getItem('ipq_lang') === 'en' ? 'en' : 'ar'; } catch (e) {}
+  var TX = {
+    welcome: ['مرحبًا مجددًا! يُرجى إدخال بيانات الحساب.', 'Welcome back! Please enter your account details.'],
+    forgot: ['نسيت كلمة المرور؟', 'Forgot password?'],
+    userPh: ['أدخل اسم المستخدم', 'Enter the username'], passPh: ['أدخل كلمة المرور', 'Enter the password'],
+    forgotMsg: ['يُرجى التواصل مع مالك الأداة لإعادة تعيين كلمة المرور.', 'Please contact the tool owner to reset the password.'],
+    signin: ['تسجيل الدخول', 'Sign in'], user: ['اسم المستخدم', 'Username'], pass: ['كلمة المرور', 'Password'],
+    show: ['إظهار كلمة المرور', 'Show password'], hide: ['إخفاء كلمة المرور', 'Hide password'],
+    change: ['تغيير كلمة المرور', 'Change password'], changeNote: ['يلزم تعيين كلمة مرور جديدة قبل المتابعة.', 'Set a new password to continue.'],
+    oldp: ['كلمة المرور الحالية', 'Current password'], newp: ['كلمة المرور الجديدة', 'New password'], newp2: ['تأكيد كلمة المرور', 'Confirm password'],
+    save: ['حفظ', 'Save'], setup: ['إعداد حساب المالك', 'Owner account setup'],
+    setupNote: ['رمز الإعداد موجود في سجل التنفيذ.', 'Enter the setup code shown in the execution log.'],
+    code: ['رمز الإعداد', 'Setup code'], dname: ['الاسم الظاهر', 'Display name'], create: ['إنشاء الحساب', 'Create account'],
+    toSetup: ['إعداد حساب المالك', 'Owner setup'], toRecover: ['استعادة حساب المالك', 'Owner recovery'], toLogin: ['العودة لتسجيل الدخول', 'Back to sign in'],
+    out: ['تسجيل الخروج', 'Sign out'], created: ['تم إنشاء الحساب. يمكن تسجيل الدخول الآن.', 'Account created. Sign in now.'],
+    mismatch: ['كلمتا المرور غير متطابقتين.', 'Passwords do not match.'], empty: ['اسم المستخدم وكلمة المرور مطلوبان.', 'Enter username and password.'],
+    forbidden: ['لا توجد صلاحية لهذه الصفحة.', 'You do not have access to this page.'],
+    INVALID_CREDENTIALS: ['اسم المستخدم أو كلمة المرور غير صحيحة.', 'Incorrect username or password.'],
+    TOO_MANY_ATTEMPTS: ['محاولات كثيرة. يُرجى المحاولة بعد قليل.', 'Too many attempts. Try again later.'],
+    AUTH_EXPIRED: ['انتهت الجلسة. يلزم تسجيل الدخول من جديد.', 'Session ended. Sign in again.'],
+    WEAK_PASSWORD: ['كلمة المرور ١٠ أحرف على الأقل، ولا تحتوي اسم المستخدم، وتختلف عن السابقة.', 'Use at least 10 characters, not containing the username or the old password.'],
+    INVALID_SETUP_CODE: ['رمز الإعداد غير صالح أو منتهٍ.', 'Invalid or expired setup code.'],
+    INVALID_USERNAME: ['اسم المستخدم: ٣–٣٢ حرفاً إنجليزياً صغيراً أو أرقاماً أو . _ -', 'Username: 3–32 lowercase letters, digits, . _ -'],
+    toSignup: ['موظف جديد؟ تفعيل حساب', 'New employee? Activate an account'], signup: ['تفعيل حساب موظف', 'Activate employee account'],
+    signupNote: ['يُرجى إدخال الرقم الوظيفي المسجّل لدى الصيدلية، ثم اختيار اسم مستخدم وكلمة مرور. يبدأ الحساب بعد موافقة المالك.', 'Enter the employee number registered with the pharmacy, then choose a username and password. The account starts after the Owner approves it.'],
+    empno: ['الرقم الوظيفي', 'Employee number'], signupDone: ['تم إرسال الطلب. يمكن تسجيل الدخول بعد موافقة المالك.', 'Request sent. Sign in after the Owner approves it.'],
+    EMPLOYEE_NOT_FOUND: ['الرقم الوظيفي غير مسجّل. يُرجى مراجعة الصيدلية.', 'Employee number not registered. Please contact the pharmacy.'],
+    ALREADY_REGISTERED: ['يوجد حساب لهذا الرقم الوظيفي مسبقًا.', 'An account already exists for this employee number.'],
+    ACCOUNT_PENDING: ['الحساب بانتظار موافقة المالك.', 'The account is awaiting Owner approval.'],
+    USERNAME_TAKEN: ['اسم المستخدم مستخدم مسبقًا.', 'Username already taken.'],
+    NETWORK: ['تعذّر الاتصال. يُرجى المحاولة مرة أخرى.', 'Connection failed. Try again.']
+  };
+  /* Auth state machine: INITIALIZING → AUTHENTICATED | UNAUTHENTICATED | SESSION_EXPIRED | ACCESS_DENIED */
+  var STATE = 'INITIALIZING';
+  function setState(st) { STATE = st; var g = $('ag'); if (g) g.setAttribute('data-state', st); }
+  function t(k) { var v = TX[k]; return v ? v[LANG === 'en' ? 1 : 0] : k; }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function codeOf(err) {
+    var m = String(err && err.message || err || '').match(/[A-Z][A-Z_]{4,}/);
+    var c = m ? m[0] : 'NETWORK';
+    if (c === 'AUTH_REVOKED' || c === 'AUTH_REQUIRED') c = 'AUTH_EXPIRED';
+    return c;
+  }
+  // Kept for the shift so a QR scan in a new tab is attributed without signing in again; the server
+  // still ends it after 4 h idle / 12 h, at sign-out, suspension, expiry or any permission change.
+  function save() { if (PREVIEW) return; try { if (token) { localStorage.setItem(KEY, token); sessionStorage.setItem(KEY, token); } else { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); } } catch (e) {} }
+
+  /** Promise wrapper around google.script.run that also handles expired sessions. */
+  function call(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e); });
+      r[fn].apply(r, args);
+    });
+  }
+  /* Instant pages: read-only data is kept in this browser per account and shown at once; the server is asked in the
+     background and a bar offers the newer data if it changed. Any save clears the copies; sign-out wipes them.
+     Pharmacy Tracker by WaadAlwagdani */
+  var READS = { dutyGet: 1, monitorSummary: 1, orgOverview: 1, orgGetProfile: 1, invGetData: 1, getDashboard: 1, getPackData: 1, mySchedule: 1,
+    exprGet: 1, authAdminListUsers: 1, getLabelsPage: 1 };
+  var CP = 'pt.c.', CMAX = 6 * 3600000;
+  function ckey(fn, args) { return CP + (user && user.id || '') + '.' + fn + '.' + JSON.stringify(args); }
+  function cacheClear() { try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf(CP) === 0) localStorage.removeItem(k); }); } catch (e) {} }
+  function freshBar() {
+    if (document.getElementById('pt-fresh')) return;
+    var b = document.createElement('div'); b.id = 'pt-fresh';
+    b.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:3000;background:#0a0a0a;color:#fff;border-radius:999px;padding:8px 8px 8px 16px;font:600 13px IBM Plex Sans,IBM Plex Sans Arabic,Arial,sans-serif;display:flex;gap:10px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.18)';
+    b.innerHTML = '<span>Newer data available · توجد بيانات أحدث</span><button type="button" style="border:0;border-radius:999px;background:#fff;color:#0a0a0a;font:700 12px inherit;font-family:inherit;padding:6px 12px;cursor:pointer">Refresh · تحديث</button>';
+    b.querySelector('button').onclick = function () { location.reload(); };
+    document.body.appendChild(b);
+  }
+  function guard(p) { return p.catch(function (e) { var c = codeOf(e); if (c === 'AUTH_EXPIRED') { expire(); } else if (c === 'PASSWORD_CHANGE_REQUIRED') { show('change'); } throw e; }); }
+  function run(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var live = guard(call.apply(null, [fn, token].concat(args)));
+    if (!READS[fn] || PREVIEW || !user) {
+      return live.then(function (v) { if (!READS[fn] && !PREVIEW) cacheClear(); return v; });   // a save: drop the copies so nothing stale is shown
+    }
+    var k = ckey(fn, args), old = null;
+    try { old = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) {}
+    var fresh = live.then(function (v) {
+      var txt = JSON.stringify(v);
+      try { localStorage.setItem(k, JSON.stringify({ at: Date.now(), v: v })); } catch (e) {}
+      if (old && JSON.stringify(old.v) !== txt) freshBar();
+      return v;
+    });
+    if (old && Date.now() - old.at < CMAX) { fresh.catch(function () {}); return Promise.resolve(old.v); }
+    return fresh;
+  }
+
+  var IC_USER = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
+  var IC_LOCK = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  var IC_KEY = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/></svg>';
+  var IC_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var IC_EYEOFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 4M6.1 6.1C3.6 7.8 2 12 2 12s4 7 10 7a9.6 9.6 0 0 0 5-1.4"/></svg>';
+
+  function field(id, label, type, icon, ac, extra) {
+    var pw = type === 'password';
+    return '<div class="ag-f"><label dir="auto" for="' + id + '">' + esc(label) + '</label><div class="ag-in">' + icon +
+      '<input id="' + id + '" name="' + id + '" type="' + type + '" autocomplete="' + ac + '" ' + (extra || '') +
+      ' autocapitalize="none" spellcheck="false" dir="ltr" maxlength="128">' +
+      (pw ? '<button type="button" class="ag-eye" data-for="' + id + '" aria-label="' + esc(t('show')) + '" aria-pressed="false">' + IC_EYE + '</button>' : '') +
+      '</div></div>';
+  }
+  function button(label) { return '<button class="ag-btn" type="submit"><span class="ag-spin" aria-hidden="true"></span><span>' + esc(label) + '</span></button>'; }
+
+  // Language icon: one speech bubble, A (English) on the left and ع (Arabic) on the right; the active language is the dark half.
+  var LIC = 0;
+  function langIcon(size) {
+    var id = 'agl' + (++LIC), en = LANG === 'en', D = '#1c1c1c', L = '#e9e7e2';
+    return '<svg class="ag-licon" width="' + size + '" height="' + Math.round(size * 0.84) + '" viewBox="0 0 120 100" aria-hidden="true">' +
+      '<defs><clipPath id="' + id + '"><rect x="4" y="6" width="112" height="70" rx="35"/></clipPath></defs>' +
+      '<g clip-path="url(#' + id + ')"><rect x="0" y="0" width="120" height="100" fill="' + (en ? D : L) + '"/>' +
+      '<polygon points="62,0 120,0 120,100 70,100" fill="' + (en ? L : D) + '"/></g>' +
+      '<path d="M52 75 L62 94 L72 75 Z" fill="' + D + '"/>' +
+      '<text x="33" y="54" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="700" font-size="40" fill="' + (en ? '#fff' : '#3a3a3a') + '">A</text>' +
+      '<text x="87" y="54" text-anchor="middle" font-family="IBM Plex Sans Arabic,Arial,sans-serif" font-weight="700" font-size="38" fill="' + (en ? '#3a3a3a' : '#fff') + '">ع</text></svg>';
+  }
+  function show(v, errKey) {
+    view = v;
+    setState(v === 'forbidden' ? 'ACCESS_DENIED' : (STATE === 'SESSION_EXPIRED' ? 'SESSION_EXPIRED' : 'UNAUTHENTICATED'));
+    document.documentElement.lang = LANG; $('ag').dir = 'rtl';   // layout never moves with the language; each text keeps its own reading direction (dir=auto)
+    $('ag-lang').innerHTML = langIcon(46); $('ag-lang').title = LANG === 'en' ? 'العربية' : 'English'; $('ag-lang').setAttribute('aria-label', LANG === 'en' ? 'التبديل إلى العربية' : 'Switch to English');
+    $('ag-sub').hidden = v !== 'login'; $('ag-sub').textContent = t('welcome');
+    $('ag').hidden = false; $('ag-err').textContent = errKey ? t(errKey) : '';
+    var f = $('ag-form'), note = $('ag-note'), alt = $('ag-alt');
+    note.hidden = true; alt.hidden = true;
+    if (v === 'login') {
+      $('ag-title').textContent = t('signin');
+      f.innerHTML = field('ag-u', t('user'), 'text', IC_USER, 'username', 'required placeholder="' + esc(t('userPh')) + '"') + field('ag-p', t('pass'), 'password', IC_LOCK, 'current-password', 'required placeholder="' + esc(t('passPh')) + '"') +
+        '<div class="ag-row"><button type="button" class="ag-forgot" id="ag-forgot" dir="auto">' + t('forgot') + '</button></div>' + button(t('signin'));
+      $('ag-forgot').onclick = function () { $('ag-err').textContent = t('forgotMsg'); };
+      if (bootstrap && cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toSetup'); alt.onclick = function () { show('setup'); }; }
+      else if (recovery && cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toRecover'); alt.onclick = function () { show('recover'); }; }
+      else if (cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toSignup'); alt.onclick = function () { show('signup'); }; }
+    } else if (v === 'signup') {
+      $('ag-title').textContent = t('signup'); note.hidden = false; note.textContent = t('signupNote');
+      f.innerHTML = field('ag-e', t('empno'), 'text', IC_USER, 'off', 'required') + field('ag-u', t('user'), 'text', IC_USER, 'username', 'required') +
+        field('ag-n', t('pass'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + field('ag-n2', t('newp2'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + button(t('signup'));
+      alt.hidden = false; alt.textContent = t('toLogin'); alt.onclick = function () { show('login'); };
+    } else if (v === 'change') {
+      $('ag-title').textContent = t('change'); note.hidden = false; note.textContent = t('changeNote');
+      f.innerHTML = field('ag-o', t('oldp'), 'password', IC_LOCK, 'current-password', 'required') + field('ag-n', t('newp'), 'password', IC_KEY, 'new-password', 'required minlength="10"') +
+        field('ag-n2', t('newp2'), 'password', IC_KEY, 'new-password', 'required minlength="10"') + button(t('save'));
+      alt.hidden = false; alt.textContent = t('out'); alt.onclick = logout;
+    } else if (v === 'setup') {
+      $('ag-title').textContent = t('setup'); note.hidden = false; note.textContent = t('setupNote');
+      f.innerHTML = field('ag-c', t('code'), 'text', IC_KEY, 'one-time-code', 'required') + field('ag-u', t('user'), 'text', IC_USER, 'username', 'required') +
+        field('ag-d', t('dname'), 'text', IC_USER, 'name', '') + field('ag-n', t('pass'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') +
+        field('ag-n2', t('newp2'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + button(t('create'));
+      alt.hidden = false; alt.textContent = t('toLogin'); alt.onclick = function () { show('login'); };
+    } else if (v === 'recover') {
+      $('ag-title').textContent = t('toRecover'); note.hidden = false; note.textContent = t('setupNote');
+      f.innerHTML = field('ag-c', t('code'), 'text', IC_KEY, 'one-time-code', 'required') + field('ag-n', t('newp'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') +
+        field('ag-n2', t('newp2'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + button(t('save'));
+      alt.hidden = false; alt.textContent = t('toLogin'); alt.onclick = function () { show('login'); };
+    } else if (v === 'forbidden') {
+      $('ag-title').textContent = t('forbidden'); f.innerHTML = '';
+      alt.hidden = false; alt.textContent = t('out'); alt.onclick = logout;
+    }
+    f.querySelectorAll('.ag-eye').forEach(function (b) {
+      b.onclick = function () {
+        var i = $(b.dataset.for), on = i.type === 'password';
+        i.type = on ? 'text' : 'password'; b.innerHTML = on ? IC_EYEOFF : IC_EYE;
+        b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', t(on ? 'hide' : 'show'));
+      };
+    });
+    var first = f.querySelector('input'); if (first) setTimeout(function () { if (!f.contains(document.activeElement)) first.focus(); }, 30);
+  }
+
+  function busy(on) { var b = $('ag-form').querySelector('.ag-btn'); if (b) { b.disabled = on; b.classList.toggle('busy', on); } }
+  function fail(e) { busy(false); $('ag-err').textContent = t(TX[codeOf(e)] ? codeOf(e) : 'NETWORK'); }
+
+  function onSubmit(ev) {
+    ev.preventDefault();
+    var v = function (id) { var el = $(id); return el ? el.value : ''; };
+    $('ag-err').textContent = '';
+    if (view === 'login') {
+      var u = v('ag-u').trim(), p = v('ag-p');
+      if (!u || !p) { $('ag-err').textContent = t('empty'); return; }
+      busy(true);
+      call('authLogin', u, p).then(function (r) { $('ag-p').value = ''; token = r.token; user = r.user; save(); busy(false); proceed(true); }, fail);
+    } else if (view === 'change') {
+      if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
+      busy(true);
+      call('authChangePassword', token, v('ag-o'), v('ag-n')).then(function (r) { token = r.token; user = r.user; save(); busy(false); proceed(true); }, function (e) {
+        if (codeOf(e) === 'AUTH_EXPIRED') { expire(); return; } fail(e);
+      });
+    } else if (view === 'recover') {
+      if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
+      busy(true);
+      call('authOwnerRecover', v('ag-c'), v('ag-n')).then(function () {
+        recovery = false; busy(false); show('login'); $('ag-err').style.color = '#276b3e'; $('ag-err').textContent = t('created');
+      }, fail);
+    } else if (view === 'signup') {
+      if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
+      busy(true);
+      call('authSignup', v('ag-e'), v('ag-u'), v('ag-n')).then(function () {
+        busy(false); show('login'); $('ag-err').style.color = '#276b3e'; $('ag-err').textContent = t('signupDone');
+        setTimeout(function () { $('ag-err').style.color = ''; }, 8000);
+      }, fail);
+    } else if (view === 'setup') {
+      if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
+      busy(true);
+      call('authBootstrapAdmin', v('ag-c'), v('ag-u'), v('ag-d'), v('ag-n')).then(function () {
+        bootstrap = false; busy(false); show('login'); $('ag-err').style.color = '#276b3e'; $('ag-err').textContent = t('created');
+        setTimeout(function () { $('ag-err').style.color = ''; }, 6000);
+      }, fail);
+    }
+  }
+
+  // Fast front end (GitHub Pages): pages are static files, so moving between them needs no server round trip.
+  // The identity handed over is for display only; every data call is still validated by the server.
+  var STATIC = { owner: 'owner.html', supervisor: 'supervisor.html', pack: 'pack.html', inventory: 'inventory.html', invread: 'inventory.html?mode=invread',
+    dash: 'dash.html', labels: 'labels.html', schedule: 'schedule.html', adc: 'adc.html', ward: 'ward.html' };
+  function fastGo(page) {
+    if (!window.PT_SITE || PREVIEW || !STATIC[page] || !token || !user) return false;
+    if (!user.isOwner && (user.pages || []).indexOf(page) === -1) return false;
+    try { sessionStorage.setItem('pt_boot', JSON.stringify({ token: token, user: user, page: page, at: Date.now() })); } catch (e) { return false; }
+    location.href = STATIC[page]; return true;
+  }
+  /** Loads the page of the account's own module, as decided by the server (unified sign-in). */
+  function goHome() {
+    if (user && user.home && fastGo(user.home)) return;
+    if (STATE !== 'AUTHENTICATED') { setState('INITIALIZING'); $('ag').hidden = false; }   // loader, not the form
+    call('authHomePage', token).then(render, function (e) { if (codeOf(e) === 'AUTH_EXPIRED') { expire(); return; } show('forbidden'); });
+  }
+
+  /**
+   * Swaps in the next page. The server already validated the session and the page permission for
+   * this response; the new page receives that identity so it does not show the gate again.
+   * Its data calls are still validated by the server one by one.
+   */
+  function render(r, opts) {
+    opts = opts || {};
+    var boot = '<script>window.__IPQ_BOOT=' + JSON.stringify({ token: token, user: r.user, page: r.mode }).replace(/</g, '\\u003c') + ';<\/script>';
+    var html = r.html, at = html.indexOf('<head>');
+    html = at > -1 ? html.slice(0, at + 6) + boot + html.slice(at + 6) : boot + html;
+    if (!opts.noPush) { try { google.script.history.push({ page: r.mode }, { mode: r.mode }); } catch (e) {} }
+    document.open(); document.write(html); document.close();
+  }
+
+  function showLogin() {
+    if (cfg.allowBootstrap) call('authStatus').then(function (s) { bootstrap = !!s.bootstrap; recovery = !!s.recovery; if (view === 'login' && STATE !== 'AUTHENTICATED' && !$('ag-err').textContent) show('login'); }, function () {});
+    show('login');
+  }
+  function proceed(fresh) {
+    if (user.mustChange) { show('change'); return; }
+    // Unified entry page, or a fresh sign-in on another module's link → the server routes to the account's module.
+    // A restored session on another module's link is refused (no module switching by URL).
+    var allowed = !cfg.page || (user.pages || []).indexOf(cfg.page) > -1;
+    if (cfg.route || (fresh && !allowed)) { goHome(); return; }
+    if (!allowed) { show('forbidden'); return; }
+    setState('AUTHENTICATED'); $('ag').hidden = true;
+    bar(); watchIdle();
+    if (cfg.onReady) { var cb = cfg.onReady; cfg.onReady = null; cb(user); }   // page loads its data once
+    setTimeout(function () {   // warm the copies of the heavy pages this account can open, so the first visit is instant too
+      if (PREVIEW || !user) return; var pg = user.isOwner ? ['labels', 'supervisor'] : (user.pages || []);
+      var d = new Date(), ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (pg.indexOf('labels') > -1 && cfg.page !== 'labels') run('getLabelsPage').catch(function () {});
+      if ((pg.indexOf('supervisor') > -1 || user.isOwner) && cfg.page !== 'supervisor' && cfg.page !== 'owner') run('dutyGet', ym).catch(function () {});
+    }, 2500);
+  }
+
+  /* Sidebar shell (monochrome): navigation to the pages this account may open (server re-checks every page). */
+  var ICON = {
+    owner: '<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/>',
+    supervisor: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>',
+    dash: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    pack: '<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/>',
+    inventory: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>',
+    invread: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    labels: '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+    schedule: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    adc: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M4 8h16M4 14h16M10 5h4M10 11h4M10 17h4"/>',
+    ward: '<path d="M9 3h6v4H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M12 11v6M9 14h6"/>'
+  };
+  var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
+    inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], schedule: ['My tasks', 'مهامي'] };
+  var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
+  var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'] };
+  function L(p) { return LANG === 'en' ? p[0] : p[1]; }
+  function bar() {
+    var old = $('ag-bar'); if (old) old.remove();
+    ['ag-side', 'ag-top', 'ag-pv', 'ag-scrim'].forEach(function (id) { var x = $(id); if (x) x.remove(); });
+    var pages = user.pages || [];
+    var dir = document.documentElement.getAttribute('dir') || 'rtl';
+    var nav = GROUPS.map(function (g) {
+      var items = g[2].filter(function (p) { return pages.indexOf(p) > -1; });
+      if (!items.length) return '';
+      return '<div class="ag-sec"><span>' + L(g) + '</span></div>' + items.map(function (p) {
+        return '<button type="button" class="ag-item ag-nav" data-p="' + p + '"' + (p === cfg.page ? ' aria-current="page"' : '') + '><svg viewBox="0 0 24 24">' + ICON[p] + '</svg><span>' + L(NAV[p]) + '<em>' + (LANG === 'en' ? NAV[p][1] : NAV[p][0]) + '</em></span></button>';
+      }).join('');
+    }).join('');
+    var nm = user.displayName || user.username, ini = nm.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+    var side = document.createElement('aside'); side.id = 'ag-side'; side.className = 'ag-side'; side.setAttribute('dir', LANG === 'en' ? 'ltr' : 'rtl');
+    side.innerHTML = '<div class="ag-brand"><i>PT</i><div><b>Pharmacy Tracker</b><small>by WaadAlwagdani</small></div>' + '<button type="button" class="ag-chip ag-lchip" id="ag-lang2" title="' + (LANG === 'en' ? 'العربية' : 'English') + '" aria-label="' + (LANG === 'en' ? 'التبديل إلى العربية' : 'Switch to English') + '">' + langIcon(40) + '</button>' + '</div>' +
+      '<nav class="ag-nav-list" aria-label="Pages">' + nav + '</nav>' +
+      '<div class="ag-me"><div class="ag-av">' + esc(ini) + '</div><div><b dir="auto">' + esc(nm) + '</b><small>' + L(ROLE[user.sysRole] || ['', '']) + '</small></div></div>' +
+      (PREVIEW ? '' : '<button type="button" class="ag-item ag-out" id="ag-out"><svg viewBox="0 0 24 24"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/></svg><span>' + L(['Sign out', 'تسجيل الخروج']) + '<em>' + (LANG === 'en' ? 'تسجيل الخروج' : 'Sign out') + '</em></span></button>');
+    var top = document.createElement('div'); top.id = 'ag-top'; top.className = 'ag-top';
+    top.innerHTML = '<div class="ag-crumb"><button type="button" class="ag-burger" id="ag-burger" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0a0a0a" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
+      '<span>' + esc(nm) + '</span><span>/</span><b>' + esc(cfg.page && NAV[cfg.page] ? L(NAV[cfg.page]) : '') + '</b></div>';
+    var scrim = document.createElement('div'); scrim.id = 'ag-scrim'; scrim.className = 'ag-scrim';
+    document.body.insertBefore(top, document.body.firstChild);
+    if (PREVIEW) {
+      var pv = document.createElement('div'); pv.id = 'ag-pv'; pv.className = 'ag-pv';
+      pv.innerHTML = '<div><span>👁 Preview — read-only · معاينة للقراءة فقط: ' + esc(nm) + '</span><button type="button" id="ag-endpv">End preview · إنهاء المعاينة</button></div>';
+      top.after(pv); $('ag-endpv').onclick = endPreview;
+    }
+    document.body.appendChild(scrim); document.body.appendChild(side);
+    document.body.classList.add('ag-shell');
+    if (!PREVIEW) $('ag-out').onclick = logout;
+    $('ag-burger').onclick = function () { document.body.classList.toggle('ag-menu'); };
+    scrim.onclick = function () { document.body.classList.remove('ag-menu'); };
+    $('ag-lang2').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} bar(); };
+    side.querySelectorAll('.ag-nav').forEach(function (x) { x.onclick = function () { document.body.classList.remove('ag-menu'); if (x.dataset.p !== cfg.page) open(x.dataset.p); }; });
+  }
+
+  /* 15 minutes without any activity → signed out. Activity keeps the server session alive (every 2 minutes at most);
+     the server also ends every session 40 minutes after sign-in, whatever the activity. */
+  var IDLE_MS = 15 * 60000, idleT = null, lastPing = Date.now(), watching = false;
+  function watchIdle() {
+    if (watching) return; watching = true;
+    var reset = function () {
+      clearTimeout(idleT); idleT = setTimeout(function () { if (STATE === 'AUTHENTICATED') expire(); }, IDLE_MS);
+      if (Date.now() - lastPing > 120000 && token) { lastPing = Date.now(); call('authWhoAmI', token).then(null, function (e) { var c = codeOf(e); if (c === 'AUTH_EXPIRED' || c === 'AUTH_REVOKED') expire(); }); }
+    };
+    ['click', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach(function (ev) { document.addEventListener(ev, reset, { passive: true, capture: true }); });
+    reset();
+  }
+  // on the fast front end (GitHub Pages) sign-in stays on that site; otherwise the Apps Script URL
+  var APP_URL = window.PT_SITE || (/github\.io$/.test(location.hostname) ? location.origin + location.pathname.replace(/[^\/]*$/, '') + 'index.html' : '') || 'https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';
+  function wipe() {
+    // drop the page and its in-memory data, then open the sign-in page in the whole tab
+    token = null; user = null; save(); cacheClear();
+    var u = APP_URL + '?mode=login';
+    // visible fallback: if the browser blocks the automatic redirect, the page is never left blank
+    document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f4f5;font-family:IBM Plex Sans,IBM Plex Sans Arabic,Arial,sans-serif">' +
+      '<div style="text-align:center;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:28px 32px;color:#0a0a0a">' +
+      '<div style="font-weight:700;font-size:16px;margin-bottom:6px">Signed out · تم تسجيل الخروج</div>' +
+      '<div style="color:#71717a;font-size:13px;margin-bottom:16px">Pharmacy Tracker by WaadAlwagdani</div>' +
+      '<a href="' + u + '" target="_top" style="display:inline-block;background:#0a0a0a;color:#fff;text-decoration:none;border-radius:8px;padding:9px 18px;font-weight:600;font-size:13px">Sign in again · تسجيل الدخول مجددًا</a></div></div>';
+    try { window.top.location.href = u; } catch (e) { try { window.open(u, '_top'); } catch (x) {} }
+  }
+  function logout() { if (PREVIEW) return endPreview(); var tk = token; token = null; save(); call('authLogout', tk).then(wipe, wipe); }
+  /* Owner preview: the preview token lives only in this tab (sessionStorage), never replaces the Owner's own session. */
+  function startPreview(r) {
+    try { sessionStorage.setItem(PKEY, JSON.stringify({ token: r.token, name: r.user.displayName })); } catch (e) {}
+    PREVIEW = r.token; token = r.token; user = r.user; open(r.home);
+  }
+  function endPreview() {
+    var pt = PREVIEW; PREVIEW = null; try { sessionStorage.removeItem(PKEY); } catch (e) {}
+    var own = null; try { own = localStorage.getItem(KEY) || sessionStorage.getItem(KEY); } catch (e) {}
+    var back = function () { if (own) { token = own; open('owner'); } else { wipe(); } };
+    call('authPreviewEnd', pt).then(back, back);
+  }
+  function expire() { if (PREVIEW) return endPreview(); token = null; user = null; save(); try { sessionStorage.setItem('ipq_expired', '1'); } catch (e) {} wipe(); }
+
+  function start(o) {
+    cfg = o || {};
+    $('ag').style.setProperty('--ag-accent', '#0a0a0a'); $('ag').style.setProperty('--ag-bg', '#f4f4f5');   // monochrome theme on every page
+    if (cfg.barWidth) document.documentElement.style.setProperty('--ag-barw', cfg.barWidth);
+    $('ag-form').addEventListener('submit', onSubmit);
+    $('ag-lang').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} show(view); };
+    var stored = null; try { stored = localStorage.getItem(KEY) || sessionStorage.getItem(KEY); } catch (e) {}
+    try { var pv = JSON.parse(sessionStorage.getItem(PKEY) || 'null'); if (pv && pv.token) { PREVIEW = pv.token; stored = pv.token; } } catch (e) {}
+    // back / forward between pages of the app
+    try { google.script.history.setChangeHandler(function (e) { var pg = (e && e.state && e.state.page) || (e && e.location && e.location.parameter && e.location.parameter.mode); if (pg && STATE === 'AUTHENTICATED' && pg !== cfg.page) open(pg, { noPush: true }); }); } catch (e) {}
+    var boot = window.__IPQ_BOOT; window.__IPQ_BOOT = null;
+    if (!boot && window.PT_SITE) { try { var pb = JSON.parse(sessionStorage.getItem('pt_boot') || 'null'); sessionStorage.removeItem('pt_boot');
+      if (pb && pb.token && Date.now() - pb.at < 30000 && pb.page === cfg.page) boot = pb; } catch (e) {} }
+    if (cfg.fresh && !PREVIEW) {                                   // the sign-in page never reuses a saved session
+      if (stored) { try { call('authLogout', stored); } catch (e) {} }
+      token = null; save(); stored = null; boot = null;
+    }
+    if (boot && boot.token && boot.user && (!stored || stored === boot.token)) {
+      token = boot.token; user = boot.user; proceed();                     // navigation inside the app: no gate at all
+      return;
+    }
+    if (stored) {
+      token = stored; setState('INITIALIZING');
+      call('authWhoAmI', stored).then(function (u) { user = u; proceed(); }, function (e) {
+        if (PREVIEW) { endPreview(); return; }
+        token = null; save();
+        var c = codeOf(e); if (c === 'AUTH_EXPIRED') { setState('SESSION_EXPIRED'); show('login', 'AUTH_EXPIRED'); } else showLogin();
+      });
+    } else {
+      var was = false; try { was = sessionStorage.getItem('ipq_expired') === '1'; sessionStorage.removeItem('ipq_expired'); } catch (e) {}
+      if (was) { setState('SESSION_EXPIRED'); show('login', 'AUTH_EXPIRED'); } else showLogin();
+    }
+  }
+
+  /** Opens another page the account may see (server checks the role), with a "home" chip for supervisors. */
+  function open(page, opts) {
+    if (fastGo(page)) return;
+    call('authPage', token, page).then(function (r) { render(r, opts); },
+      function (e) { if (codeOf(e) === 'AUTH_EXPIRED') expire(); else alertBox(); });
+  }
+  function alertBox() { var b = document.getElementById('ag-top') || document.getElementById('ag-bar'); if (b) b.insertAdjacentHTML('beforeend', '<span style="color:#a3231b">' + esc(t('forbidden')) + '</span>'); }
+
+  return { start: start, run: run, open: open, call: call, logout: logout, startPreview: startPreview, get preview() { return !!PREVIEW; }, get token() { return token; }, get user() { return user; } };
+})();
+</script>
+
+<!-- OrgUI — shared monitoring, task distribution and supervision panels · Pharmacy Tracker by WaadAlwagdani -->
+<style>
+  .ou{--ink:#171b1f;--muted:#5b6472;--line:#dde1e7;--panel:#fff;--acc:#0a0a0a;--acc-t:#e9ecf3;--ok:#276b3e;--ok-t:#e6f1ea;--warn:#9a6200;--warn-t:#fbf1dc;--bad:#a3231b;--bad-t:#f8e9e8}
+  .ou *{box-sizing:border-box}
+  .bi{display:flex;justify-content:space-between;align-items:baseline;gap:10px;direction:ltr;width:100%}
+  .bi .en{direction:ltr;text-align:left} .bi .ar{direction:rtl;text-align:right;font-family:"IBM Plex Sans Arabic","IBM Plex Sans",Arial,sans-serif}
+  .ou .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+  .ou h3{font-size:14px;margin:0 0 10px}
+  .ou .row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .ou label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+  .ou input,.ou select{height:40px;padding:0 10px;border:1px solid #c3cad3;border-radius:8px;font-family:inherit;font-size:14px;background:var(--pt-card,#fff);color:var(--ink);min-width:0}
+  .ou input:focus,.ou select:focus,.ou button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+  .ou button{height:40px;padding:0 14px;border:1px solid #c3cad3;border-radius:8px;background:var(--pt-card,#fff);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer}
+  .ou button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+  .ou button.sm{height:32px;padding:0 10px;font-size:12.5px}
+  .ou button.danger{color:var(--bad)}
+  .ou button:disabled{opacity:.55;cursor:default}
+  .ou .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+  .ou .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .ou .kpi .v{font-size:26px;font-weight:700;direction:ltr;text-align:center;margin:4px 0 0}
+  .ou .kpi .bi{font-size:12px;color:var(--muted)}
+  .ou .bars .b{display:grid;grid-template-columns:1fr 2fr 64px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+  .ou .bars .track{height:10px;background:var(--acc-t);border-radius:99px;overflow:hidden;direction:ltr}
+  .ou .bars .fill{height:100%;background:var(--acc);border-radius:99px}
+  .ou .bars .n{text-align:right;direction:ltr;font-weight:600}
+  .ou table{width:100%;border-collapse:collapse;font-size:13px}
+  .ou th,.ou td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:start;vertical-align:middle}
+  .ou th{font-size:11.5px;color:var(--muted);font-weight:600}
+  .ou .ltr{direction:ltr;unicode-bidi:isolate}
+  .ou .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700}
+  .ou .t-ok{background:var(--ok-t);color:var(--ok)} .ou .t-warn{background:var(--warn-t);color:var(--warn)} .ou .t-bad{background:var(--bad-t);color:var(--bad)} .ou .t-n{background:var(--acc-t);color:var(--acc)}
+  .ou .msg{min-height:0;font-size:13px;font-weight:600;margin-top:8px}
+  .ou .msg:empty{display:none} .ou .msg.ok{color:var(--ok)} .ou .msg.err{color:var(--bad)}
+  .ou .day{font-size:12.5px;font-weight:700;color:var(--muted);margin:12px 0 4px;direction:ltr}
+  .ou .shift{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
+  .ou .shift .tm{font-weight:700;direction:ltr;font-size:13px;min-width:92px}
+  .ou .shift .who{font-size:13px} .ou .shift .who small{display:block;color:var(--muted);font-size:12px}
+  .ou .shift.cx{opacity:.5;text-decoration:line-through}
+  .ou .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .ou .chk{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:12.5px;cursor:pointer;background:var(--pt-card,#fff)}
+  .ou .chk input{height:auto;min-width:0;margin:0}
+  .ou .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+  .ou .spark{width:100%;height:70px;display:block}
+  .ou .empty{color:var(--muted);font-size:13px;text-align:center;padding:16px 0}
+  @media (max-width:640px){ .ou .shift{grid-template-columns:1fr auto} .ou .shift .tm{grid-column:1/-1} }
+</style>
+<script>
+/* OrgUI — Pharmacy Tracker by WaadAlwagdani. All data comes from scoped server functions. */
+var OrgUI = (function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function B(en, ar) { return '<span class="bi"><span class="en">' + en + '</span><span class="ar">' + ar + '</span></span>'; }
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US'); }
+  function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
+  var ERR = {
+    FORBIDDEN: ['Not permitted', 'غير مصرّح'], CONFLICT: ['Changed by someone else — reloaded', 'عُدّل من مستخدم آخر — أُعيد التحميل'],
+    OVERLAP: ['Overlaps another shift', 'يتداخل مع مناوبة أخرى'], OUTSIDE_VALIDITY: ['Outside the account validity period', 'خارج فترة صلاحية الحساب'],
+    RESP_NOT_AUTHORISED: ['Responsibility not assigned to this employee', 'المسؤولية غير مسندة لهذا الموظف'], EMPLOYEE_INACTIVE: ['Account not active', 'الحساب غير نشط'],
+    INVALID_TIME: ['Invalid date or time', 'تاريخ أو وقت غير صالح'], INVALID_SUPERVISOR: ['Invalid supervisor', 'مشرف غير صالح'], INVALID_EMPLOYEE: ['Invalid employee', 'موظف غير صالح'],
+    OWNER_PROTECTED: ['Owner account is protected', 'حساب المالك محمي'], USERNAME_TAKEN: ['Username already exists', 'اسم المستخدم مستخدم مسبقاً'],
+    INVALID_USERNAME: ['Username: 3–32 lowercase letters, digits, . _ -', 'اسم المستخدم: ٣–٣٢ حرفاً إنجليزياً صغيراً أو أرقاماً أو . _ -'],
+    WEAK_PASSWORD: ['At least 10 characters, not containing the username', '١٠ أحرف على الأقل دون اسم المستخدم'], INVALID_DATE: ['Invalid validity dates', 'تواريخ الصلاحية غير صالحة'],
+    INVALID_ROLE: ['Invalid role', 'دور غير صالح'], EXPORT_FAILED: ['Export failed — the Owner needs to run authorizeExport once in Apps Script', 'تعذّر التصدير، يلزم أن تشغّل المالكة authorizeExport مرة واحدة في Apps Script'], PREVIEW_READ_ONLY: ['Preview is read-only — no changes saved', 'المعاينة للقراءة فقط، ولم يُحفظ أي تعديل'], DUPLICATE_DAY: ['Employee assigned twice to the same task on the same day', 'الموظف مُسند مرتين للمهمة نفسها في اليوم نفسه'], INVALID_INPUT: ['Invalid data', 'بيانات غير صالحة'], LIB_FAILED: ['Export library could not load — check the connection', 'تعذّر تحميل أداة التصدير، يُرجى التحقق من الاتصال'], NOT_FOUND: ['Not found', 'غير موجود'], FAILED: ['Action failed', 'تعذّر تنفيذ العملية']
+  };
+  function err(e) {
+    var m = String(e && e.message || ''), c = (m.match(/[A-Z][A-Z_]{4,}/) || ['FAILED'])[0], x = ERR[c] || ERR.FAILED;
+    var extra = c === 'OVERLAP' ? ' (' + esc(m.split('OVERLAP:')[1] || '') + ')' : '';
+    return B(x[0] + extra, x[1] + extra);
+  }
+  function msg(el, html, ok) { el.classList.add('msg'); el.classList.toggle('ok', !!ok); el.classList.toggle('err', !ok); el.innerHTML = html; }
+
+  /* ---------------- Monitoring ---------------- */
+  function monitor(el) {
+    var to = iso(new Date()), from = addD(to, -13);
+    el.innerHTML = '<div class="ou"><div class="panel"><div class="row">' +
+      '<div><label class="f">' + B('From', 'من') + '</label><input type="date" class="m-from" value="' + from + '"></div>' +
+      '<div><label class="f">' + B('To', 'إلى') + '</label><input type="date" class="m-to" value="' + to + '"></div>' +
+      '<button type="button" class="pri m-go">' + B('Show', 'عرض') + '</button></div></div><div class="m-body"><div class="empty">…</div></div></div>';
+    var go = el.querySelector('.m-go'); go.onclick = load; load();
+    function load() {
+      go.disabled = true;
+      AuthGate.run('monitorSummary', el.querySelector('.m-from').value, el.querySelector('.m-to').value).then(function (d) {
+        go.disabled = false;
+        var max = Math.max.apply(null, d.stations.map(function (s) { return s[2]; }).concat([1]));
+        var tmax = Math.max.apply(null, d.trend.map(function (t) { return t[1]; }).concat([1]));
+        var n = d.trend.length, w = 300, h = 60;
+        var pts = d.trend.map(function (t, i) { return (n < 2 ? w / 2 : i * w / (n - 1)).toFixed(1) + ',' + (h - t[1] / tmax * (h - 6) - 3).toFixed(1); }).join(' ');
+        el.querySelector('.m-body').innerHTML =
+          '<div class="kpis">' +
+            kpi('Active employees', 'الموظفون النشطون', d.activeEmployees + '<span style="font-size:14px;color:#5b6472"> / ' + d.totalEmployees + '</span>') +
+            kpi('Transactions', 'العمليات', fmt(d.transactions)) + kpi('Units processed', 'الوحدات', fmt(d.units)) +
+            kpi('Assigned today', 'موظفو اليوم', fmt(d.coverage.onDuty)) + kpi('Tasks today', 'مهام اليوم', fmt(d.coverage.today)) +
+            kpi('Next 7 days', 'الأيام السبعة القادمة', fmt(d.coverage.upcoming7)) +
+          '</div><div class="grid2"><div class="panel"><h3>' + B('Workload by station', 'العمل حسب المحطة') + '</h3><div class="bars">' +
+            d.stations.map(function (s) { return '<div class="b">' + B(s[1], s[0]) + '<div class="track"><div class="fill" style="width:' + (s[2] / max * 100).toFixed(1) + '%"></div></div><div class="n">' + fmt(s[2]) + '</div></div>'; }).join('') +
+          '</div></div><div class="panel"><h3>' + B('Units per day', 'الوحدات يومياً') + '</h3>' +
+            '<svg class="spark" viewBox="0 0 300 60" preserveAspectRatio="none" role="img" aria-label="trend"><polyline points="' + pts + '" fill="none" stroke="#0a0a0a" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>' +
+            '<div class="bi" style="font-size:11.5px;color:#5b6472"><span class="en">' + d.from + '</span><span class="ar" style="direction:ltr">' + d.to + '</span></div></div>' +
+          '<div class="panel"><h3>' + B('Task coverage today', 'تغطية المهام اليوم') + '</h3>' +
+            (d.coverage.byResp.length ? '<div class="bars">' + d.coverage.byResp.map(function (r) { return '<div class="b" style="grid-template-columns:1fr 48px">' + B(r[0], r[1]) + '<div class="n">' + r[2] + '</div></div>'; }).join('') + '</div>'
+              : '<div class="empty">' + B('No tasks today', 'لا مهام اليوم') + '</div>') + '</div></div>' +
+          '<div style="font-size:11.5px;color:#5b6472">' + B(d.scope === 'all' ? 'Scope: whole pharmacy · aggregates only' : 'Scope: assigned employees · aggregates only',
+            d.scope === 'all' ? 'النطاق: الصيدلية كاملة · أرقام إجمالية فقط' : 'النطاق: الموظفون المسندون · أرقام إجمالية فقط') + '</div>';
+      }).catch(function (e) { go.disabled = false; el.querySelector('.m-body').innerHTML = '<div class="panel msg err">' + err(e) + '</div>'; });
+    }
+    function kpi(en, ar, v) { return '<div class="kpi">' + B(en, ar) + '<div class="v">' + v + '</div></div>'; }
+  }
+
+  /* ---------------- Task distribution (monthly) ---------------- */
+  var LIB = { docx: 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js', pptx: 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', xlsx: 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js' };
+  var LIBP = {};
+  function loadLib(k) { return LIBP[k] || (LIBP[k] = new Promise(function (ok, no) { if (k === 'docx' && window.docx || k === 'pptx' && window.PptxGenJS || k === 'xlsx' && window.ExcelJS) return ok(); var s = document.createElement('script'); s.src = LIB[k]; s.onload = ok; s.onerror = function () { delete LIBP[k]; no(new Error('LIB_FAILED')); }; document.head.appendChild(s); })); }
+  function save(name, blob) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
+  function duty(el) {
+    var D = null, edits = {}, nedits = {}, view = 'week', cur = null, hide = {};
+    // export libraries are fetched quietly in the background so the export buttons respond at once
+    setTimeout(function () { ['xlsx', 'docx', 'pptx'].forEach(function (k) { loadLib(k).catch(function () {}); }); }, 1200);
+    var now = new Date(), ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    el.innerHTML = '<div class="ou"><style>' +
+      '.ou .dg{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:8px}.ou .dg table{font-size:12px;min-width:900px}' +
+      '.ou .dg th,.ou .dg td{border:1px solid var(--line);padding:3px;text-align:center;white-space:nowrap}.ou .dg thead th{position:sticky;top:0;background:#0a0a0a;color:#fff;z-index:2}' +
+      '.ou .dg thead tr+tr th{top:34px;background:#27272a}.ou .dg .sd{position:sticky;right:0;background:#f7f8fa;z-index:1;font-weight:700}' +
+      '.ou .dg select{height:30px;font-size:12px;padding:0 4px;max-width:150px}.ou .dg select.dp{max-width:110px;margin-top:2px;display:block}.ou .dg .dup select{background:#f8d7d5;border-color:#a3231b}' +
+      '.ou .dg .chg select{border-color:#276b3e;border-width:2px}.ou .dg .lk{color:#5b6472;font-size:11.5px}.ou .dg input.nt{height:30px;font-size:12px;width:150px}' +
+'.ou .cal{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}.ou .cal-side{display:flex;flex-direction:column;gap:12px}.ou .cbox{background:var(--pt-card,#fff);border:1px solid var(--line);border-radius:16px;padding:14px}.ou .cbox h4{margin:0 0 10px;font-size:14px;display:flex;justify-content:space-between;align-items:center}.ou .mini{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:12px}.ou .mini b{font-size:10.5px;color:var(--muted);font-weight:600;padding:4px 0}.ou .mini button{height:30px;border:0;border-radius:8px;background:transparent;font:500 12px inherit;color:#0a0a0a;cursor:pointer;position:relative;padding:0}.ou .mini button:disabled{color:#d4d4d8;cursor:default}.ou .mini button.wk{background:#f4f4f5}.ou .mini button.on{background:#0a0a0a;color:#fff}.ou .mini button i{position:absolute;bottom:3px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#a1a1aa}.ou .mini button.on i{background:var(--pt-card,#fff)}.ou .flt label{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;cursor:pointer}.ou .flt input{width:16px;height:16px;accent-color:#0a0a0a;min-width:16px;flex:none}.ou .flt .sw{width:10px;height:10px;border-radius:3px;flex:none;border:1px solid #a1a1aa}.ou .cal-main{background:var(--pt-card,#fff);border:1px solid var(--line);border-radius:16px;overflow:hidden}.ou .cal-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}.ou .cal-head h4{margin:0;font-size:16px;display:flex;align-items:center;gap:8px}.ou .cal-head .nv{width:32px;height:32px;padding:0;border-radius:10px}.ou .cg{display:grid;overflow-x:auto}.ou .cg>div{border-bottom:1px solid #f4f4f5;border-inline-start:1px solid #f4f4f5;padding:6px;min-width:0}.ou .cg .hd{position:sticky;top:0;background:var(--pt-card,#fff);z-index:2;text-align:center;padding:10px 4px;border-bottom:1px solid var(--line)}.ou .cg .hd small{display:block;color:var(--muted);font-size:11px}.ou .cg .hd .dn{display:inline-grid;place-items:center;min-width:36px;height:36px;border-radius:12px;font-size:20px;font-weight:700;margin-top:2px}.ou .cg .hd.today .dn{background:#0a0a0a;color:#fff}.ou .cg .hd .nt{font-size:11px;color:#3f3f46;margin-top:4px;cursor:pointer;min-height:14px}.ou .cg .tl{position:sticky;inset-inline-start:0;background:var(--pt-card,#fff);z-index:1;font-size:12.5px;font-weight:700;padding:10px 8px}.ou .cg .tl small{display:block;font-weight:400;color:var(--muted);font-size:11px}.ou .cg .corner{position:sticky;top:0;inset-inline-start:0;z-index:3;background:var(--pt-card,#fff);border-bottom:1px solid var(--line)}.ou .ev{display:flex;align-items:center;gap:7px;width:100%;border:1px solid transparent;border-radius:10px;padding:6px 7px;margin-bottom:4px;font:600 12px inherit;text-align:start;cursor:pointer;color:#0a0a0a;min-height:34px}.ou .ev .av{width:22px;height:22px;border-radius:7px;background:#0a0a0a;color:#fff;display:grid;place-items:center;font-size:9.5px;flex:none}.ou .ev span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ou .ev small{display:block;font-weight:400;color:#52525b;font-size:10.5px}.ou .ev.add{background:transparent;border:1px dashed #d4d4d8;color:#a1a1aa;justify-content:center;font-weight:500}.ou .ev.add:hover{border-color:#0a0a0a;color:#0a0a0a}.ou .ev.dup{border:2px solid #dc2626}.ou .ev.chg{box-shadow:inset 0 0 0 1.5px #0a0a0a}.ou .ev.lk{cursor:default;color:#71717a}.ou .ev.lk .av{background:#a1a1aa}.ou .pop{position:fixed;z-index:50;background:var(--pt-card,#fff);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:12px;width:270px}.ou .pop select{width:100%;margin-bottom:8px}.ou .pop h5{margin:0 0 8px;font-size:12.5px}@media (max-width:1000px){.ou .cal{grid-template-columns:1fr}}' +
+      '.ou .vt button[aria-pressed=true]{background:#0a0a0a;color:#fff;border-color:#0a0a0a}.ou .xp{display:flex;gap:6px;flex-wrap:wrap;align-items:center}' +
+      '.ou .tk td,.ou .tk th{padding:4px}.ou .tk input[type=text]{height:34px;width:100%}.ou .tk input[type=number]{height:34px;width:64px}' +
+      '</style><div class="panel"><div class="row" style="justify-content:space-between">' +
+      '<div class="row"><div><label class="f">' + B('Month', 'الشهر') + '</label><input type="month" class="d-m" value="' + ym + '"></div>' +
+      '<div class="row vt"><button type="button" class="sm" data-v="day" aria-pressed="false">' + B('Daily', 'يومي') + '</button>' +
+      '<button type="button" class="sm" data-v="week" aria-pressed="true">' + B('Weekly', 'أسبوعي') + '</button>' +
+      '<button type="button" class="sm" data-v="grid" aria-pressed="false">' + B('Monthly', 'شهري') + '</button>' +
+      '<button type="button" class="sm" data-v="emp" aria-pressed="false">' + B('Employee', 'جدول موظف') + '</button>' +
+      '<button type="button" class="sm" data-v="sum" aria-pressed="false">' + B('Summary', 'الملخص') + '</button></div></div>' +
+      '<div class="row"><button type="button" class="sm d-quick">' + B('Quick assign', 'تعيين سريع') + '</button><button type="button" class="sm d-cfg" hidden>' + B('Tasks', 'المهام') + '</button><button type="button" class="pri d-save" disabled>' + B('Save', 'حفظ') + '</button></div></div>' +
+      '<div class="msg d-msg"></div></div><div class="panel d-qp" hidden></div><div class="panel d-cfgp" hidden></div><datalist id="ou-wards"></datalist><div class="panel"><div class="d-body"><div class="empty">…</div></div>' +
+      '<div class="xp" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px"><b style="font-size:12.5px">' + B('Export', 'تصدير') + '</b>' +
+      '<button type="button" class="sm" data-x="xlsx">Excel</button><button type="button" class="sm" data-x="pdf">PDF</button><button type="button" class="sm" data-x="docx">Word</button><button type="button" class="sm" data-x="pptx">PowerPoint</button><button type="button" class="sm" data-x="screen">' + B('Screen deck', 'عرض الشاشة') + '</button>' +
+      '<span class="d-xmsg" style="font-size:12px;color:var(--muted)"></span>' +
+      '<div class="d-scr" hidden style="margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fafafa">' +
+        '<b style="font-size:13px">' + B('Pharmacy screen deck (A3)', 'عرض شاشة الصيدلية (A3)') + '</b>' +
+        '<div class="row" style="margin-top:8px;gap:10px;flex-wrap:wrap;align-items:flex-end">' +
+          '<label style="font-size:12px">' + B('Tasks from', 'المهام من') + '<br><input type="date" class="sc-tf"></label><label style="font-size:12px">' + B('to', 'إلى') + '<br><input type="date" class="sc-tt"></label>' +
+          '<label style="font-size:12px">' + B('Unavailable drugs from', 'عدم التوفر من') + '<br><input type="date" class="sc-of"></label><label style="font-size:12px">' + B('to', 'إلى') + '<br><input type="date" class="sc-ot"></label>' +
+          '<button type="button" class="pri sm sc-go">' + B('Create deck', 'إنشاء العرض') + '</button></div>' +
+        '<div class="sc-msg" style="font-size:12px;margin-top:6px;color:var(--muted)"></div></div></div></div></div>';
+    var mEl = el.querySelector('.d-m'), saveB = el.querySelector('.d-save'), M = el.querySelector('.d-msg');
+    mEl.onchange = function () { if (dirty() && !confirm('Unsaved changes will be lost · ستُفقد التعديلات غير المحفوظة')) { mEl.value = D.month; return; } load(); };
+    el.querySelectorAll('[data-v]').forEach(function (b) { b.onclick = function () { view = b.dataset.v; el.querySelectorAll('[data-v]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); draw(); }; });
+    saveB.onclick = doSave;
+    el.querySelector('.d-quick').onclick = function () { var p = el.querySelector('.d-qp'); p.hidden = !p.hidden; if (!p.hidden) quickForm(p, ''); };
+    el.querySelector('.d-cfg').onclick = function () { var p = el.querySelector('.d-cfgp'); p.hidden = !p.hidden; if (!p.hidden) cfgForm(p); };
+    el.querySelectorAll('[data-x]').forEach(function (b) { b.onclick = function () { doExport(b.dataset.x, b); }; });
+    load();
+    function dirty() { return Object.keys(edits).length + Object.keys(nedits).length > 0; }
+    function load() {
+      M.innerHTML = ''; M.className = 'msg d-msg';
+      return AuthGate.run('dutyGet', mEl.value).then(function (d) { D = d; edits = {}; nedits = {}; var dl = el.querySelector('#ou-wards'); if (dl) dl.innerHTML = (d.adc || []).map(function (x) { return '<option value="' + esc(x) + '">'; }).join(''); el.querySelector('.d-cfg').hidden = !d.canEditTasks; draw(); })
+        .catch(function (e) { el.querySelector('.d-body').innerHTML = '<div class="msg err">' + err(e) + '</div>'; });
+    }
+    function cell(k) { return k in edits ? edits[k] : (D.cells[k] || null); }
+    function empName(id) { var e = D.employees.filter(function (x) { return x.id === id; })[0]; return e ? e.name : ''; }
+    function dayLabel(d) { return '<span class="ltr">' + d.date.slice(8) + '/' + d.date.slice(5, 7) + '</span> ' + d.ar; }
+    function draw() {
+      saveB.disabled = !dirty();
+      if (!D) return;
+      if (!D.tasks.length) { el.querySelector('.d-body').innerHTML = '<div class="empty">' + B('No tasks configured', 'لا توجد مهام') + '</div>'; return; }
+      if (view === 'emp') return drawEmp();
+      if (view === 'sum') return drawSum();
+      if (view === 'week' || view === 'day') return drawCal();
+      var opts = '<option value=""></option>' + D.employees.filter(function (e) { return e.active; }).map(function (e) { return '<option value="' + esc(e.id) + '">' + esc(e.name) + '</option>'; }).join('');
+      var dopts = '<option value="">' + 'القسم · Dept' + '</option>' + D.adc.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('');
+      var h = '<div class="dg"><table><thead><tr><th class="sd" rowspan="2">' + B('Day', 'اليوم') + '</th>' + D.tasks.map(function (t) { return '<th colspan="' + t.slots + '" title="' + esc(t.en) + '">' + esc(t.ar) + '<br><small style="color:#c9d0dc;font-weight:400">' + esc(t.en) + '</small></th>'; }).join('') +
+        (D.canNote ? '<th rowspan="2">' + B('Notes', 'ملاحظات') + '</th>' : '') + '</tr><tr>' +
+        D.tasks.map(function (t) { var x = ''; for (var s = 0; s < t.slots; s++) x += '<th>' + (s + 1) + '</th>'; return x; }).join('') + '</tr></thead><tbody>';
+      D.days.forEach(function (d) {
+        var seen = {}, dup = {};
+        D.tasks.forEach(function (t) { for (var s = 0; s < t.slots; s++) { var c = cell(d.date + '|' + t.id + '|' + s); if (c && c.emp) { /* several tasks per employee per day are allowed */ } } });
+        h += '<tr><td class="sd">' + dayLabel(d) + '</td>';
+        D.tasks.forEach(function (t) { for (var s = 0; s < t.slots; s++) {
+          var k = d.date + '|' + t.id + '|' + s, c = cell(k), cls = (c && dup[c.emp] ? 'dup ' : '') + (k in edits ? 'chg' : '');
+          if (c && c.locked) { h += '<td class="lk">' + esc(c.name) + (c.dept ? '<br><small>' + esc(c.dept) + '</small>' : '') + '</td>'; continue; }
+          var v = c ? c.emp : '', missing = v && !D.employees.some(function (e) { return e.id === v && e.active; });
+          h += '<td class="' + cls + '"><select data-k="' + k + '">' + (missing ? '<option value="' + esc(v) + '">' + esc(c.name) + '</option>' : '') + opts.replace('value="' + esc(v) + '"', 'value="' + esc(v) + '" selected') + '</select>' +
+            (t.adc ? '<select class="dp" data-dk="' + k + '">' + dopts.replace('<option>' + esc(c && c.dept || '\u0000') + '</option>', '<option selected>' + esc(c && c.dept || '') + '</option>') + '</select>' : '') + '</td>';
+        } });
+        if (D.canNote) h += '<td><input class="nt" data-n="' + d.date + '" value="' + esc(d.date in nedits ? nedits[d.date] : (D.notes[d.date] || '')) + '"></td>';
+        h += '</tr>';
+      });
+      el.querySelector('.d-body').innerHTML = h + '</tbody></table></div><div style="font-size:11.5px;color:var(--muted);margin-top:6px">' +
+        B('Red = same employee twice on one day (save is refused). Green border = unsaved change.', 'الأحمر: الموظف مكرر في اليوم نفسه، ولن يُقبل الحفظ. الإطار الأخضر: تعديل غير محفوظ.') + '</div>';
+      el.querySelectorAll('select[data-k]').forEach(function (sel) { sel.onchange = function () { setCell(sel.dataset.k, sel.value, null); }; });
+      el.querySelectorAll('select[data-dk]').forEach(function (sel) { sel.onchange = function () { var c = cell(sel.dataset.dk); setCell(sel.dataset.dk, c ? c.emp : '', sel.value); }; });
+      el.querySelectorAll('input[data-n]').forEach(function (i) { i.onchange = function () { nedits[i.dataset.n] = i.value; saveB.disabled = false; }; });
+    }
+
+    /* ---- calendar views (weekly / daily) ---- */
+    var SHADE = ['#f4f4f5', '#e4e4e7', '#fafafa', '#d4d4d8', '#ececee', '#f0f0f1', '#dedee2', '#f7f7f8'];
+    var DOW = [['Sun', 'ح'], ['Mon', 'ن'], ['Tue', 'ث'], ['Wed', 'ر'], ['Thu', 'خ'], ['Fri', 'ج'], ['Sat', 'س']];
+    var TODAY = iso(new Date());
+    function ini(n) { return String(n || '').trim().split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase(); }
+    function pickCur() {
+      if (cur && D.days.some(function (d) { return d.date === cur; })) return;
+      var t = D.days.filter(function (d) { return d.date >= TODAY; })[0]; cur = (t || D.days[0] || {}).date || null;
+    }
+    function weekOf(date) {   // Sunday-based week inside this month
+      var p = date.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]), s = new Date(d); s.setDate(d.getDate() - d.getDay());
+      var a = iso(s), e = new Date(s); e.setDate(s.getDate() + 6); var b = iso(e);
+      return D.days.filter(function (x) { return x.date >= a && x.date <= b; });
+    }
+    function used(date) { return Object.keys(D.cells).some(function (k) { return k.indexOf(date + '|') === 0; }) || Object.keys(edits).some(function (k) { return k.indexOf(date + '|') === 0 && edits[k]; }); }
+    function drawCal() {
+      pickCur(); if (!cur) { el.querySelector('.d-body').innerHTML = '<div class="empty">' + B('No working days', 'لا توجد أيام عمل') + '</div>'; return; }
+      var days = view === 'day' ? D.days.filter(function (d) { return d.date === cur; }) : weekOf(cur);
+      var wk = weekOf(cur).map(function (d) { return d.date; });
+      var tasks = D.tasks.filter(function (t) { return !hide[t.id]; });
+      // mini month calendar
+      var p = D.month.split('-'), first = new Date(+p[0], +p[1] - 1, 1), n = new Date(+p[0], +p[1], 0).getDate();
+      var work = {}; D.days.forEach(function (d) { work[d.date] = 1; });
+      var mini = DOW.map(function (w) { return '<b>' + (LANG_AR() ? w[1] : w[0]) + '</b>'; }).join('');
+      for (var i = 0; i < first.getDay(); i++) mini += '<span></span>';
+      for (var dd = 1; dd <= n; dd++) { var ds = D.month + '-' + String(dd).padStart(2, '0');
+        mini += '<button type="button" data-day="' + ds + '"' + (work[ds] ? '' : ' disabled') + ' class="' + (ds === cur ? 'on' : wk.indexOf(ds) > -1 ? 'wk' : '') + '">' + dd + (work[ds] && used(ds) ? '<i></i>' : '') + '</button>'; }
+      var monthName = new Date(+p[0], +p[1] - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      var side = '<aside class="cal-side"><div class="cbox"><h4><span class="ltr">' + monthName + '</span></h4><div class="mini">' + mini + '</div></div>' +
+        '<div class="cbox flt"><h4>' + B('Tasks', 'المهام') + '</h4>' + D.tasks.map(function (t, i) {
+          return '<label><input type="checkbox" data-hide="' + esc(t.id) + '"' + (hide[t.id] ? '' : ' checked') + '><span>' + esc(t.ar) + (t.en && t.en !== t.ar ? '<small style="display:block;color:#a1a1aa">' + esc(t.en) + '</small>' : '') + '</span></label>'; }).join('') + '</div>' +
+        '<div class="cbox" style="font-size:12px;color:#52525b;line-height:1.6">' + B('Click a card to change it, or + to assign.', 'يُضغط على البطاقة للتعديل، أو على + للإسناد.') +
+        '<div><span style="display:inline-block;width:12px;height:12px;box-shadow:inset 0 0 0 1.5px #0a0a0a;border-radius:4px;vertical-align:middle"></span> ' + B('Unsaved change', 'تعديل غير محفوظ') + '</div></div></aside>';
+      // week / day grid
+      var range = days.length ? (days[0].date.slice(8) + (days.length > 1 ? ' – ' + days[days.length - 1].date.slice(8) : '') + ' ' + monthName) : '';
+      var cols = 'grid-template-columns:190px repeat(' + days.length + ',minmax(' + (view === 'day' ? 300 : 150) + 'px,1fr))';
+      var g = '<div class="cg" style="' + cols + '"><div class="corner"></div>' + days.map(function (d) {
+        var note = d.date in nedits ? nedits[d.date] : (D.notes[d.date] || '');
+        return '<div class="hd' + (d.date === TODAY ? ' today' : '') + '"><small>' + d.ar + ' · ' + d.en + '</small><div class="dn">' + (+d.date.slice(8)) + '</div>' +
+          (D.canNote ? '<div class="nt" data-note="' + d.date + '" title="' + esc(B('Day note', 'ملاحظة اليوم').replace(/<[^>]+>/g, ' ')) + '">' + (note ? '✎ ' + esc(note) : '<span style="color:#d4d4d8">✎</span>') + '</div>' : (note ? '<div class="nt">' + esc(note) + '</div>' : '')) + '</div>';
+      }).join('');
+      tasks.forEach(function (t) {
+        var ti = D.tasks.indexOf(t);
+        g += '<div class="tl">' + esc(t.ar) + '<small>' + (t.en && t.en !== t.ar ? esc(t.en) + ' · ' : '') + t.slots + '</small></div>';
+        days.forEach(function (d) {
+          var seen = {}, dup = {};
+          D.tasks.forEach(function (x) { for (var s = 0; s < x.slots; s++) { var c = cell(d.date + '|' + x.id + '|' + s); if (c && c.emp) { /* several tasks per employee per day are allowed */ } } });
+          var h = '', free = [];
+          for (var s = 0; s < t.slots; s++) {
+            var k = d.date + '|' + t.id + '|' + s, c = cell(k);
+            if (!(c && c.emp)) { free.push(k); continue; }
+            h += '<button type="button" class="ev' + (dup[c.emp] ? ' dup' : '') + (k in edits ? ' chg' : '') + (c.locked ? ' lk' : '') + '" data-ck="' + k + '" style="background:' + SHADE[ti % SHADE.length] + '"' + (c.locked ? ' disabled' : '') + '>' +
+              '<i class="av" style="font-style:normal">' + esc(ini(c.name)) + '</i><span>' + esc(c.name) + (c.dept ? '<small class="ltr">' + esc(c.dept) + '</small>' : '') + '</span></button>';
+          }
+          if (!free.length && t.slots < 6 && D.canEdit !== false) free.push(d.date + '|' + t.id + '|' + t.slots);   // room for one more employee
+          if (free.length) h += '<button type="button" class="ev add' + (free.some(function (x) { return x in edits; }) ? ' chg' : '') + '" data-ck="' + free[0] + '" title="' + free.length + '">+' + (free.length > 1 ? ' <small style="display:inline;margin-inline-start:4px">' + free.length + '</small>' : '') + '</button>';
+          g += '<div>' + h + '</div>';
+        });
+      });
+      g += '</div>';
+      var head = '<div class="cal-head"><h4><button type="button" class="sm nv" data-step="-1" aria-label="previous">‹</button><span class="ltr">' + esc(range) + '</span><button type="button" class="sm nv" data-step="1" aria-label="next">›</button></h4>' +
+        '<button type="button" class="sm" data-today="1">' + B('Today', 'اليوم') + '</button></div>';
+      el.querySelector('.d-body').innerHTML = '<div class="cal">' + side + '<section class="cal-main">' + head + g + '</section></div>';
+      el.querySelectorAll('[data-day]').forEach(function (b) { b.onclick = function () { cur = b.dataset.day; draw(); }; });
+      el.querySelectorAll('[data-hide]').forEach(function (b) { b.onchange = function () { if (b.checked) delete hide[b.dataset.hide]; else hide[b.dataset.hide] = 1; draw(); }; });
+      el.querySelectorAll('[data-step]').forEach(function (b) { b.onclick = function () {
+        var st = +b.dataset.step, list = D.days.map(function (d) { return d.date; }), i = list.indexOf(cur);
+        if (view === 'day') i = Math.max(0, Math.min(list.length - 1, i + st));
+        else { var w = weekOf(cur).map(function (d) { return d.date; }); i = st > 0 ? list.indexOf(w[w.length - 1]) + 1 : list.indexOf(w[0]) - 1; i = Math.max(0, Math.min(list.length - 1, i)); }
+        cur = list[i]; draw(); }; });
+      var tb = el.querySelector('[data-today]'); if (tb) tb.onclick = function () { if (D.days.some(function (d) { return d.date === TODAY; })) cur = TODAY; else cur = null; draw(); };
+      el.querySelectorAll('[data-note]').forEach(function (x) { x.onclick = function () {
+        var d = x.dataset.note, v = window.prompt('Day note · ملاحظة اليوم', d in nedits ? nedits[d] : (D.notes[d] || ''));
+        if (v === null) return; nedits[d] = v; draw(); }; });
+      el.querySelectorAll('.ev[data-ck]:not([disabled])').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); popover(b); }; });
+    }
+    function LANG_AR() { try { return localStorage.getItem('ipq_lang') !== 'en'; } catch (e) { return true; } }
+    // "+" on a task-day: several employees can be ticked at once, then applied together
+    function popMulti(btn) {
+      var old = el.querySelector('.pop'); if (old) old.remove();
+      var k = btn.dataset.ck, p = k.split('|'), t = D.tasks.filter(function (x) { return x.id === p[1]; })[0];
+      var taken = {}; for (var s0 = 0; s0 < 6; s0++) { var c0 = cell(p[0] + '|' + t.id + '|' + s0); if (c0 && c0.emp) taken[c0.emp] = 1; }
+      var list = D.employees.filter(function (e) { return e.active && !taken[e.id]; });
+      var pop = document.createElement('div'); pop.className = 'pop';
+      pop.innerHTML = '<h5>' + esc(t.ar) + ' · <span class="ltr">' + esc(p[0]) + '</span></h5>' +
+        '<input type="search" class="pq" placeholder="بحث · Search" style="width:100%;margin-bottom:6px">' +
+        '<div class="pl" style="max-height:220px;overflow:auto;border:1px solid #e4e4e7;border-radius:8px;padding:4px 6px;margin-bottom:8px">' +
+        (list.length ? list.map(function (e) { return '<label style="display:flex;gap:8px;align-items:center;padding:5px 2px;cursor:pointer" data-n="' + esc(e.name.toLowerCase()) + '"><input type="checkbox" value="' + esc(e.id) + '">' + esc(e.name) + (e.noAccount ? ' <small style="color:#71717a">· بدون حساب</small>' : e.pending ? ' <small style="color:#71717a">· بانتظار التفعيل</small>' : '') + '</label>'; }).join('')
+          : '<div style="color:#71717a;padding:8px">لا يوجد موظفون متاحون</div>') + '</div>' +
+        '<input class="pd" list="ou-wards" placeholder="Ward / ADC · الجناح أو ADC (اختياري)" style="width:100%;margin-bottom:8px">' +
+        '<div class="row" style="justify-content:space-between"><button type="button" class="pri sm pa">' + B('Apply', 'تطبيق') + ' <span class="pn"></span></button><button type="button" class="sm px">✕</button></div>';
+      el.querySelector('.ou').appendChild(pop);
+      var r = btn.getBoundingClientRect(), w = 290, x = Math.min(Math.max(8, r.left), innerWidth - w - 8), y = r.bottom + 6;
+      if (y + 340 > innerHeight) y = Math.max(8, r.top - 346);
+      pop.style.left = x + 'px'; pop.style.top = y + 'px'; pop.style.width = w + 'px';
+      var close = function () { pop.remove(); document.removeEventListener('click', outside, true); };
+      var outside = function (e) { if (!pop.contains(e.target)) close(); };
+      setTimeout(function () { document.addEventListener('click', outside, true); }, 0);
+      var picked = function () { return Array.prototype.map.call(pop.querySelectorAll('.pl input:checked'), function (i) { return i.value; }); };
+      pop.querySelector('.pl').onchange = function () { var n = picked().length; pop.querySelector('.pn').textContent = n ? '(' + n + ')' : ''; };
+      pop.querySelector('.pq').oninput = function () { var q = this.value.trim().toLowerCase(); pop.querySelectorAll('.pl label').forEach(function (l) { l.style.display = !q || l.dataset.n.indexOf(q) > -1 ? '' : 'none'; }); };
+      pop.querySelector('.px').onclick = close;
+      pop.querySelector('.pa').onclick = function () {
+        var ids = picked(), dp = pop.querySelector('.pd'), dept = dp ? dp.value : null; close();
+        ids.forEach(function (id) {
+          for (var s1 = 0; s1 < 6; s1++) { var kk = p[0] + '|' + t.id + '|' + s1, cc = cell(kk); if (!(cc && cc.emp)) { if (s1 >= t.slots) t.slots = s1 + 1; setCell(kk, id, dept); return; } }
+        });
+      };
+      pop.querySelector('.pq').focus();
+    }
+    function popover(btn) {
+      if (btn.classList.contains('add')) return popMulti(btn);
+      var old = el.querySelector('.pop'); if (old) old.remove();
+      var k = btn.dataset.ck, c = cell(k), p = k.split('|'), t = D.tasks.filter(function (x) { return x.id === p[1]; })[0];
+      var opts = '<option value="">' + 'غير مُسند · Unassigned' + '</option>' + D.employees.filter(function (e) { return e.active; }).map(function (e) { return '<option value="' + esc(e.id) + '"' + (c && c.emp === e.id ? ' selected' : '') + '>' + esc(e.name) + (e.noAccount ? ' · بدون حساب' : e.pending ? ' · بانتظار التفعيل' : '') + '</option>'; }).join('');
+      var pop = document.createElement('div'); pop.className = 'pop';
+      pop.innerHTML = '<h5>' + esc(t.ar) + ' · <span class="ltr">' + esc(p[0]) + '</span></h5><select class="pe">' + opts + '</select>' +
+        '<input class="pd" list="ou-wards" placeholder="Ward / ADC · الجناح أو ADC (اختياري)" value="' + esc(c && c.dept || '') + '" style="width:100%;margin:6px 0 8px">' +
+        '<div class="row" style="justify-content:space-between"><button type="button" class="pri sm pa">' + B('Apply', 'تطبيق') + '</button>' +
+        (c && c.emp ? '<button type="button" class="sm danger pc">' + B('Remove', 'إزالة') + '</button>' : '') + '<button type="button" class="sm px">✕</button></div>';
+      el.querySelector('.ou').appendChild(pop);
+      var r = btn.getBoundingClientRect(), w = 270, x = Math.min(Math.max(8, r.left), innerWidth - w - 8), y = r.bottom + 6;
+      if (y + 190 > innerHeight) y = Math.max(8, r.top - 196);
+      pop.style.left = x + 'px'; pop.style.top = y + 'px';
+      var close = function () { pop.remove(); document.removeEventListener('click', outside, true); };
+      var outside = function (e) { if (!pop.contains(e.target)) close(); };
+      setTimeout(function () { document.addEventListener('click', outside, true); }, 0);
+      pop.querySelector('.px').onclick = close;
+      pop.querySelector('.pa').onclick = function () { var emp = pop.querySelector('.pe').value, dp = pop.querySelector('.pd'); close(); setCell(k, emp, dp ? dp.value : null); };
+      var rm = pop.querySelector('.pc'); if (rm) rm.onclick = function () { close(); setCell(k, '', null); };
+      pop.querySelector('.pe').focus();
+    }
+    function setCell(k, emp, dept) {
+      var o = D.cells[k] || null, c = cell(k);
+      var nd = dept === null ? (c && c.dept || '') : dept;
+      if (!emp) nd = '';
+      if ((o ? o.emp : '') === emp && (o ? o.dept || '' : '') === nd) delete edits[k];
+      else edits[k] = emp ? { emp: emp, name: empName(emp), dept: nd } : null;
+      var g0 = el.querySelector('.dg') || el.querySelector('.cg'), sc = g0 ? g0.scrollLeft : 0, st = g0 ? g0.scrollTop : 0; draw(); var g = el.querySelector('.dg') || el.querySelector('.cg'); if (g) { g.scrollLeft = sc; g.scrollTop = st; }
+    }
+
+    /* ---- Quick assign: a team (or one employee) + a task + a period → every working day filled, then saved. ---- */
+    function quickForm(p, onlyEmp) {
+      var first = D.days[0] ? D.days[0].date : '', last = D.days.length ? D.days[D.days.length - 1].date : '';
+      var emps = D.employees.filter(function (e) { return e.active; });
+      p.innerHTML = '<h4 style="margin:0 0 10px">' + B(onlyEmp ? 'Custom schedule' : 'Quick assign', onlyEmp ? 'جدول مخصص' : 'تعيين سريع') + '</h4>' +
+        '<div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">' +
+          '<label style="font-size:12px">' + B('Task', 'المهمة') + '<br><select class="q-task" style="min-width:240px">' + D.tasks.map(function (t) { return '<option value="' + esc(t.id) + '">' + esc(t.ar) + ' · ' + esc(t.en) + '</option>'; }).join('') + '</select></label>' +
+          '<label style="font-size:12px">' + B('From', 'من') + '<br><input type="date" class="q-from" value="' + first + '" min="' + first + '" max="' + last + '"></label>' +
+          '<label style="font-size:12px">' + B('To', 'إلى') + '<br><input type="date" class="q-to" value="' + last + '" min="' + first + '" max="' + last + '"></label>' +
+          '<label style="font-size:12px">' + B('Ward / ADC', 'الجناح أو ADC') + '<br><input class="q-ward" list="ou-wards" placeholder="(اختياري)" style="min-width:200px"></label></div>' +
+        '<div style="margin-top:10px;font-size:12px;font-weight:600">' + B('Employees', 'الموظفون') + ' <span class="q-n" style="color:#71717a"></span></div>' +
+        '<input type="search" class="q-q" placeholder="بحث · Search" style="width:100%;max-width:420px;margin:6px 0">' +
+        '<div class="q-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 12px;max-height:220px;overflow:auto;border:1px solid #e4e4e7;border-radius:8px;padding:6px 10px">' +
+          emps.map(function (e) { return '<label style="display:flex;gap:8px;align-items:center;padding:4px 0;cursor:pointer" data-n="' + esc(e.name.toLowerCase()) + '"><input type="checkbox" value="' + esc(e.id) + '"' + (e.id === onlyEmp ? ' checked' : '') + '>' + esc(e.name) + '</label>'; }).join('') + '</div>' +
+        '<div class="row" style="margin-top:10px;gap:8px"><button type="button" class="pri q-go">' + B('Fill days and save', 'تعبئة الأيام وحفظ') + '</button><button type="button" class="sm q-x">' + B('Close', 'إغلاق') + '</button></div>' +
+        '<div class="q-msg" style="font-size:12px;margin-top:6px"></div>';
+      var n = function () { var k = p.querySelectorAll('.q-list input:checked').length; p.querySelector('.q-n').textContent = k ? '(' + k + ')' : ''; }; n();
+      p.querySelector('.q-list').onchange = n;
+      p.querySelector('.q-q').oninput = function () { var q = this.value.trim().toLowerCase(); p.querySelectorAll('.q-list label').forEach(function (l) { l.style.display = !q || l.dataset.n.indexOf(q) > -1 ? '' : 'none'; }); };
+      p.querySelector('.q-x').onclick = function () { p.hidden = true; };
+      p.querySelector('.q-go').onclick = function () {
+        var Q = p.querySelector('.q-msg'), tid = p.querySelector('.q-task').value, t = D.tasks.filter(function (x) { return x.id === tid; })[0];
+        var from = p.querySelector('.q-from').value, to = p.querySelector('.q-to').value, ward = p.querySelector('.q-ward').value.trim();
+        var ids = Array.prototype.map.call(p.querySelectorAll('.q-list input:checked'), function (i) { return i.value; });
+        if (!t || !ids.length || !from || !to || from > to) { Q.style.color = '#a3231b'; Q.textContent = 'يُرجى اختيار المهمة والموظفين وفترة صحيحة · Please choose a task, employees and a valid period'; return; }
+        var added = 0, full = 0;
+        D.days.forEach(function (d) {
+          if (d.date < from || d.date > to) return;
+          ids.forEach(function (id) {
+            for (var s0 = 0; s0 < 6; s0++) { var c0 = cell(d.date + '|' + t.id + '|' + s0); if (c0 && c0.emp === id) return; }      // already on this task that day
+            for (var s1 = 0; s1 < 6; s1++) {
+              var k = d.date + '|' + t.id + '|' + s1, c1 = cell(k);
+              if (!(c1 && c1.emp)) { if (s1 >= t.slots) t.slots = s1 + 1; var o = D.cells[k];
+                if (o && o.emp === id && (o.dept || '') === ward) delete edits[k]; else edits[k] = { emp: id, name: empName(id), dept: ward }; added++; return; }
+            }
+            full++;
+          });
+        });
+        draw();
+        if (!added) { Q.style.color = '#a3231b'; Q.textContent = 'لا توجد أيام جديدة للتعبئة · Nothing new to fill'; return; }
+        Q.style.color = '#16a34a'; Q.textContent = 'تمت تعبئة ' + added + ' خانة' + (full ? ' · تجاوز ' + full + ' (المهمة ممتلئة: 6 موظفين)' : '') + ' — جاري الحفظ…';
+        doSave();
+      };
+    }
+    function doSave() {
+      var ch = Object.keys(edits).map(function (k) { var p = k.split('|'), c = edits[k]; return { date: p[0], task: p[1], slot: +p[2], emp: c ? c.emp : '', dept: c ? c.dept : '' }; });
+      var nt = Object.keys(nedits).map(function (d) { return { date: d, note: nedits[d] }; });
+      saveB.disabled = true;
+      AuthGate.run('dutySave', D.month, ch, nt, D.version).then(function () { load().then(function () { msg(M, B('Saved', 'تم الحفظ'), true); }); })
+        .catch(function (e) { saveB.disabled = false; var m = String(e && e.message || ''); var extra = /(DUPLICATE_DAY|EMPLOYEE_INACTIVE|OUTSIDE_VALIDITY):(.*)/.exec(m);
+          msg(M, err(e) + (extra ? '<div class="ltr" style="font-weight:400">' + esc(extra[2]) + '</div>' : ''), false); if (/CONFLICT/.test(m)) load(); });
+    }
+    /* ---- views ---- */
+    function countFor(id) { var o = {}, tot = 0; Object.keys(D.cells).forEach(function (k) { var c = D.cells[k]; if (c.emp === id) { var t = k.split('|')[1]; o[t] = (o[t] || 0) + 1; tot++; } }); o._ = tot; return o; }
+    var EMP = '';
+    function drawEmp() {
+      var list = D.employees; EMP = EMP && list.some(function (e) { return e.id === EMP; }) ? EMP : (list[0] && list[0].id || '');
+      var rows = model('employee', EMP);
+      el.querySelector('.d-body').innerHTML = '<div class="row" style="margin-bottom:8px"><select class="d-emp">' + list.map(function (e) { return '<option value="' + esc(e.id) + '"' + (e.id === EMP ? ' selected' : '') + '>' + esc(e.name) + '</option>'; }).join('') + '</select>' + (D.canEdit === false ? '' : '<button type="button" class="pri sm d-own">' + B('Custom schedule for this employee', 'جدول مخصص لهذا الموظف') + '</button>') + '</div>' + tableHtml(rows);
+      el.querySelector('.d-emp').onchange = function () { EMP = this.value; drawEmp(); };
+      var ob = el.querySelector('.d-own'); if (ob) ob.onclick = function () { var p = el.querySelector('.d-qp'); p.hidden = false; quickForm(p, EMP); p.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    }
+    function drawSum() { el.querySelector('.d-body').innerHTML = tableHtml(model('summary')); }
+    function tableHtml(m) { return '<div style="overflow:auto"><table><thead><tr>' + m.head.map(function (h) { return '<th>' + B(esc(h[0]), esc(h[1])) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      m.rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c).replace(/\n/g, '<br>') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
+    /** Table model shared by the on-screen views and the Word / PowerPoint exports (saved data only). */
+    function model(kind, empId) {
+      if (kind === 'employee') {
+        var e = D.employees.filter(function (x) { return x.id === empId; })[0] || { name: '' };
+        return { title: ['Employee monthly schedule', 'الجدول الشهري للموظف'], sub: e.name + (e.empRef ? ' — ' + e.empRef : ''), landscape: false,
+          head: [['Date', 'التاريخ'], ['Day', 'اليوم'], ['Task', 'المهمة'], ['ADC dept', 'القسم']],
+          rows: D.days.map(function (d) { var t = [], dp = [];
+            D.tasks.forEach(function (x) { for (var s = 0; s < x.slots; s++) { var c = D.cells[d.date + '|' + x.id + '|' + s]; if (c && c.emp === empId) { t.push(x.ar + ' · ' + x.en); if (c.dept) dp.push(c.dept); } } });
+            return [d.date, d.ar, t.join('\n') || '—', dp.join('\n')]; }).concat([['', '', 'الإجمالي · Total: ' + countFor(empId)._, '']]) };
+      }
+      if (kind === 'summary') return { title: ['Task count per employee', 'ملخص عدد المهام لكل موظف'], sub: D.month, landscape: true,
+        head: [['Employee', 'الموظف']].concat(D.tasks.map(function (t) { return [t.en, t.ar]; }), [['Total', 'الإجمالي']]),
+        rows: D.employees.map(function (e) { var c = countFor(e.id); return [e.name].concat(D.tasks.map(function (t) { return String(c[t.id] || 0); }), [String(c._)]); }) };
+      return { title: ['Monthly task distribution', 'التوزيع الشهري للمهام'], sub: D.month, landscape: true,
+        head: [['Date', 'التاريخ'], ['Day', 'اليوم']].concat(D.tasks.map(function (t) { return [t.en, t.ar]; })).concat(D.canNote ? [['Notes', 'ملاحظات']] : []),
+        rows: D.days.map(function (d) { return [d.date.slice(5), d.ar].concat(D.tasks.map(function (t) { var n = [];
+          for (var s = 0; s < t.slots; s++) { var c = D.cells[d.date + '|' + t.id + '|' + s]; if (c) n.push(c.name + (c.dept ? ' (' + c.dept + ')' : '')); } return n.join('\n'); }))
+          .concat(D.canNote ? [D.notes[d.date] || ''] : []); }) };
+    }
+    /* ---- exports ---- */
+    function current() { return view === 'emp' ? ['employee', EMP] : view === 'sum' ? ['summary', ''] : ['month', '']; }
+    function doExport(fmt, btn) {
+      var X = el.querySelector('.d-xmsg');
+      if (fmt === 'screen') { var P0 = el.querySelector('.d-scr'); P0.hidden = !P0.hidden; if (!P0.hidden) screenInit(P0); return; }
+      if (dirty()) { X.innerHTML = B('Save first', 'يُرجى الحفظ أولًا'); return; }
+      var k = current(), m = model(k[0], k[1]), base = 'Pharmacy_Tracker_Roster_' + D.month + (k[0] === 'employee' ? '_' + (m.sub.split(' — ')[0] || '').replace(/\s+/g, '_') : k[0] === 'summary' ? '_summary' : '') + '_by_WaadAlwagdani';
+      btn.disabled = true; X.textContent = '…';
+      var done = function () { btn.disabled = false; X.textContent = ''; }, fail = function (e) { btn.disabled = false; X.innerHTML = err(e); };
+      if (fmt === 'pdf') return AuthGate.run('dutyPdf', D.month, k[0], k[1]).then(function (b64) {
+        var bin = atob(b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        save(base + '.pdf', new Blob([u], { type: 'application/pdf' })); done(); }).catch(fail);
+      var A = k[0] === 'month' ? a3Model() : null;
+      if (fmt === 'xlsx') return loadLib('xlsx').then(function () { return a3Xlsx(A || a3Model()).then(function (b) { save(base + '.xlsx', b); done(); }); }).catch(fail);
+      if (fmt === 'docx') return loadLib('docx').then(function () { return (A ? a3Docx(A) : toDocx(m)).then(function (b) { save(base + '.docx', b); done(); }); }).catch(fail);
+      if (fmt === 'pptx') return loadLib('pptx').then(function () { return (A ? a3Pptx(A, base) : toPptx(m, base)).then(done); }).catch(fail);
+    }
+
+    /* ---- Pharmacy screen deck: A3 slides for the display video — tasks + unavailable drugs, period chosen by the supervisor ---- */
+    function screenInit(P0) {
+      var t = new Date(), iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }, today = iso(t);
+      ['.sc-tf', '.sc-tt', '.sc-of', '.sc-ot'].forEach(function (q) { var i = P0.querySelector(q); if (!i.value) i.value = today; });
+      P0.querySelector('.sc-go').onclick = function () {
+        var g = function (q) { return P0.querySelector(q).value; }, M0 = P0.querySelector('.sc-msg'), b = this;
+        var tf = g('.sc-tf'), tt = g('.sc-tt'), of = g('.sc-of'), ot = g('.sc-ot');
+        if (!tf || !tt || !of || !ot || tf > tt || of > ot) { M0.textContent = 'يُرجى تحديد فترة صحيحة · Please set a valid period'; return; }
+        b.disabled = true; M0.textContent = '…';
+        var months = [], d0 = new Date(tf + 'T00:00:00'), d1 = new Date(tt + 'T00:00:00');
+        for (var y = d0.getFullYear(), m = d0.getMonth(); y < d1.getFullYear() || (y === d1.getFullYear() && m <= d1.getMonth()); m++) { if (m > 11) { m = 0; y++; } months.push(y + '-' + String(m + 1).padStart(2, '0')); if (months.length > 3) break; }
+        Promise.all([loadLib('pptx'), AuthGate.run('oosReport', of, ot)].concat(months.map(function (ym) { return ym === D.month && !dirty() ? Promise.resolve(D) : AuthGate.run('dutyGet', ym); })))
+          .then(function (r) { return screenDeck(r.slice(2), r[1], tf, tt, of, ot); })
+          .then(function () { b.disabled = false; M0.textContent = B('Deck downloaded — export it to video from PowerPoint', 'نزل العرض — يُحوَّل إلى فيديو من PowerPoint').replace(/<[^>]+>/g, ' '); },
+            function (e) { b.disabled = false; M0.innerHTML = err(e); });
+      };
+    }
+    function screenDeck(dataList, oos, tf, tt, of, ot) {
+      var p = new window.PptxGenJS(); p.defineLayout({ name: 'A3L', width: 16.54, height: 11.69 }); p.layout = 'A3L';
+      p.author = 'Pharmacy Tracker by WaadAlwagdani'; p.title = 'Pharmacy screen deck';
+      var EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      var F = 'Calibri', X0 = 0.4, WT = 15.74, TOP = 1.65, BOTTOM = 10.9, LINE = 0.3;
+      function frame(s, title, sub, page, pages) {
+        s.background = { color: 'FFFFFF' };
+        s.addText('PHARMACEUTICAL CARE OPERATIONS', { x: X0, y: 0.25, w: 10, h: 0.3, fontFace: F, fontSize: 11, bold: true, color: A3.BLUE });
+        s.addText(title, { x: X0, y: 0.55, w: 12, h: 0.6, fontFace: F, fontSize: 28, bold: true, color: A3.NAVY });
+        s.addText(sub, { x: X0, y: 1.12, w: 12, h: 0.35, fontFace: F, fontSize: 14, color: A3.MUTED });
+        if (pages > 1) s.addText(page + ' / ' + pages, { x: 13.6, y: 0.6, w: 2.54, h: 0.4, fontFace: F, fontSize: 14, bold: true, color: A3.MUTED, align: 'right' });
+        s.addText('Pharmacy Tracker by WaadAlwagdani', { x: X0, y: 11.2, w: 6, h: 0.25, fontFace: F, fontSize: 9, color: '94A3B8' });
+      }
+      var hc = function (t) { return { text: t, options: { bold: true, color: 'FFFFFF', fill: { color: A3.NAVY }, fontSize: 12, align: 'center', valign: 'middle' } }; };
+      // 1) tasks: one row per day, one column per task; rows move to a new slide when the A3 page is full
+      var D0 = dataList[0], tasks = D0.tasks.map(function (t) { var mx = t.slots; dataList.forEach(function (dd) { var x = dd.tasks.filter(function (y) { return y.id === t.id; })[0]; if (x) mx = Math.max(mx, x.slots); }); return { id: t.id, en: t.en, ar: t.ar, slots: mx }; });
+      var days = [];
+      dataList.forEach(function (dd) { dd.days.forEach(function (day) { if (day.date < tf || day.date > tt) return;
+        var dow = new Date(day.date + 'T00:00:00').getDay();
+        var cells = tasks.map(function (t) { var v = []; for (var s2 = 0; s2 < t.slots; s2++) { var c = dd.cells[day.date + '|' + t.id + '|' + s2]; if (c) v.push(c.name + (c.dept ? ' (' + c.dept + ')' : '')); } return v; });
+        days.push({ date: day.date, dow: dow, cells: cells, lines: Math.max(1, Math.max.apply(null, cells.map(function (v) { return v.length; }))) }); }); });
+      // page budget in inches: header row ≈ 0.75 in, each day ≈ 0.22 in per name line + padding
+      var pagesT = [], cur = [], used = 0, budget = (BOTTOM - TOP) - 0.75;
+      days.forEach(function (d) { var need = d.lines * 0.22 + 0.14; if (cur.length && used + need > budget) { pagesT.push(cur); cur = []; used = 0; } cur.push(d); used += need; });
+      if (cur.length || !pagesT.length) pagesT.push(cur);
+      var cwT = [1.3, 1.3].concat(tasks.map(function () { return (WT - 2.6) / tasks.length; }));
+      var subT = (tf === tt ? tf : tf + '  →  ' + tt);
+      pagesT.forEach(function (pg, pi) {
+        var s = p.addSlide(); frame(s, 'Task Distribution · توزيع المهام', subT, pi + 1, pagesT.length);
+        var rows = [[hc('Date'), hc('Day')].concat(tasks.map(function (t) { return { text: t.ar + '\n' + t.en, options: { bold: true, color: 'FFFFFF', fill: { color: A3.NAVY }, fontSize: 9, align: 'center', valign: 'middle' } }; }))];
+        if (!pg.length) rows.push([{ text: 'لا توجد بيانات للفترة المحددة · No assignments in this period', options: { colspan: 2 + tasks.length, align: 'center', fontSize: 14, color: A3.MUTED } }]);
+        pg.forEach(function (d) { var wk = !(D0.workdays || [0, 1, 2, 3, 4]).some(function (w) { return w === d.dow; });
+          rows.push([{ text: d.date.slice(5), options: { bold: true, fontSize: 13, color: A3.NAVY, fill: { color: A3.DATE_BG }, align: 'center', valign: 'middle' } },
+                     { text: AR[d.dow] + '\n' + EN[d.dow], options: { bold: true, fontSize: 11, color: A3.NAVY, fill: { color: A3.DATE_BG }, align: 'center', valign: 'middle' } }]
+            .concat(d.cells.map(function (v) { return { text: v.join('\n'), options: { fontSize: 12, color: A3.INK, fill: { color: wk ? A3.WKND : A3.CELL }, align: 'center', valign: 'middle' } }; }))); });
+        s.addTable(rows, { x: X0, y: TOP, w: WT, colW: cwT, fontFace: F, border: { type: 'solid', pt: 1.5, color: 'FFFFFF' }, rowH: LINE, autoPage: false });
+      });
+      // 2) unavailable drugs: fixed rows per A3 page, the rest continues on the next slide
+      var PER = 20, pagesO = []; for (var i = 0; i < Math.max(1, oos.length); i += PER) pagesO.push(oos.slice(i, i + PER));
+      var subO = (of === ot ? of : of + '  →  ' + ot) + '  ·  ' + oos.length + ' ' + 'items · صنف';
+      pagesO.forEach(function (pg, pi) {
+        var s = p.addSlide(); frame(s, 'Unavailable Drugs · الأدوية غير المتوفرة', subO, pi + 1, pagesO.length);
+        var rows = [[hc('#'), hc('Item · الصنف'), hc('Strength · التركيز'), hc('Group · الفئة'), hc('Reports · البلاغات'), hc('Departments · الأقسام'), hc('Last report · آخر بلاغ')]];
+        if (!pg.length) rows.push([{ text: 'لا توجد بلاغات في الفترة المحددة · No reports in this period', options: { colspan: 7, align: 'center', fontSize: 14, color: A3.MUTED } }]);
+        pg.forEach(function (r, k) { var z = k % 2 ? 'FFFFFF' : A3.CELL;
+          rows.push([String(pi * PER + k + 1), r.item, r.strength, r.group, String(r.n), r.depts, r.last].map(function (v, j) {
+            return { text: v || '', options: { fontSize: 13, bold: j === 1, color: A3.INK, fill: { color: z }, align: j === 1 || j === 5 ? 'left' : 'center', valign: 'middle' } }; })); });
+        s.addTable(rows, { x: X0, y: TOP, w: WT, colW: [0.6, 4.6, 1.9, 1.5, 1.4, 3.6, 2.14], fontFace: F, border: { type: 'solid', pt: 1, color: 'E2E8F0' }, rowH: 0.42, autoPage: false });
+      });
+      return p.writeFile({ fileName: 'Pharmacy_Screen_Deck_' + tf + '_by_WaadAlwagdani.pptx' });
+    }
+    /* ---- A3 template (monthly distribution): same layout for Excel, Word and PowerPoint as the PDF ---- */
+    var A3 = { NAVY: '1E293B', INK: '0F172A', BLUE: '3B5998', MUTED: '64748B', WEEK_BG: 'DBEAFE', WEEK_FG: '1E3A8A', DATE_BG: 'EFF6FF', CELL: 'F1F5F9', WKND: 'F8FAFC', FOOT: '334155' };
+    function a3Model() {
+      var p = D.month.split('-'), y = +p[0], mo = +p[1], n = new Date(y, mo, 0).getDate(), EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], work = {}, weeks = [], wk = null;
+      (D.workdays || [0, 1, 2, 3, 4]).forEach(function (w) { work[w] = 1; });
+      for (var day = 1; day <= n; day++) {
+        var dow = new Date(y, mo - 1, day).getDay(), iso = D.month + '-' + String(day).padStart(2, '0');
+        if (!wk || dow === 0) { wk = { label: String(weeks.length + 1).padStart(2, '0') + '  WEEK ' + (weeks.length + 1), days: [] }; weeks.push(wk); }
+        wk.days.push({ md: iso.slice(5), dow: EN[dow], weekend: !work[dow], note: D.notes[iso] || '', cells: D.tasks.map(function (t) {
+          var v = []; for (var s2 = 0; s2 < t.slots; s2++) { var c = D.cells[iso + '|' + t.id + '|' + s2]; if (c) v.push(c.name + (c.dept ? ' (' + c.dept + ')' : '')); } return v.join('\n'); }) });
+      }
+      var monthName = new Date(y, mo - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      return { top: 'PHARMACEUTICAL CARE OPERATIONS', title: 'Monthly Task Distribution', sub: 'Pharmacy daily shift and unit assignments — ' + monthName,
+        head: ['Date', 'Day'].concat(D.tasks.map(function (t) { return t.en; }), ['Notes']), weeks: weeks,
+        foot: ['CONFIDENTIAL • INTERNAL HOSPITAL USE ONLY', 'Prepared By: ___________________________', 'Pharmacy Director Approval: ___________________________'] };
+    }
+    var A3W = [9, 8, 13, 14, 15, 15, 15, 15, 14, 16, 14, 13, 14, 13];
+    function a3Xlsx(M) {
+      var wb = new window.ExcelJS.Workbook(); wb.creator = 'Pharmacy Tracker by WaadAlwagdani';
+      var ws = wb.addWorksheet('Monthly Task Distribution', { views: [{ showGridLines: false }],
+        pageSetup: { paperSize: 8, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 1, margins: { left: 0.3, right: 0.3, top: 0.35, bottom: 0.35, header: 0.2, footer: 0.2 } } });
+      var W = M.head.length, F = function (o) { return Object.assign({ name: 'Calibri', size: 9 }, o); }, fill = function (c) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c } }; };
+      ws.columns = M.head.map(function (h, i) { return { width: i === W - 1 ? 22 : (A3W[i] || 14) }; });
+      var col = function (i) { var s3 = ''; i++; while (i > 0) { var m3 = (i - 1) % 26; s3 = String.fromCharCode(65 + m3) + s3; i = Math.floor((i - 1) / 26); } return s3; };
+      ws.mergeCells('A1:I1'); ws.mergeCells('A2:I2'); ws.mergeCells('A3:I3');
+      ws.getCell('A1').value = M.top; ws.getCell('A1').font = F({ size: 10, bold: true, color: { argb: 'FF' + A3.BLUE } }); ws.getCell('A1').alignment = { vertical: 'bottom' };
+      ws.getCell('A2').value = M.title; ws.getCell('A2').font = F({ size: 24, bold: true, color: { argb: 'FF' + A3.NAVY } }); ws.getCell('A2').alignment = { vertical: 'middle' };
+      ws.getCell('A3').value = M.sub; ws.getCell('A3').font = F({ size: 12, color: { argb: 'FF' + A3.MUTED } }); ws.getCell('A3').alignment = { vertical: 'middle' };
+      [18, 32, 20, 18, 10, 46].forEach(function (h, i) { ws.getRow(i + 1).height = h; });
+      var hr = ws.getRow(6); M.head.forEach(function (h, i) { var c = hr.getCell(i + 1); c.value = h; c.font = F({ bold: true, color: { argb: 'FF' + A3.INK } });
+        c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }; c.border = { bottom: { style: 'medium', color: { argb: 'FF' + A3.NAVY } } }; });
+      var white = { style: 'medium', color: { argb: 'FFFFFFFF' } }, r = 7;
+      M.weeks.forEach(function (wk) {
+        ws.mergeCells('A' + r + ':' + col(W - 1) + r); var c = ws.getCell('A' + r); c.value = wk.label; c.font = F({ size: 10, bold: true, color: { argb: 'FF' + A3.WEEK_FG } });
+        c.fill = fill(A3.WEEK_BG); c.alignment = { horizontal: 'left', vertical: 'middle' }; ws.getRow(r).height = 20; r++;
+        wk.days.forEach(function (dd) {
+          var row = ws.getRow(r), vals = [dd.md, dd.dow].concat(dd.cells, [dd.note]), lines = 1;
+          vals.forEach(function (v, i) { var c2 = row.getCell(i + 1); c2.value = v || null; lines = Math.max(lines, String(v || '').split('\n').length);
+            c2.font = F({ color: { argb: 'FF' + (i < 2 ? A3.NAVY : A3.INK) } }); c2.alignment = { horizontal: 'center', vertical: 'middle', wrapText: i > 1 };
+            c2.fill = fill(i < 2 ? A3.DATE_BG : dd.weekend ? A3.WKND : A3.CELL); c2.border = { left: white, right: white, top: white, bottom: white }; });
+          row.height = Math.max(20, lines * 12 + 6); r++;
+        });
+      });
+      r++;
+      ws.mergeCells('A' + r + ':E' + r); ws.mergeCells('G' + r + ':J' + r); ws.mergeCells(col(W - 5) + r + ':' + col(W - 1) + r);
+      [['A', M.foot[0], 'left'], ['G', M.foot[1], 'left'], [col(W - 5), M.foot[2], 'right']].forEach(function (f) { var c = ws.getCell(f[0] + r); c.value = f[1]; c.font = F({ bold: true, color: { argb: 'FF' + A3.FOOT } }); c.alignment = { horizontal: f[2], vertical: 'middle' }; });
+      ws.getRow(r).height = 22;
+      ws.headerFooter.oddFooter = '&L&7Pharmacy Tracker by WaadAlwagdani';
+      ws.pageSetup.printArea = 'A1:' + col(W - 1) + r;
+      return wb.xlsx.writeBuffer().then(function (b) { return new Blob([b], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); });
+    }
+    function a3Docx(M) {
+      var d = window.docx, W = M.head.length;
+      var T = function (t, o) { return new d.TextRun(Object.assign({ text: String(t), font: 'Calibri', size: 18 }, o || {})); };
+      var P = function (t, o, po) { return new d.Paragraph(Object.assign({ children: String(t || '').split('\n').map(function (ln, i) { return T(ln, Object.assign({ break: i ? 1 : 0 }, o)); }) }, po || {})); };
+      var cell = function (t, o) { o = o || {}; return new d.TableCell({ shading: o.bg ? { fill: o.bg } : undefined, columnSpan: o.span, verticalAlign: d.VerticalAlign.CENTER,
+        borders: o.borders || { top: { style: d.BorderStyle.SINGLE, size: 12, color: 'FFFFFF' }, bottom: { style: d.BorderStyle.SINGLE, size: 12, color: 'FFFFFF' }, left: { style: d.BorderStyle.SINGLE, size: 12, color: 'FFFFFF' }, right: { style: d.BorderStyle.SINGLE, size: 12, color: 'FFFFFF' } },
+        children: [P(t, o.run, { alignment: o.left ? d.AlignmentType.LEFT : d.AlignmentType.CENTER })] }); };
+      var none = { style: d.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+      var rows = [new d.TableRow({ tableHeader: true, height: { value: 920, rule: 'atLeast' }, children: M.head.map(function (h) { return cell(h, { run: { bold: true, color: A3.INK }, borders: { top: none, left: none, right: none, bottom: { style: d.BorderStyle.SINGLE, size: 12, color: A3.NAVY } } }); }) })];
+      M.weeks.forEach(function (wk) {
+        rows.push(new d.TableRow({ height: { value: 400, rule: 'atLeast' }, children: [cell(wk.label, { span: W, bg: A3.WEEK_BG, left: true, run: { bold: true, size: 20, color: A3.WEEK_FG } })] }));
+        wk.days.forEach(function (dd) { rows.push(new d.TableRow({ height: { value: 400, rule: 'atLeast' }, children: [dd.md, dd.dow].concat(dd.cells, [dd.note]).map(function (v, i) {
+          return cell(v, { bg: i < 2 ? A3.DATE_BG : dd.weekend ? A3.WKND : A3.CELL, run: { color: i < 2 ? A3.NAVY : A3.INK } }); }) })); });
+      });
+      var doc = new d.Document({ creator: 'Pharmacy Tracker by WaadAlwagdani', title: M.title, sections: [{
+        properties: { page: { size: { orientation: d.PageOrientation.LANDSCAPE, width: 16838, height: 23811 }, margin: { top: 500, bottom: 500, left: 430, right: 430 } } },
+        footers: { default: new d.Footer({ children: [P('Pharmacy Tracker by WaadAlwagdani', { size: 14, color: '94A3B8' })] }) },
+        children: [P(M.top, { bold: true, size: 20, color: A3.BLUE }), P(M.title, { bold: true, size: 48, color: A3.NAVY }), P(M.sub, { size: 24, color: A3.MUTED }, { spacing: { after: 200 } }),
+          new d.Table({ width: { size: 100, type: d.WidthType.PERCENTAGE }, rows: rows }),
+          new d.Table({ width: { size: 100, type: d.WidthType.PERCENTAGE }, borders: { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none }, rows: [new d.TableRow({ children: M.foot.map(function (f, i) {
+            return new d.TableCell({ borders: { top: none, bottom: none, left: none, right: none }, children: [P(f, { bold: true, color: A3.FOOT }, { alignment: i === 2 ? d.AlignmentType.RIGHT : d.AlignmentType.LEFT, spacing: { before: 240 } })] }); }) })] })] }] });
+      return d.Packer.toBlob(doc);
+    }
+    function a3Pptx(M, base) {
+      var p = new window.PptxGenJS(); p.defineLayout({ name: 'A3L', width: 16.54, height: 11.69 }); p.layout = 'A3L'; p.author = 'Pharmacy Tracker by WaadAlwagdani'; p.title = M.title;
+      var W = M.head.length, hdr = M.head.map(function (h) { return { text: h, options: { bold: true, color: A3.INK, fontSize: 8, align: 'center', valign: 'middle', border: [{ type: 'none' }, { type: 'none' }, { pt: 1.5, color: A3.NAVY }, { type: 'none' }] } }; });
+      var cw = M.head.map(function (h, i) { return i === W - 1 ? 22 : (A3W[i] || 14); }), tot = cw.reduce(function (a, b) { return a + b; }, 0), widths = cw.map(function (w) { return 15.9 * w / tot; });
+      for (var i = 0; i < M.weeks.length; i += 2) {
+        var s = p.addSlide(); s.background = { color: 'FFFFFF' };
+        s.addText(M.top, { x: 0.3, y: 0.2, w: 10, h: 0.3, fontFace: 'Calibri', fontSize: 10, bold: true, color: A3.BLUE });
+        s.addText(M.title, { x: 0.3, y: 0.48, w: 12, h: 0.55, fontFace: 'Calibri', fontSize: 24, bold: true, color: A3.NAVY });
+        s.addText(M.sub, { x: 0.3, y: 1.0, w: 12, h: 0.35, fontFace: 'Calibri', fontSize: 12, color: A3.MUTED });
+        var rows = [hdr];
+        M.weeks.slice(i, i + 2).forEach(function (wk) {
+          rows.push([{ text: wk.label, options: { colspan: W, bold: true, fontSize: 10, color: A3.WEEK_FG, fill: { color: A3.WEEK_BG }, align: 'left' } }]);
+          wk.days.forEach(function (dd) { rows.push([dd.md, dd.dow].concat(dd.cells, [dd.note]).map(function (v, j) { return { text: v || '', options: { fontSize: 8, align: 'center', valign: 'middle', color: j < 2 ? A3.NAVY : A3.INK,
+            fill: { color: j < 2 ? A3.DATE_BG : dd.weekend ? A3.WKND : A3.CELL }, border: { pt: 1.5, color: 'FFFFFF' } } }; })); });
+        });
+        s.addTable(rows, { x: 0.3, y: 1.5, w: 15.9, colW: widths, fontFace: 'Calibri', rowH: 0.3 });
+        s.addText(M.foot[0], { x: 0.3, y: 11.05, w: 5, h: 0.3, fontFace: 'Calibri', fontSize: 9, bold: true, color: A3.FOOT });
+        s.addText(M.foot[1], { x: 5.6, y: 11.05, w: 5, h: 0.3, fontFace: 'Calibri', fontSize: 9, bold: true, color: A3.FOOT });
+        s.addText(M.foot[2], { x: 10.9, y: 11.05, w: 5.3, h: 0.3, fontFace: 'Calibri', fontSize: 9, bold: true, color: A3.FOOT, align: 'right' });
+        s.addText('Pharmacy Tracker by WaadAlwagdani', { x: 0.3, y: 11.35, w: 6, h: 0.22, fontFace: 'Calibri', fontSize: 7, color: '94A3B8' });
+      }
+      return p.writeFile({ fileName: base + '.pptx' });
+    }
+    function toDocx(m) {
+      var d = window.docx, R = function (t, o) { return new d.TextRun(Object.assign({ text: String(t), rightToLeft: true, font: 'Arial' }, o || {})); };
+      var P = function (t, o, po) { return new d.Paragraph(Object.assign({ bidirectional: true, alignment: d.AlignmentType.CENTER, children: String(t).split('\n').map(function (line, i) { return R(line, Object.assign({ break: i ? 1 : 0 }, o)); }) }, po || {})); };
+      var head = new d.TableRow({ tableHeader: true, children: m.head.map(function (h) { return new d.TableCell({ shading: { fill: '1F2A44' }, children: [P(h[1] + '\n' + h[0], { bold: true, color: 'FFFFFF', size: 16 })] }); }) });
+      var rows = m.rows.map(function (r) { return new d.TableRow({ children: r.map(function (c) { return new d.TableCell({ children: [P(c, { size: m.landscape ? 14 : 18 })] }); }) }); });
+      var doc = new d.Document({ creator: 'Pharmacy Tracker by WaadAlwagdani', title: m.title[1], sections: [{
+        properties: { page: { size: { orientation: m.landscape ? d.PageOrientation.LANDSCAPE : d.PageOrientation.PORTRAIT }, margin: { top: 600, bottom: 600, left: 500, right: 500 } } },
+        children: [P(m.title[1] + ' · ' + m.title[0], { bold: true, size: 28, color: '1F2A44' }), P((D.orgName ? D.orgName + ' — ' : '') + m.sub, { size: 18, color: '5B6472' }),
+          new d.Table({ visuallyRightToLeft: true, width: { size: 100, type: d.WidthType.PERCENTAGE }, rows: [head].concat(rows) }),
+          P('Pharmacy Tracker by WaadAlwagdani', { size: 14, color: '5B6472' })] }] });
+      return d.Packer.toBlob(doc);
+    }
+    function toPptx(m, base) {
+      var p = new window.PptxGenJS(); p.layout = 'LAYOUT_WIDE'; p.rtlMode = true; p.author = 'Pharmacy Tracker by WaadAlwagdani'; p.title = m.title[1];
+      var per = m.landscape ? 6 : 12, fs = m.head.length > 8 ? 8 : 11;
+      var head = m.head.slice().reverse().map(function (h) { return { text: h[1] + '\n' + h[0], options: { bold: true, color: 'FFFFFF', fill: { color: '1F2A44' }, align: 'center', valign: 'middle', fontSize: fs } }; });
+      for (var i = 0; i < Math.max(1, m.rows.length); i += per) {
+        var s = p.addSlide();
+        s.addText(m.title[1] + ' · ' + m.title[0] + '  —  ' + m.sub, { x: 0.4, y: 0.2, w: 12.5, h: 0.5, fontSize: 18, bold: true, color: '1F2A44', rtlMode: true, align: 'right', fontFace: 'Arial' });
+        s.addTable([head].concat(m.rows.slice(i, i + per).map(function (r) { return r.slice().reverse().map(function (c) { return { text: c, options: { align: 'center', valign: 'middle', fontSize: fs } }; }); })),
+          { x: 0.3, y: 0.8, w: 12.7, border: { type: 'solid', pt: 0.5, color: '9AA3AF' }, fontFace: 'Arial', rtlMode: true });
+        s.addText('Pharmacy Tracker by WaadAlwagdani', { x: 0.4, y: 7.05, w: 12.5, h: 0.3, fontSize: 9, color: '5B6472', align: 'center' });
+      }
+      return p.writeFile({ fileName: base + '.pptx' });
+    }
+    /* ---- task settings (Owner / Pharmacy Supervisor) ---- */
+    function cfgForm(p) {
+      var T = D.tasks.map(function (t) { return Object.assign({}, t); });
+      function rowsHtml() { return T.map(function (t, i) { return '<tr data-i="' + i + '"><td><input type="text" data-f="ar" value="' + esc(t.ar) + '" placeholder="الاسم بالعربية"></td><td><input type="text" data-f="en" class="ltr" value="' + esc(t.en) + '" placeholder="English name"></td>' +
+        '<td><input type="number" data-f="slots" min="1" max="6" value="' + t.slots + '"></td><td style="text-align:center"><input type="checkbox" data-f="adc"' + (t.adc ? ' checked' : '') + '></td><td><button type="button" class="sm danger" data-del="' + i + '">✕</button></td></tr>'; }).join(''); }
+      var DN = [['Sun', 'الأحد'], ['Mon', 'الاثنين'], ['Tue', 'الثلاثاء'], ['Wed', 'الأربعاء'], ['Thu', 'الخميس'], ['Fri', 'الجمعة'], ['Sat', 'السبت']];
+      p.innerHTML = '<h3>' + B('Tasks', 'المهام') + '</h3><div style="overflow:auto"><table class="tk"><thead><tr><th>' + B('Arabic', 'عربي') + '</th><th>' + B('English', 'إنجليزي') + '</th><th>' + B('Employees', 'عدد الموظفين') + '</th><th>' + B('ADC dept', 'قسم ADC') + '</th><th></th></tr></thead><tbody class="tkb">' + rowsHtml() + '</tbody></table></div>' +
+        '<button type="button" class="sm t-add" style="margin-top:8px">' + B('+ Task', 'إضافة مهمة') + '</button> <button type="button" class="sm t-def" style="margin-top:8px">' + B('Load default list', 'تحميل القائمة الافتراضية') + '</button>' +
+        '<h3 style="margin-top:14px">' + B('Working days', 'أيام العمل') + '</h3><div class="chips">' + DN.map(function (n, i) { return '<label class="chk"><input type="checkbox" class="t-day" value="' + i + '"' + (D.workdays.indexOf(i) > -1 ? ' checked' : '') + '>' + n[1] + ' · ' + n[0] + '</label>'; }).join('') + '</div>' +
+        '<h3 style="margin-top:14px">' + B('ADC departments (one per line)', 'أقسام أجهزة ADC (قسم في كل سطر)') + '</h3><textarea class="t-adc ltr" rows="8" style="width:100%;border:1px solid #c3cad3;border-radius:8px;padding:8px;font-family:inherit">' + esc(D.adc.join('\n')) + '</textarea>' +
+        '<div class="row" style="margin-top:10px"><button type="button" class="pri t-save">' + B('Save tasks', 'حفظ المهام') + '</button></div><div class="msg t-msg"></div>';
+      function sync() { p.querySelectorAll('.tkb tr').forEach(function (tr) { var t = T[+tr.dataset.i]; tr.querySelectorAll('[data-f]').forEach(function (i) { t[i.dataset.f] = i.type === 'checkbox' ? i.checked : i.value; }); }); }
+      function bind() { p.querySelectorAll('[data-del]').forEach(function (b) { b.onclick = function () { sync(); T.splice(+b.dataset.del, 1); p.querySelector('.tkb').innerHTML = rowsHtml(); bind(); }; }); }
+      bind();
+      p.querySelector('.t-def').onclick = function () { T = (D.defaultTasks || []).map(function (t) { return Object.assign({}, t); }); p.querySelector('.tkb').innerHTML = rowsHtml(); bind(); };
+      p.querySelector('.t-add').onclick = function () { sync(); T.push({ id: '', ar: '', en: '', slots: 1, adc: false }); p.querySelector('.tkb').innerHTML = rowsHtml(); bind(); };
+      p.querySelector('.t-save').onclick = function () {
+        sync(); var b = this; b.disabled = true;
+        var days = [].slice.call(p.querySelectorAll('.t-day:checked')).map(function (x) { return +x.value; });
+        AuthGate.run('dutySaveConfig', { tasks: T, adc: p.querySelector('.t-adc').value.split('\n'), days: days }).then(function () { b.disabled = false; p.hidden = true; load().then(function () { msg(M, B('Tasks saved', 'تم حفظ المهام'), true); }); })
+          .catch(function (e) { b.disabled = false; msg(p.querySelector('.t-msg'), err(e), false); });
+      };
+    }
+  }
+
+  /* ---------------- Supervision ---------------- */
+  function supervision(el) {
+    el.innerHTML = '<div class="ou"><div class="s-body"><div class="empty">…</div></div></div>';
+    var flash = null;   // confirmation shown again after the panel reloads
+    load();
+    function load() {
+      AuthGate.run('orgOverview').then(function (d) {
+        var body = el.querySelector('.s-body');
+        var catOpt = function (v) { return '<option value=""></option>' + d.categories.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === v ? ' selected' : '') + '>' + esc((c.en ? c.en + ' · ' : '') + c.label) + '</option>'; }).join(''); };
+        var respName = function (c) { var x = d.resps.filter(function (y) { return y.code === c; })[0]; return x ? esc(x.en + ' · ' + x.ar) : esc(c); };
+        if (!d.canManage) {
+          body.innerHTML = '<div class="panel"><h3>' + B('My team', 'فريقي') + '</h3>' + (d.mine.emps.length ? '<table><tbody>' + d.mine.emps.map(function (e) {
+            return '<tr><td>' + esc(e.name) + '</td><td>' + e.resps.map(respName).join('<br>') + '</td><td><span class="tag ' + (e.active ? 't-ok' : 't-warn') + '">' + (e.active ? 'active' : 'inactive') + '</span></td></tr>'; }).join('') + '</tbody></table>'
+            : '<div class="empty">' + B('No employees assigned yet', 'لا موظفين مسندين بعد') + '</div>') + '</div>';
+          return;
+        }
+        body.innerHTML = d.supervisors.length ? d.supervisors.map(function (s) {
+          return '<div class="panel" data-s="' + esc(s.id) + '"><div class="row" style="justify-content:space-between"><h3 style="margin:0">' + esc(s.name) + ' <span class="ltr" style="color:#5b6472;font-weight:500">@' + esc(s.username) + '</span></h3>' +
+            '<select class="s-cat" aria-label="category">' + catOpt(s.category) + '</select></div>' +
+            '<label class="f" style="margin-top:10px">' + B('Employees', 'الموظفون') + '</label><div class="chips">' + d.employees.map(function (e) {
+              return '<label class="chk"><input type="checkbox" value="' + esc(e.id) + '"' + (s.emps.indexOf(e.id) > -1 ? ' checked' : '') + ' class="s-emp">' + esc(e.name) + '</label>'; }).join('') + '</div>' +
+            '<label class="f" style="margin-top:10px">' + B('Responsibilities overseen (none = all)', 'المسؤوليات تحت الإشراف (بلا تحديد = الكل)') + '</label><div class="chips">' + d.resps.map(function (r) {
+              return '<label class="chk"><input type="checkbox" value="' + r.code + '"' + (s.scopeResps.indexOf(r.code) > -1 ? ' checked' : '') + ' class="s-resp">' + esc(r.en) + ' · ' + esc(r.ar) + '</label>'; }).join('') + '</div>' +
+            '<div class="row" style="margin-top:10px"><button type="button" class="pri s-save">' + B('Save', 'حفظ') + '</button></div><div class="msg s-msg"></div></div>';
+        }).join('') : '<div class="panel empty">' + B('No department supervisor accounts yet — the Owner creates them', 'لا حسابات لمشرفي الأقسام بعد — ينشئها المالك') + '</div>';
+        if (flash) { var fp = body.querySelector('[data-s="' + flash + '"] .s-msg'); if (fp) msg(fp, B('Saved', 'تم الحفظ'), true); flash = null; }
+        body.querySelectorAll('[data-s]').forEach(function (p) {
+          p.querySelector('.s-save').onclick = function () {
+            var b = this; b.disabled = true;
+            var emps = [].slice.call(p.querySelectorAll('.s-emp:checked')).map(function (x) { return x.value; });
+            var resps = [].slice.call(p.querySelectorAll('.s-resp:checked')).map(function (x) { return x.value; });
+            AuthGate.run('orgSetSupervision', p.dataset.s, emps, resps, p.querySelector('.s-cat').value).then(function () { b.disabled = false; flash = p.dataset.s; load(); })
+              .catch(function (e) { b.disabled = false; msg(p.querySelector('.s-msg'), err(e), false); });
+          };
+        });
+      }).catch(function (e) { el.querySelector('.s-body').innerHTML = '<div class="panel msg err">' + err(e) + '</div>'; });
+    }
+  }
+
+  /* ---------------- Tabs helper ---------------- */
+  function tabs(host, list) {
+    host.innerHTML = '<div class="ou"><div class="ou-tabs" role="tablist" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' + list.map(function (t, i) {
+      return '<button type="button" role="tab" data-t="' + i + '" style="height:40px;padding:0 14px;border:1px solid #dde1e7;border-radius:999px;background:' + (i ? '#fff' : '#0a0a0a') + ';color:' + (i ? '#171b1f' : '#fff') + ';font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">' + t.en + ' · ' + t.ar + '</button>';
+    }).join('') + '</div><div class="ou-pane"></div></div>';
+    var pane = host.querySelector('.ou-pane'), btns = host.querySelectorAll('[data-t]');
+    function show(i) { btns.forEach(function (b, j) { b.style.background = j === i ? '#0a0a0a' : '#fff'; b.style.color = j === i ? '#fff' : '#171b1f'; b.setAttribute('aria-selected', j === i); }); pane.innerHTML = ''; list[i].render(pane); }
+    btns.forEach(function (b) { b.onclick = function () { show(+b.dataset.t); }; });
+    show(0);
+  }
+
+  return { B: B, esc: esc, err: err, msg: msg, monitor: monitor, duty: duty, roster: duty, supervision: supervision, tabs: tabs, iso: iso, loadLib: loadLib };
+})();
+</script>
+
+<div class="wrap">
+  <div class="banner"><div><b>طلبات الأقسام · Ward Requests</b><br><small>Floor stock · Crash cart</small></div><button class="btn sec" id="rf" type="button">تحديث · Refresh</button></div>
+  <div id="main"><div class="card muted">Loading · جاري التحميل…</div></div>
+  <footer>Pharmacy Tracker by WaadAlwagdani</footer>
+</div>
+<script>
+  /* Ward request desk — Pharmacy Tracker by WaadAlwagdani */
+  var E = function (s) { return OrgUI.esc(s); }, D = null, F = 'open', TF = '';
+  var AR = { New: 'جديد', Preparing: 'قيد التجهيز', Ready: 'جاهز للاستلام', Delivered: 'تم التسليم', Cancelled: 'ملغى' };
+  var NEXT = { New: ['Preparing', 'Cancelled'], Preparing: ['Ready', 'Cancelled'], Ready: ['Delivered'], Delivered: [], Cancelled: [] };
+  var TAR = { 'Floor stock': 'مخزون القسم', 'Crash cart': 'عربة الطوارئ' };
+  function load() { return AuthGate.run('wardQueue').then(function (d) { D = d; draw(); }, function (e) { document.getElementById('main').innerHTML = '<div class="card msg err">' + E(OrgUI.err(e)) + '</div>'; }); }
+  function draw() {
+    var m = document.getElementById('main');
+    var cnt = function (st) { return D.rows.filter(function (r) { return (!TF || r.type === TF) && st.indexOf(r.status) > -1; }).length; };
+    var h = '<div class="k"><div><b>' + cnt(['New']) + '</b><span>جديد · New</span></div><div><b>' + cnt(['Preparing']) + '</b><span>قيد التجهيز · Preparing</span></div><div><b>' + cnt(['Ready']) + '</b><span>جاهز · Ready</span></div></div>';
+    h += '<div class="filt">' + [['open', 'المفتوحة · Open'], ['done', 'المنتهية · Closed'], ['all', 'الكل · All']].map(function (f) { return '<button type="button" data-f="' + f[0] + '" class="' + (F === f[0] ? 'on' : '') + '">' + f[1] + '</button>'; }).join('');
+    if (D.types.length > 1) h += '<span style="width:12px"></span>' + [['', 'كل الأنواع · All types']].concat(D.types.map(function (t) { return [t, TAR[t] + ' · ' + t]; })).map(function (t) { return '<button type="button" data-t="' + E(t[0]) + '" class="' + (TF === t[0] ? 'on' : '') + '">' + E(t[1]) + '</button>'; }).join('');
+    h += '</div>';
+    var rows = D.rows.filter(function (r) { var open = ['New', 'Preparing', 'Ready'].indexOf(r.status) > -1; return (!TF || r.type === TF) && (F === 'all' || (F === 'open' ? open : !open)); });
+    if (F === 'open') rows.reverse();   // oldest open request first
+    h += rows.length ? rows.map(function (r) {
+      return '<div class="req"><div class="top"><div><b>' + E(r.dept) + '</b> <span class="muted">· ' + E(r.facility) + '</span><br><span class="muted">' + E(TAR[r.type] || '') + ' · ' + E(r.type) + ' · ' + E(r.id) + ' · ' + E(r.at) + ' · ' + E(r.by) + '</span></div>' +
+        '<span class="pill ' + E(r.status) + '">' + E(AR[r.status] || r.status) + ' · ' + E(r.status) + '</span></div>' +
+        '<ul>' + r.items.map(function (it) { return '<li>' + E(it.name) + (it.strength ? ' ' + E(it.strength) : '') + ' — <b>' + it.qty + '</b></li>'; }).join('') + '</ul>' +
+        (r.note ? '<div class="muted">ملاحظة · Note: ' + E(r.note) + '</div>' : '') +
+        (r.handler ? '<div class="muted">آخر تحديث · Updated: ' + E(r.handler) + ' · ' + E(r.updated) + '</div>' : '') +
+        (NEXT[r.status] && NEXT[r.status].length ? '<div class="acts" style="margin-top:8px">' + NEXT[r.status].map(function (n) { return '<button type="button" class="btn' + (n === 'Cancelled' ? ' sec' : '') + '" data-id="' + E(r.id) + '" data-s="' + n + '">' + AR[n] + ' · ' + n + '</button>'; }).join('') + '</div>' : '') +
+        '</div>';
+    }).join('') : '<div class="card muted">لا توجد طلبات · No requests</div>';
+    m.innerHTML = h;
+    m.querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { F = b.dataset.f; draw(); }; });
+    m.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { TF = b.dataset.t; draw(); }; });
+    m.querySelectorAll('[data-s]').forEach(function (b) { b.onclick = function () {
+      if (b.dataset.s === 'Cancelled' && !confirmCancel(b)) return;
+      b.disabled = true; AuthGate.run('wardSetStatus', b.dataset.id, b.dataset.s).then(load, function (e) { b.disabled = false; alertMsg(OrgUI.err(e)); });
+    }; });
+  }
+  function confirmCancel(b) { if (b.dataset.sure) return true; b.dataset.sure = '1'; b.textContent = 'تأكيد الإلغاء · Confirm'; return false; }
+  function alertMsg(t) { var m = document.getElementById('main'); var d = document.createElement('div'); d.className = 'card msg err'; d.textContent = t; m.prepend(d); }
+  AuthGate.start({ accent: '#1c1c1c', bg: '#f6f5f2', barWidth: '1180px', page: 'ward', onReady: function () {
+    document.getElementById('rf').onclick = load; load(); setInterval(function () { if (!document.hidden) load(); }, 60000);
+  } });
+</script>
+</body>
+</html>
