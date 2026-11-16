@@ -749,6 +749,8 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet', 'لم يُربط شيت الجودة بعد'],
+    QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة شيت الجودة (محرر) مع حساب المنصة'],
     READ_ONLY: ['Quality accounts are view-only — nothing was changed', 'حساب الجودة للاطلاع فقط — لم يُحفظ أي تعديل'],
     ADC_NOT_ASSIGNED: ['This cabinet is not assigned to you', 'هذه الكابينة غير مُسندة إليك'],
     FORBIDDEN: ['Not permitted', 'غير مصرّح'], CONFLICT: ['Changed by someone else — reloaded', 'عُدّل من مستخدم آخر — أُعيد التحميل'],
@@ -1559,6 +1561,43 @@ var OosUI = (function () {
     }
     load();
   }
+  /* the quality department's own spreadsheet: send reports to it, read its tabs */
+  function qualitySheet(el){
+    var E=OrgUI.esc,S=null;
+    var box='background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px;margin-bottom:12px';
+    var btn='height:38px;border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:0 14px;cursor:pointer;font-family:inherit;font-weight:600';
+    function load(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';
+      AuthGate.run('qualityGet').then(function(s){S=s;draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+    function draw(){
+      var h='<div style="'+box+'"><b style="font-size:15px">شيت قسم الجودة · Quality department sheet</b>'+
+        '<div style="color:#71717a;font-size:13px;margin:4px 0 12px">شيت مستقل لقسم الجودة. ترسل المنصة تقاريرها إليه في تبويبات تبدأ بـ «PT ·»، ويمكن عرض أي تبويب منه هنا.</div>';
+      if(S.canSet) h+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input id="q-url" dir="ltr" value="'+E(S.url)+'" placeholder="https://docs.google.com/spreadsheets/d/…" style="flex:1;min-width:260px;height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit">'+
+        '<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600"><input type="checkbox" id="q-auto"'+(S.auto?' checked':'')+'> إرسال يومي تلقائي · Daily send</label>'+
+        '<button type="button" id="q-save" style="'+btn+';background:#0a0a0a;color:#fff;border-color:#0a0a0a">حفظ · Save</button></div>';
+      else h+='<div style="font-size:13px;margin-bottom:10px">'+(S.url?'<a href="'+E(S.url)+'" target="_blank" rel="noopener">'+E(S.name||S.url)+'</a>':'لم يُربط شيت الجودة بعد — يربطه المالك · Not linked yet')+'</div>';
+      if(S.error) h+='<div style="color:#a3231b;font-size:13px;font-weight:600;margin-bottom:8px">'+OrgUI.err({message:S.error})+'</div>';
+      if(S.url&&!S.error) h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" id="q-send" style="'+btn+'">إرسال التقارير الآن · Send reports now</button>'+
+        '<span style="font-size:13px;color:#71717a">آخر إرسال · Last sent: '+E(S.last||'—')+(S.lastBy?' · '+E(S.lastBy):'')+(S.auto?' · يومياً الساعة 6 صباحاً · daily 06:00':'')+'</span></div>';
+      h+='<div id="q-m" style="font-size:13px;font-weight:600;margin-top:8px"></div></div>';
+      if(S.tabs.length) h+='<div style="'+box+'"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><b>عرض الشيت · View sheet</b>'+
+        '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#71717a">التبويب · Tab <select id="q-tab" style="width:auto;min-width:200px;height:36px;border:1px solid #e4e4e7;border-radius:10px;font-family:inherit;padding:0 10px">'+S.tabs.map(function(t){return '<option>'+E(t)+'</option>';}).join('')+'</select></label></div><div id="q-view" style="overflow:auto;max-height:65vh"></div></div>';
+      el.innerHTML=h;
+      var m=el.querySelector('#q-m');
+      var sv=el.querySelector('#q-save'); if(sv) sv.onclick=function(){sv.disabled=true;
+        AuthGate.run('qualitySave',el.querySelector('#q-url').value.trim(),el.querySelector('#q-auto').checked).then(function(){load();},function(e){sv.disabled=false;m.style.color='#a3231b';m.innerHTML=OrgUI.err(e);});};
+      var sd=el.querySelector('#q-send'); if(sd) sd.onclick=function(){sd.disabled=true;m.style.color='#71717a';m.textContent='جاري الإرسال… · Sending…';
+        AuthGate.run('qualitySendNow').then(function(r){S.last=r.at;m.style.color='#276b3e';m.textContent='✓ تم الإرسال · Sent ('+Object.keys(r.counts).map(function(k){return k+': '+r.counts[k];}).join(' · ')+')';sd.disabled=false;
+          AuthGate.run('qualityGet').then(function(s){S=s;var keep=m.textContent;draw();el.querySelector('#q-m').style.color='#276b3e';el.querySelector('#q-m').textContent=keep;});},
+          function(e){sd.disabled=false;m.style.color='#a3231b';m.innerHTML=OrgUI.err(e);});};
+      var tb=el.querySelector('#q-tab'); if(tb){tb.onchange=function(){view(tb.value);};view(tb.value);}
+    }
+    function view(tab){var v=el.querySelector('#q-view');v.innerHTML='<div style="color:#71717a;padding:10px">…</div>';
+      AuthGate.run('qualityRead',tab).then(function(d){
+        v.innerHTML=d.rows.length?'<table style="width:100%;border-collapse:collapse;font-size:12.5px;direction:ltr">'+d.rows.map(function(r,i){return '<tr style="'+(i?'border-top:1px solid #f1f1f1':'background:#f4f4f5;font-weight:700')+'">'+r.map(function(c){return '<td style="padding:6px 8px;white-space:nowrap">'+E(c)+'</td>';}).join('')+'</tr>';}).join('')+'</table>'+(d.cut?'<div style="color:#71717a;font-size:12px;padding:6px">يُعرض أول 1000 صف من '+d.total+' · First 1000 of '+d.total+' rows</div>':'')
+          :'<div style="color:#71717a;padding:10px">التبويب فارغ · Empty tab</div>';
+      },function(e){v.innerHTML='<div style="color:#a3231b;padding:10px">'+OrgUI.err(e)+'</div>';});}
+    load();
+  }
   /* audit log — read-only, for the quality department */
   function auditLog(el){
     var E=OrgUI.esc,rows=[];
@@ -1576,6 +1615,7 @@ var OosUI = (function () {
     tabs.push({en:'Re-packaging stock',ar:'رصيد إعادة التغليف',render:pstock});
     tabs.push({en:'OOS alerts',ar:'بلاغات عدم التوفر',render:function(el){OosUI.panel(el,'supervisor');}});
     if(u.sysRole==='QUALITY') tabs.push({en:'Audit log',ar:'سجل التدقيق',render:auditLog});
+    if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR'||u.sysRole==='QUALITY') tabs.push({en:'Quality sheet',ar:'شيت الجودة',render:qualitySheet});
     OrgUI.tabs(document.getElementById('main'),tabs);
   }});
 </script>

@@ -749,6 +749,8 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet', 'لم يُربط شيت الجودة بعد'],
+    QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة شيت الجودة (محرر) مع حساب المنصة'],
     READ_ONLY: ['Quality accounts are view-only — nothing was changed', 'حساب الجودة للاطلاع فقط — لم يُحفظ أي تعديل'],
     ADC_NOT_ASSIGNED: ['This cabinet is not assigned to you', 'هذه الكابينة غير مُسندة إليك'],
     FORBIDDEN: ['Not permitted', 'غير مصرّح'], CONFLICT: ['Changed by someone else — reloaded', 'عُدّل من مستخدم آخر — أُعيد التحميل'],
