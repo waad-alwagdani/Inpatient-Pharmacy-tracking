@@ -527,7 +527,7 @@ var AuthGate = (function () {
   var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
     inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], wardreq: ['My requests', 'طلباتي'], schedule: ['My tasks', 'مهامي'] };
   var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
-  var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'] };
+  var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'], QUALITY: ['Quality', 'الجودة'] };
   function L(p) { return LANG === 'en' ? p[0] : p[1]; }
   function bar() {
     var old = $('ag-bar'); if (old) old.remove();
@@ -749,6 +749,7 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    READ_ONLY: ['Quality accounts are view-only — nothing was changed', 'حساب الجودة للاطلاع فقط — لم يُحفظ أي تعديل'],
     ADC_NOT_ASSIGNED: ['This cabinet is not assigned to you', 'هذه الكابينة غير مُسندة إليك'],
     FORBIDDEN: ['Not permitted', 'غير مصرّح'], CONFLICT: ['Changed by someone else — reloaded', 'عُدّل من مستخدم آخر — أُعيد التحميل'],
     OVERLAP: ['Overlaps another shift', 'يتداخل مع مناوبة أخرى'], OUTSIDE_VALIDITY: ['Outside the account validity period', 'خارج فترة صلاحية الحساب'],

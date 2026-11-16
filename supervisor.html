@@ -527,7 +527,7 @@ var AuthGate = (function () {
   var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
     inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], wardreq: ['My requests', 'طلباتي'], schedule: ['My tasks', 'مهامي'] };
   var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
-  var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'] };
+  var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'], QUALITY: ['Quality', 'الجودة'] };
   function L(p) { return LANG === 'en' ? p[0] : p[1]; }
   function bar() {
     var old = $('ag-bar'); if (old) old.remove();
@@ -749,6 +749,7 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    READ_ONLY: ['Quality accounts are view-only — nothing was changed', 'حساب الجودة للاطلاع فقط — لم يُحفظ أي تعديل'],
     ADC_NOT_ASSIGNED: ['This cabinet is not assigned to you', 'هذه الكابينة غير مُسندة إليك'],
     FORBIDDEN: ['Not permitted', 'غير مصرّح'], CONFLICT: ['Changed by someone else — reloaded', 'عُدّل من مستخدم آخر — أُعيد التحميل'],
     OVERLAP: ['Overlaps another shift', 'يتداخل مع مناوبة أخرى'], OUTSIDE_VALIDITY: ['Outside the account validity period', 'خارج فترة صلاحية الحساب'],
@@ -1558,12 +1559,23 @@ var OosUI = (function () {
     }
     load();
   }
+  /* audit log — read-only, for the quality department */
+  function auditLog(el){
+    var E=OrgUI.esc,rows=[];
+    el.innerHTML='<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px"><input id="aq" placeholder="تصفية · Filter" style="width:100%;max-width:320px;height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;margin-bottom:10px;font-family:inherit"><div style="overflow:auto;max-height:70vh"><table style="width:100%;border-collapse:collapse;font-size:13px;direction:ltr"><thead><tr style="background:#f4f4f5"><th style="padding:8px;text-align:left">Time · الوقت</th><th style="padding:8px;text-align:left">Event · الحدث</th><th style="padding:8px;text-align:left">Target · على</th><th style="padding:8px;text-align:left">By · بواسطة</th><th style="padding:8px;text-align:left">Detail · التفاصيل</th><th style="padding:8px;text-align:left">Outcome</th></tr></thead><tbody id="at"><tr><td style="padding:12px;color:#71717a">Loading · جاري التحميل</td></tr></tbody></table></div></div>';
+    AuthGate.run('authAdminAudit',1000).then(function(r){rows=r;draw();},function(e){el.querySelector('#at').innerHTML='<tr><td style="padding:12px;color:#a3231b">'+OrgUI.err(e)+'</td></tr>';});
+    el.querySelector('#aq').oninput=draw;
+    function draw(){var q=(el.querySelector('#aq').value||'').toLowerCase();
+      el.querySelector('#at').innerHTML=rows.filter(function(r){return !q||r.join(' ').toLowerCase().indexOf(q)>-1}).slice(0,500).map(function(r){
+        return '<tr style="border-top:1px solid #f1f1f1"><td style="padding:6px 8px;white-space:nowrap">'+E(new Date(r[0]).toLocaleString('en-GB',{dateStyle:'short',timeStyle:'short'}))+'</td><td style="padding:6px 8px">'+E(r[1])+'</td><td style="padding:6px 8px">'+E(r[2])+'</td><td style="padding:6px 8px">'+E(r[3])+'</td><td style="padding:6px 8px">'+E(r[4])+'</td><td style="padding:6px 8px;color:'+(r[9]==='denied'?'#a3231b':'#276b3e')+'">'+E(r[9]||'ok')+'</td></tr>';}).join('');}
+  }
   AuthGate.start({accent:'#0a0a0a',bg:'#f4f4f5',barWidth:'980px',page:'supervisor',onReady:function(u){
     var tabs=[{en:'Monitoring',ar:'المتابعة',render:OrgUI.monitor},{en:'Task distribution',ar:'توزيع المهام',render:OrgUI.duty},
       {en:u.sysRole==='DEPT_SUPERVISOR'?'My team':'Supervision',ar:u.sysRole==='DEPT_SUPERVISOR'?'فريقي':'هيكل الإشراف',render:OrgUI.supervision}];
-    if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR') tabs.push({en:'Expiry report',ar:'تقرير الانتهاء',render:expiry});
+    if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR'||u.sysRole==='QUALITY') tabs.push({en:'Expiry report',ar:'تقرير الانتهاء',render:expiry});
     tabs.push({en:'Re-packaging stock',ar:'رصيد إعادة التغليف',render:pstock});
     tabs.push({en:'OOS alerts',ar:'بلاغات عدم التوفر',render:function(el){OosUI.panel(el,'supervisor');}});
+    if(u.sysRole==='QUALITY') tabs.push({en:'Audit log',ar:'سجل التدقيق',render:auditLog});
     OrgUI.tabs(document.getElementById('main'),tabs);
   }});
 </script>
