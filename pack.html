@@ -485,7 +485,7 @@ var AuthGate = (function () {
   // Fast front end (GitHub Pages): pages are static files, so moving between them needs no server round trip.
   // The identity handed over is for display only; every data call is still validated by the server.
   var STATIC = { owner: 'owner.html', supervisor: 'supervisor.html', pack: 'pack.html', inventory: 'inventory.html', invread: 'inventory.html?mode=invread',
-    dash: 'dash.html', labels: 'labels.html', schedule: 'schedule.html', adc: 'adc.html', ward: 'ward.html' };
+    dash: 'dash.html', labels: 'labels.html', schedule: 'schedule.html', adc: 'adc.html', ward: 'ward.html', wardreq: 'myrequests.html' };
   function fastGo(page) {
     if (!window.PT_SITE || PREVIEW || !STATIC[page] || !token || !user) return false;
     if (!user.isOwner && (user.pages || []).indexOf(page) === -1) return false;
@@ -546,11 +546,12 @@ var AuthGate = (function () {
     labels: '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
     schedule: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     adc: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M4 8h16M4 14h16M10 5h4M10 11h4M10 17h4"/>',
+    wardreq: '<path d="M9 3h6v4H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M9 14l2 2 4-4"/>',
     ward: '<path d="M9 3h6v4H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M12 11v6M9 14h6"/>'
   };
   var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
-    inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], schedule: ['My tasks', 'مهامي'] };
-  var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
+    inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], wardreq: ['My requests', 'طلباتي'], schedule: ['My tasks', 'مهامي'] };
+  var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
   var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'] };
   function L(p) { return LANG === 'en' ? p[0] : p[1]; }
   function bar() {

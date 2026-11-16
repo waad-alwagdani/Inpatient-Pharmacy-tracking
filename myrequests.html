@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>/* Pharmacy Tracker by WaadAlwagdani — google.script.run over the JSON API */
+(function(){var API='https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';var Q=new URLSearchParams(location.search);
+window.PT_SITE=location.origin+location.pathname.replace(/[^\/]*$/,'')+'index.html';
+function runner(s,f){return new Proxy({},{get:function(_,k){
+ if(k==='withSuccessHandler')return function(h){return runner(h,f);};
+ if(k==='withFailureHandler')return function(h){return runner(s,h);};
+ if(k==='withUserObject')return function(){return runner(s,f);};
+ return function(){var a=Array.prototype.slice.call(arguments);
+  fetch(API,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:k,args:a})})
+  .then(function(r){return r.text();}).then(function(t){try{return JSON.parse(t);}catch(x){console.error('Pharmacy Tracker API: not JSON',t.slice(0,300));return {ok:false,err:'API_NOT_DEPLOYED'};}}).then(function(j){if(j&&j.ok){if(s)s(j.v);}else if(f)f(new Error(j&&j.err||'NETWORK'));})
+  .catch(function(e){console.error('Pharmacy Tracker API: request failed',e);if(f)f(new Error('NETWORK'));});};}});}
+var P={},PS={};Q.forEach(function(v,k){P[k]=v;(PS[k]=PS[k]||[]).push(v);});
+window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({parameter:P,parameters:PS,hash:location.hash.slice(1)});}},host:{close:function(){}}}};
+})();</script>
+
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Pharmacy Tracker by WaadAlwagdani — Nursing requests (signed in): schedule Floor stock / Crash cart requests and follow their status -->
+<title>My Requests — Pharmacy Tracker by WaadAlwagdani</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+
+  /* off-white theme with soft drifting blobs — same as the rest of Pharmacy Tracker by WaadAlwagdani */
+  html{background:linear-gradient(135deg,#fbfaf8 0%,#f6f5f2 55%,#f1efeb 100%) fixed}
+  body.pt-theme{background:transparent!important;isolation:isolate}
+  body.pt-theme::before,body.pt-theme::after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(90px);opacity:.4;pointer-events:none}
+  body.pt-theme::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;background:radial-gradient(circle,#d8d3cb 0%,rgba(216,211,203,0) 68%);animation:ptd1 30s ease-in-out infinite alternate}
+  body.pt-theme::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;background:radial-gradient(circle,#dcd7cf 0%,rgba(220,215,207,0) 68%);animation:ptd2 36s ease-in-out infinite alternate}
+  @keyframes ptd1{50%{transform:translate(8vmax,-5vmax) scale(1.08)}100%{transform:translate(3vmax,-10vmax) scale(.96)}}
+  @keyframes ptd2{50%{transform:translate(-7vmax,6vmax) scale(1.06)}100%{transform:translate(-3vmax,11vmax) scale(.95)}}
+  @media (prefers-reduced-motion:reduce){body.pt-theme::before,body.pt-theme::after{animation:none}}
+  @media print{html{background:var(--panel,#fff)}body.pt-theme::before,body.pt-theme::after{display:none}}
+  :root{--ink:#0a0a0a;--muted:#71717a;--paper:#f6f5f2;--panel:#fdfdfb;--line:#ebe8e3;--acc:#0a0a0a;--acc-t:#f4f4f5;--red:#a3231b;--red-t:#f8e9e8;--green:#276b3e;--green-t:#e6f1ea}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:transparent;color:var(--ink);font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;font-size:16px;-webkit-text-size-adjust:100%}
+  .wrap{max-width:560px;margin:0 auto;padding:12px 12px calc(24px + env(safe-area-inset-bottom))}
+  .bi{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .bi .en{direction:ltr;text-align:left} .bi .ar{direction:rtl;text-align:right;font-family:"IBM Plex Sans Arabic","IBM Plex Sans",Arial,sans-serif}
+  header{background:var(--acc);color:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  header .t{font-size:19px;font-weight:700} header .s{font-size:13.5px;opacity:.9;margin-top:2px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .lbl{font-size:14px;font-weight:700;margin-bottom:8px}
+  .grp{font-size:12.5px;font-weight:600;color:var(--muted);margin:10px 0 6px;direction:ltr;text-align:left}
+  .grp:first-of-type{margin-top:0}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;direction:ltr}
+  .pill{min-height:44px;padding:0 14px;border:1.5px solid var(--line);border-radius:999px;background:var(--panel,#fff);color:var(--ink);font:inherit;font-size:15px;font-weight:600;cursor:pointer;
+        -webkit-tap-highlight-color:transparent;direction:ltr;text-align:left}
+  .pill[aria-checked="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+  .pill:focus-visible{outline:3px solid #8f80f0;outline-offset:2px}
+  .row{display:grid;grid-template-columns:1fr 88px;gap:8px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0;padding-top:0}
+  .row .head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted);font-weight:600;direction:ltr}
+  .fld{position:relative}
+  .fld .cap{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .fld .cap .ar{direction:rtl}
+  input{width:100%;height:48px;padding:0 12px;font:inherit;font-size:16px;border:1.5px solid #e4e4e7;border-radius:10px;background:var(--panel,#fff);color:var(--ink);direction:ltr;text-align:left}
+  input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-t)}
+  input.bad{border-color:var(--red);background:var(--red-t)}
+  .err{font-size:12.5px;color:var(--red);font-weight:600;margin-top:4px;min-height:0}
+  .err:empty{display:none}
+  .sugg{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:var(--panel,#fff);border:1px solid #e4e4e7;border-radius:10px;max-height:260px;overflow:auto;z-index:10;box-shadow:0 10px 24px -12px rgba(0,0,0,.4)}
+  .sugg div{padding:12px;border-bottom:1px solid var(--line);cursor:pointer;direction:ltr;text-align:left}
+  .sugg div:last-child{border-bottom:0} .sugg div.on,.sugg div:hover{background:var(--acc-t)} .sugg small{color:var(--muted)}
+  .rm{height:32px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel,#fff);font:inherit;font-size:12.5px;font-weight:600;color:var(--red);cursor:pointer}
+  .add{width:100%;min-height:48px;border:2px dashed var(--acc);border-radius:10px;background:transparent;color:var(--acc);font:inherit;font-weight:700;font-size:15px;cursor:pointer;margin-top:8px;padding:0 14px}
+  .go{width:100%;min-height:56px;border:0;border-radius:12px;background:var(--acc);color:#fff;font:inherit;font-size:18px;font-weight:700;cursor:pointer;padding:0 16px}
+  .go:disabled{opacity:.6}
+  .btnbi{display:flex;justify-content:space-between;align-items:center;width:100%} .btnbi .ar{direction:rtl}
+  .msg{border-radius:12px;padding:12px 14px;font-weight:700;margin-bottom:10px}
+  .msg.ok{background:var(--green-t);color:var(--green)} .msg.bad{background:var(--red-t);color:var(--red)}
+  .msg small{display:block;font-weight:500;margin-top:2px;opacity:.9}
+  .msg .retry{margin-top:8px;min-height:40px;border:1px solid var(--red);background:var(--panel,#fff);color:var(--red);border-radius:8px;font:inherit;font-weight:700;width:100%;cursor:pointer}
+  .msg[hidden]{display:none}
+  .loading{text-align:center;color:var(--muted);padding:40px 0}
+  .tools{display:flex;gap:8px;margin-top:10px}.tools button{flex:1;min-height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;padding:0 10px}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+  footer{text-align:center;font-size:11px;color:var(--muted);margin-top:16px}
+  .banner b{display:block;font-size:22px}.banner .bsub{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body class="pt-theme">
+<!-- AuthGate — sign-in gate shared by protected pages · Pharmacy Tracker by WaadAlwagdani -->
+<style>
+  .ag{position:fixed;inset:0;z-index:2147483000;background:var(--ag-bg,#eef4f0);color:#171b1f;
+      font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:12vh 16px 32px}
+  .ag[hidden]{display:none}
+  /* INITIALIZING: neutral loader only — the login form is never shown while a session is being checked */
+  .ag[data-state="INITIALIZING"]{background:var(--ag-bg,#eef4f0);align-items:center;padding-top:0}
+  .ag[data-state="INITIALIZING"] .ag-box,.ag[data-state="INITIALIZING"] .ag-lang{display:none}
+  .ag-load{display:none;gap:6px}
+  .ag[data-state="INITIALIZING"] .ag-load{display:flex}
+  .ag-dot{width:8px;height:8px;border-radius:50%;background:var(--ag-accent,#276b3e);opacity:.35;animation:agdot 1s infinite ease-in-out}
+  .ag-dot:nth-child(2){animation-delay:.15s}.ag-dot:nth-child(3){animation-delay:.3s}
+  @keyframes agdot{50%{opacity:1}}
+  .ag *{box-sizing:border-box}
+  .ag-box{width:100%;max-width:360px}
+  .ag-lang{position:absolute;top:14px;inset-inline-end:16px;height:32px;padding:0 12px;border:1px solid #c9d3cc;background:transparent;border-radius:8px;
+           font-size:13px;font-weight:600;line-height:1;font-family:inherit;color:#5b6472;cursor:pointer}
+  .ag-head{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+  .ag-logo{width:44px;height:44px;border-radius:10px;background:var(--ag-accent,#276b3e);display:grid;place-items:center;flex:none}
+  .ag-logo svg{width:24px;height:24px}
+  .ag-name{font-weight:700;font-size:18px;line-height:1.2}
+  .ag-by{font-size:12px;color:#5b6472;margin-top:2px}
+  .ag-title{font-size:15px;font-weight:600;margin:0 0 16px}
+  .ag-f{margin-bottom:14px}
+  .ag-f label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#2d343c}
+  .ag-in{position:relative}
+  .ag-in svg.ic{position:absolute;top:50%;transform:translateY(-50%);inset-inline-start:13px;width:18px;height:18px;color:#7a8492;pointer-events:none}
+  .ag-in input{width:100%;height:48px;padding:0 44px;font-size:16px;font-weight:400;line-height:1;font-family:inherit;border:1px solid #b9c7bd;border-radius:8px;background:#fff;color:#171b1f}
+  .ag-in input:focus{outline:2px solid var(--ag-accent,#276b3e);outline-offset:1px;border-color:transparent}
+  .ag-eye{position:absolute;top:4px;inset-inline-end:4px;width:40px;height:40px;border:0;background:transparent;border-radius:6px;color:#7a8492;cursor:pointer;display:grid;place-items:center}
+  .ag-eye:focus-visible{outline:2px solid var(--ag-accent,#276b3e)}
+  .ag-eye svg{width:18px;height:18px}
+  .ag-btn{width:100%;height:48px;border:0;border-radius:8px;background:var(--ag-accent,#276b3e);color:#fff;font-size:16px;font-weight:700;line-height:1;font-family:inherit;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px}
+  .ag-btn:disabled{opacity:.7;cursor:default}
+  .ag-btn:focus-visible{outline:2px solid #171b1f;outline-offset:2px}
+  .ag-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:agspin .8s linear infinite;display:none}
+  .ag-btn.busy .ag-spin{display:block}
+  @keyframes agspin{to{transform:rotate(360deg)}}
+  .ag-err{min-height:20px;margin-top:12px;font-size:13.5px;font-weight:600;color:#a3231b}
+  .ag-link{background:none;border:0;padding:0;margin-top:14px;font-size:13px;font-weight:600;line-height:1.4;font-family:inherit;color:#5b6472;text-decoration:underline;cursor:pointer}
+  .ag-note{font-size:13px;color:#5b6472;margin:-6px 0 16px;line-height:1.5}
+  .ag-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:var(--ag-barw,520px);margin:0 auto;padding:8px 16px 0;
+          font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;font-size:13px;color:#5b6472}
+  .ag-bar b{color:#171b1f;font-weight:600}
+  .ag-links{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .ag-bar{flex-wrap:wrap}
+  .ag-bar button{white-space:nowrap;flex:none;height:30px;padding:0 12px;border:1px solid #c9d3cc;background:#fff;border-radius:8px;font-size:12.5px;font-weight:600;line-height:1;font-family:inherit;color:#2d343c;cursor:pointer}
+
+  /* ======== Monochrome app shell (sidebar layout) · Pharmacy Tracker by WaadAlwagdani ======== */
+  :root{--ink:#0a0a0a;--muted:#71717a;--paper:#f4f4f5;--panel:#fff;--line:#e4e4e7;--green:#0a0a0a;--green-tint:#f4f4f5;--green-t:#f4f4f5;--acc:#0a0a0a;--acc-t:#f4f4f5}
+  body.ag-shell{background:#f4f4f5!important;color:#0a0a0a;padding-right:280px;padding-left:0;padding-top:0}/* the sidebar stays on the right in both languages; only text direction follows the language */
+  body.ag-shell .wrap{max-width:1680px!important;padding:8px 32px 48px!important}
+  body.ag-shell .banner{background:transparent!important;color:#0a0a0a!important;padding:6px 0 14px!important;border-radius:0!important;margin-bottom:8px!important;box-shadow:none!important}
+  body.ag-shell .banner .bi,body.ag-shell .banner{font-size:26px!important;font-weight:700!important;letter-spacing:-.01em}
+  body.ag-shell .panel,body.ag-shell .card,body.ag-shell .kpi{border-radius:16px!important;border-color:#e4e4e7!important;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  body.ag-shell .ou{--ink:#0a0a0a;--muted:#71717a;--line:#e4e4e7;--acc:#0a0a0a;--acc-t:#f4f4f5}
+  body.ag-shell button.pri,body.ag-shell .btn.primary,body.ag-shell .pri{background:#0a0a0a!important;border-color:#0a0a0a!important;color:#fff!important}
+  body.ag-shell input,body.ag-shell select,body.ag-shell textarea{border-color:#d4d4d8!important;border-radius:10px!important}
+  body.ag-shell input:focus,body.ag-shell select:focus,body.ag-shell textarea:focus{outline:2px solid #0a0a0a!important;outline-offset:1px}
+  body.ag-shell footer{color:#a1a1aa}
+  /* dashboard page in the monochrome shell */
+  body.ag-shell .top{background:transparent!important;color:#0a0a0a!important;padding:4px 24px 0!important}
+  body.ag-shell .top .sub{opacity:1;color:#71717a}
+  body.ag-shell .top h1{font-size:26px!important}
+  body.ag-shell .picker button{background:#fff!important;color:#3f3f46!important;border:1px solid #e4e4e7!important;border-radius:10px!important}
+  body.ag-shell .picker button.on{background:#0a0a0a!important;color:#fff!important;border-color:#0a0a0a!important}
+  body.ag-shell .picker input{background:#fff!important;color:#0a0a0a!important;border:1px solid #e4e4e7!important;color-scheme:light!important;border-radius:10px!important}
+  body.ag-shell .card::before{background:#e4e4e7!important}
+  body.ag-shell .card.bad::before{background:#0a0a0a!important}
+  /* distribution grid header */
+  body.ag-shell .ou .dg thead th{background:#0a0a0a!important;color:#fff!important}
+  body.ag-shell .ou .dg thead tr+tr th{background:#27272a!important}
+  body.ag-shell .ou .dg tbody .sd{background:#fafafa!important;color:#0a0a0a}
+  .ag-side{position:fixed;top:16px;bottom:16px;right:16px;left:auto;width:248px;background:#fff;border:1px solid #e4e4e7;border-radius:20px;z-index:1000;
+    display:flex;flex-direction:column;padding:18px 14px;font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;color:#0a0a0a;box-sizing:border-box}
+  .ag-side *{box-sizing:border-box}
+  .ag-brand{display:flex;align-items:center;gap:10px;padding:2px 6px 18px}
+  .ag-brand>div{flex:1;min-width:0}
+  .ag-brand .ag-lchip{flex:none;margin-inline-start:auto}
+  .ag-brand b{white-space:nowrap;font-size:14px}
+  body.ag-shell .ag-brand{gap:8px;padding-inline:2px}
+  body.ag-shell .ag-brand i{width:32px;height:32px;font-size:12px}
+  .ag-brand .ag-lchip{padding:0!important}
+  .ag-brand i{width:36px;height:36px;border-radius:10px;background:#0a0a0a;color:#fff;display:grid;place-items:center;font:700 13px/1 "IBM Plex Sans",Arial;font-style:normal;letter-spacing:.02em}
+  .ag-brand b{display:block;font-size:14.5px;line-height:1.15}.ag-brand small{display:block;font-size:11px;color:#a1a1aa;margin-top:2px}
+  .ag-sec{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa;padding:12px 10px 6px;display:flex;justify-content:space-between}
+  .ag-item{display:flex;align-items:center;gap:10px;width:100%;height:40px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#3f3f46;
+    font:500 13.5px/1 "IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;cursor:pointer;text-align:start}
+  .ag-item svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .ag-item span{flex:1;display:flex;justify-content:space-between;align-items:center;gap:6px;min-width:0;white-space:nowrap}.ag-item span em{overflow:hidden;text-overflow:ellipsis}.ag-item span em{font-style:normal;color:#a1a1aa;font-size:12px}
+  .ag-item:hover{background:#f4f4f5;color:#0a0a0a}
+  .ag-item[aria-current=page]{background:#0a0a0a;color:#fff}.ag-item[aria-current=page] em{color:#d4d4d8}
+  .ag-tabis{display:flex;flex-direction:column;gap:2px;margin:2px 0 6px;padding-inline-start:22px;position:relative}
+  .ag-tabis::before{content:"";position:absolute;inset-inline-start:19px;top:4px;bottom:4px;width:1.5px;background:#e4e2dd;border-radius:2px}
+  .ag-tabi{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;min-height:34px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#52525b;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:start;white-space:nowrap}
+  .ag-tabi em{font-style:normal;color:#a1a1aa;font-size:11.5px;overflow:hidden;text-overflow:ellipsis}
+  .ag-tabi:hover{background:#f4f4f5;color:#0a0a0a}
+  .ag-tabi[aria-current=true]{background:#efede8;color:#0a0a0a}
+  .ag-tabi[aria-current=true]::before{content:"";width:6px;height:6px;border-radius:50%;background:#0a0a0a;flex:none;margin-inline-end:4px}
+  .ag-nav-list{flex:1;overflow:auto;margin:0 -4px;padding:0 4px}
+  .ag-me{border:1px solid #e4e4e7;border-radius:14px;padding:10px;display:flex;align-items:center;gap:10px;margin-top:10px}
+  .ag-av{width:36px;height:36px;border-radius:10px;background:#f4f4f5;color:#0a0a0a;display:grid;place-items:center;font:700 13px/1 "IBM Plex Sans",Arial;flex:none}
+  .ag-me b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ag-me small{display:block;font-size:11.5px;color:#71717a}
+  .ag-me>div:not(.ag-av){min-width:0;flex:1}
+  .ag-out{margin-top:6px;color:#71717a}
+  .ag-top{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1180px;margin:0 auto;padding:22px 24px 6px;font:13px "IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;color:#71717a;box-sizing:border-box}
+  .ag-top b{color:#0a0a0a;font-weight:600}.ag-crumb{display:flex;gap:10px;align-items:center}
+  .ag-hi{font-size:15px;color:#3f3f46}.ag-hi b{font-weight:700}
+  .ag-role{font-size:11.5px;font-weight:600;color:#52525b;background:#efede8;border:1px solid #e4e2dd;border-radius:999px;padding:2px 10px}
+  .ag-burger{display:none;width:38px;height:38px;border:1px solid #e4e4e7;border-radius:10px;background:#fff;cursor:pointer}
+  .ag-pv{max-width:1180px;margin:10px auto 0;padding:0 24px;box-sizing:border-box}
+  .ag-pv div{background:#fafafa;border:1px dashed #0a0a0a;color:#0a0a0a;border-radius:12px;padding:10px 14px;font:600 13px "IBM Plex Sans","IBM Plex Sans Arabic",Arial;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+  .ag-pv button,.ag-chip{height:32px;padding:0 12px;border:1px solid #d4d4d8;background:#fff;border-radius:10px;font:600 12.5px/1 inherit;color:#0a0a0a;cursor:pointer}
+  .ag-scrim{display:none}
+  @media (max-width:900px){
+    body.ag-shell{padding-inline-start:0}
+    .ag-side{transform:translateX(110%);transition:transform .2s ease;top:8px;bottom:8px;right:8px;left:auto}
+    html[dir=rtl] .ag-side,[dir=rtl] .ag-side{--dir:1} html:not([dir=rtl]) .ag-side{--dir:-1}
+    body.ag-menu .ag-side{transform:none}
+    body.ag-menu .ag-scrim{display:block;position:fixed;inset:0;background:rgba(10,10,10,.25);z-index:999}
+    .ag-burger{display:grid;place-items:center}
+    .ag-top{padding:14px 16px 4px}.ag-pv{padding:0 16px} body.ag-shell .wrap{padding:8px 16px 40px!important}
+  }
+
+  /* ---- Sign-in look: soft blurred backdrop, warm card, centred header (Pharmacy Tracker by WaadAlwagdani) ---- */
+  .ag:not([data-state="AUTHENTICATED"]){align-items:center;padding:24px 16px;isolation:isolate;
+    background:linear-gradient(135deg,#fbfaf8 0%,#f6f5f2 55%,#f1efeb 100%)}
+  /* soft taupe blobs blended into the beige, drifting slowly */
+  .ag:not([data-state="AUTHENTICATED"])::before,.ag:not([data-state="AUTHENTICATED"])::after{content:"";position:fixed;z-index:-1;border-radius:50%;
+    filter:blur(90px);opacity:.45;pointer-events:none;will-change:transform}
+  .ag:not([data-state="AUTHENTICATED"])::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;
+    background:radial-gradient(circle,#d8d3cb 0%,rgba(216,211,203,0) 68%);animation:agdrift1 26s ease-in-out infinite alternate}
+  .ag:not([data-state="AUTHENTICATED"])::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;
+    background:radial-gradient(circle,#dcd7cf 0%,rgba(220,215,207,0) 68%);animation:agdrift2 32s ease-in-out infinite alternate}
+  @keyframes agdrift1{0%{transform:translate(0,0) scale(1)}50%{transform:translate(8vmax,-5vmax) scale(1.08)}100%{transform:translate(3vmax,-10vmax) scale(.96)}}
+  @keyframes agdrift2{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-7vmax,6vmax) scale(1.06)}100%{transform:translate(-3vmax,11vmax) scale(.95)}}
+  @media (prefers-reduced-motion:reduce){.ag::before,.ag::after{animation:none!important}}
+  .ag-box{max-width:400px;background:#fdfdfb;border:1px solid #ebe8e3;border-radius:24px;padding:30px 30px 26px;
+    box-shadow:0 30px 60px -24px rgba(0,0,0,.18),0 6px 20px rgba(0,0,0,.05)}
+  .ag-head{flex-direction:column;gap:2px;margin-bottom:22px;text-align:center}
+  .ag-head .ag-logo{display:none}
+  .ag-name{font-size:20px;font-weight:600;letter-spacing:.01em;color:#141414}
+  .ag-by{font-size:12.5px;color:#3f3f3f;margin-top:0}
+  .ag-title{font-size:21px;font-weight:700;text-align:center;margin:0 0 6px;color:#141414}
+  .ag-sub{font-size:13.5px;color:#2f2f2f;text-align:center;margin:0 0 22px}
+  .ag-f label{font-size:13.5px;color:#1c1c1c}
+  .ag-in input{height:44px;border:1px solid #e3e0da;border-radius:10px;background:#fff;font-size:15px;color:#141414}
+  .ag-in input::placeholder{color:#8a867f}
+  .ag .ag-in input:placeholder-shown{direction:rtl}
+  .ag-f label{text-align:right}
+  .ag-err{unicode-bidi:plaintext}
+  .ag-in input:focus{outline:2px solid #1c1c1c;outline-offset:1px;border-color:transparent}
+  .ag-in svg.ic{color:#55524d}
+  .ag-btn{height:46px;border-radius:12px;background:#1c1c1c;font-size:15.5px;margin-top:10px}
+  .ag-row{display:flex;justify-content:flex-end;margin:-4px 0 4px}
+  .ag-forgot{border:0;background:none;padding:0;font:inherit;font-size:13px;color:#4a4742;cursor:pointer}
+  .ag-forgot:hover{text-decoration:underline}
+  .ag-err{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;color:#8f1d1d;font-weight:500}
+  .ag-err:not(:empty)::before{content:"";flex:none;width:16px;height:16px;background:#8f1d1d;
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z'/%3E%3C/svg%3E") center/contain no-repeat}
+  .ag-link{display:block;margin:10px auto 0;color:#4a4742}
+  .ag-lang{top:18px;left:18px;right:auto;height:34px;padding:3px;border:1px solid #1c1c1c;border-radius:12px;background:rgba(253,253,251,.7);
+    display:flex;gap:2px;color:#1c1c1c;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .ag-lang span{display:grid;place-items:center;padding:0 12px;border-radius:9px;font-size:13px;font-weight:500}
+  .ag-lang span.on{background:#f0eee9;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+
+  /* ---- Platform theme: warm beige backdrop with soft drifting blobs, ivory surfaces (Pharmacy Tracker by WaadAlwagdani) ---- */
+  body.ag-shell{--pt-card:#fdfdfb;--panel:#fdfdfb;--paper:#f6f5f2;--line:#ebe8e3;--line-strong:#dedad3;--bg:transparent;
+    background:linear-gradient(135deg,#fbfaf8 0%,#f6f5f2 55%,#f1efeb 100%) fixed!important;isolation:isolate}
+  body.ag-shell::before,body.ag-shell::after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(90px);opacity:.35;pointer-events:none;will-change:transform}
+  body.ag-shell::before{width:58vmax;height:58vmax;left:-14vmax;bottom:-22vmax;background:radial-gradient(circle,#d8d3cb 0%,rgba(216,211,203,0) 68%);animation:agdrift1 30s ease-in-out infinite alternate}
+  body.ag-shell::after{width:50vmax;height:50vmax;right:-12vmax;top:-14vmax;background:radial-gradient(circle,#dcd7cf 0%,rgba(220,215,207,0) 68%);animation:agdrift2 36s ease-in-out infinite alternate}
+  @media (prefers-reduced-motion:reduce){body.ag-shell::before,body.ag-shell::after{animation:none!important}}
+  body.ag-shell .ag-side{background:rgba(253,253,251,.94);border:1px solid rgba(255,255,255,.75);box-shadow:0 24px 48px -24px rgba(0,0,0,.28),0 4px 14px rgba(0,0,0,.05);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  body.ag-shell .ag-item:hover{background:#f1efeb}
+  body.ag-shell .ag-item[aria-current=page]{background:#1c1c1c}
+  body.ag-shell .ag-me{border-color:#ebe8e3;background:rgba(255,255,255,.35)}
+  body.ag-shell .ag-av{background:#f1efeb}
+  body.ag-shell .ag-brand i{background:#1c1c1c}
+  body.ag-shell .ag-chip,body.ag-shell .ag-burger{background:#fdfdfb;border-color:#dedad3}
+  .ag-lang{top:14px;left:16px;right:auto;height:auto;padding:4px;border:0!important;background:transparent!important;border-radius:12px;display:block;cursor:pointer;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .ag-lang:hover .ag-licon,.ag-lchip:hover .ag-licon{transform:scale(1.05)}
+  .ag-licon{display:block;transition:transform .15s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,.08))}
+  body.ag-shell .ag-chip.ag-lchip,.ag-chip.ag-lchip{height:auto;padding:2px;border:0;background:transparent}
+</style>
+
+<div class="ag" id="ag" data-state="INITIALIZING" role="dialog" aria-modal="true" aria-labelledby="ag-title">
+  <div class="ag-load" role="status" aria-live="polite"><span class="ag-dot"></span><span class="ag-dot"></span><span class="ag-dot"></span></div>
+  <button class="ag-lang" id="ag-lang" type="button">English</button>
+  <div class="ag-box">
+    <div class="ag-head">
+      <div class="ag-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>
+      </div>
+      <div><div class="ag-name">Pharmacy Tracker</div><div class="ag-by">by WaadAlwagdani</div></div>
+    </div>
+    <h1 class="ag-title" id="ag-title" dir="auto"></h1>
+    <p class="ag-sub" id="ag-sub" dir="auto" hidden></p>
+    <p class="ag-note" id="ag-note" dir="auto" hidden></p>
+    <form id="ag-form" novalidate autocomplete="on"></form>
+    <div class="ag-err" id="ag-err" role="alert" aria-live="assertive"></div>
+    <button class="ag-link" id="ag-alt" dir="auto" type="button" hidden></button>
+  </div>
+</div>
+
+<script>
+/* AuthGate — Pharmacy Tracker by WaadAlwagdani.
+   Holds only a short-lived session token (browser storage, ends at sign-out or after 12 h at most on the server). Every protected
+   server function re-validates the token; nothing here is a security control by itself. */
+var AuthGate = (function () {
+  var KEY = 'ipq_session', PKEY = 'ipq_preview', PREVIEW = null, cfg = {}, token = null, user = null, view = 'login', bootstrap = false, recovery = false;
+  var LANG = 'ar'; try { LANG = localStorage.getItem('ipq_lang') === 'en' ? 'en' : 'ar'; } catch (e) {}
+  var TX = {
+    welcome: ['مرحبًا مجددًا! يُرجى إدخال بيانات الحساب.', 'Welcome back! Please enter your account details.'],
+    forgot: ['نسيت كلمة المرور؟', 'Forgot password?'],
+    userPh: ['أدخل اسم المستخدم', 'Enter the username'], passPh: ['أدخل كلمة المرور', 'Enter the password'],
+    forgotMsg: ['يُرجى التواصل مع مالك الأداة لإعادة تعيين كلمة المرور.', 'Please contact the tool owner to reset the password.'],
+    signin: ['تسجيل الدخول', 'Sign in'], user: ['اسم المستخدم', 'Username'], pass: ['كلمة المرور', 'Password'],
+    show: ['إظهار كلمة المرور', 'Show password'], hide: ['إخفاء كلمة المرور', 'Hide password'],
+    change: ['تغيير كلمة المرور', 'Change password'], changeNote: ['يلزم تعيين كلمة مرور جديدة قبل المتابعة.', 'Set a new password to continue.'],
+    oldp: ['كلمة المرور الحالية', 'Current password'], newp: ['كلمة المرور الجديدة', 'New password'], newp2: ['تأكيد كلمة المرور', 'Confirm password'],
+    save: ['حفظ', 'Save'], setup: ['إعداد حساب المالك', 'Owner account setup'],
+    setupNote: ['رمز الإعداد موجود في سجل التنفيذ.', 'Enter the setup code shown in the execution log.'],
+    code: ['رمز الإعداد', 'Setup code'], dname: ['الاسم الظاهر', 'Display name'], create: ['إنشاء الحساب', 'Create account'],
+    toSetup: ['إعداد حساب المالك', 'Owner setup'], toRecover: ['استعادة حساب المالك', 'Owner recovery'], toLogin: ['العودة لتسجيل الدخول', 'Back to sign in'],
+    out: ['تسجيل الخروج', 'Sign out'], created: ['تم إنشاء الحساب. يمكن تسجيل الدخول الآن.', 'Account created. Sign in now.'],
+    mismatch: ['كلمتا المرور غير متطابقتين.', 'Passwords do not match.'], empty: ['اسم المستخدم وكلمة المرور مطلوبان.', 'Enter username and password.'],
+    forbidden: ['لا توجد صلاحية لهذه الصفحة.', 'You do not have access to this page.'],
+    INVALID_CREDENTIALS: ['اسم المستخدم أو كلمة المرور غير صحيحة.', 'Incorrect username or password.'],
+    TOO_MANY_ATTEMPTS: ['محاولات كثيرة. يُرجى المحاولة بعد قليل.', 'Too many attempts. Try again later.'],
+    AUTH_EXPIRED: ['انتهت الجلسة. يلزم تسجيل الدخول من جديد.', 'Session ended. Sign in again.'],
+    WEAK_PASSWORD: ['كلمة المرور ١٠ أحرف على الأقل، ولا تحتوي اسم المستخدم، وتختلف عن السابقة.', 'Use at least 10 characters, not containing the username or the old password.'],
+    INVALID_SETUP_CODE: ['رمز الإعداد غير صالح أو منتهٍ.', 'Invalid or expired setup code.'],
+    INVALID_USERNAME: ['اسم المستخدم: ٣–٣٢ حرفاً إنجليزياً صغيراً أو أرقاماً أو . _ -', 'Username: 3–32 lowercase letters, digits, . _ -'],
+    toSignup: ['موظف جديد؟ تفعيل حساب', 'New employee? Activate an account'], signup: ['تفعيل حساب موظف', 'Activate employee account'],
+    signupNote: ['يُرجى إدخال الرقم الوظيفي المسجّل لدى الصيدلية، ثم اختيار اسم مستخدم وكلمة مرور. يبدأ الحساب بعد موافقة المالك.', 'Enter the employee number registered with the pharmacy, then choose a username and password. The account starts after the Owner approves it.'],
+    empno: ['الرقم الوظيفي', 'Employee number'], signupDone: ['تم إرسال الطلب. يمكن تسجيل الدخول بعد موافقة المالك.', 'Request sent. Sign in after the Owner approves it.'],
+    EMPLOYEE_NOT_FOUND: ['الرقم الوظيفي غير مسجّل. يُرجى مراجعة الصيدلية.', 'Employee number not registered. Please contact the pharmacy.'],
+    ALREADY_REGISTERED: ['يوجد حساب لهذا الرقم الوظيفي مسبقًا.', 'An account already exists for this employee number.'],
+    ACCOUNT_PENDING: ['الحساب بانتظار موافقة المالك.', 'The account is awaiting Owner approval.'],
+    USERNAME_TAKEN: ['اسم المستخدم مستخدم مسبقًا.', 'Username already taken.'],
+    NETWORK: ['تعذّر الاتصال. يُرجى المحاولة مرة أخرى.', 'Connection failed. Try again.']
+  };
+  /* Auth state machine: INITIALIZING → AUTHENTICATED | UNAUTHENTICATED | SESSION_EXPIRED | ACCESS_DENIED */
+  var STATE = 'INITIALIZING';
+  function setState(st) { STATE = st; var g = $('ag'); if (g) g.setAttribute('data-state', st); }
+  function t(k) { var v = TX[k]; return v ? v[LANG === 'en' ? 1 : 0] : k; }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function codeOf(err) {
+    var m = String(err && err.message || err || '').match(/[A-Z][A-Z_]{4,}/);
+    var c = m ? m[0] : 'NETWORK';
+    if (c === 'AUTH_REVOKED' || c === 'AUTH_REQUIRED') c = 'AUTH_EXPIRED';
+    return c;
+  }
+  // Kept for the shift so a QR scan in a new tab is attributed without signing in again; the server
+  // still ends it after 4 h idle / 12 h, at sign-out, suspension, expiry or any permission change.
+  function save() { if (PREVIEW) return; try { if (token) { localStorage.setItem(KEY, token); sessionStorage.setItem(KEY, token); } else { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); } } catch (e) {} }
+
+  /** Promise wrapper around google.script.run that also handles expired sessions. */
+  function call(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e); });
+      r[fn].apply(r, args);
+    });
+  }
+  /* Instant pages: read-only data is kept in this browser per account and shown at once; the server is asked in the
+     background and a bar offers the newer data if it changed. Any save clears the copies; sign-out wipes them.
+     Pharmacy Tracker by WaadAlwagdani */
+  var READS = { dutyGet: 1, monitorSummary: 1, orgOverview: 1, orgGetProfile: 1, invGetData: 1, getDashboard: 1, getPackData: 1, mySchedule: 1,
+    exprGet: 1, authAdminListUsers: 1, getLabelsPage: 1 };
+  var CP = 'pt.c.', CMAX = 6 * 3600000;
+  function ckey(fn, args) { return CP + (user && user.id || '') + '.' + fn + '.' + JSON.stringify(args); }
+  function cacheClear() { try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf(CP) === 0) localStorage.removeItem(k); }); } catch (e) {} }
+  function freshBar() {
+    if (document.getElementById('pt-fresh')) return;
+    var b = document.createElement('div'); b.id = 'pt-fresh';
+    b.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:3000;background:#0a0a0a;color:#fff;border-radius:999px;padding:8px 8px 8px 16px;font:600 13px IBM Plex Sans,IBM Plex Sans Arabic,Arial,sans-serif;display:flex;gap:10px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.18)';
+    b.innerHTML = '<span>Newer data available · توجد بيانات أحدث</span><button type="button" style="border:0;border-radius:999px;background:#fff;color:#0a0a0a;font:700 12px inherit;font-family:inherit;padding:6px 12px;cursor:pointer">Refresh · تحديث</button>';
+    b.querySelector('button').onclick = function () { location.reload(); };
+    document.body.appendChild(b);
+  }
+  function guard(p) { return p.catch(function (e) { var c = codeOf(e); if (c === 'AUTH_EXPIRED') { expire(); } else if (c === 'PASSWORD_CHANGE_REQUIRED') { show('change'); } throw e; }); }
+  function run(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var live = guard(call.apply(null, [fn, token].concat(args)));
+    if (!READS[fn] || PREVIEW || !user) {
+      return live.then(function (v) { if (!READS[fn] && !PREVIEW) cacheClear(); return v; });   // a save: drop the copies so nothing stale is shown
+    }
+    var k = ckey(fn, args), old = null;
+    try { old = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) {}
+    var fresh = live.then(function (v) {
+      var txt = JSON.stringify(v);
+      try { localStorage.setItem(k, JSON.stringify({ at: Date.now(), v: v })); } catch (e) {}
+      if (old && JSON.stringify(old.v) !== txt) freshBar();
+      return v;
+    });
+    if (old && Date.now() - old.at < CMAX) { fresh.catch(function () {}); return Promise.resolve(old.v); }
+    return fresh;
+  }
+
+  var IC_USER = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
+  var IC_LOCK = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  var IC_KEY = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/></svg>';
+  var IC_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var IC_EYEOFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 4M6.1 6.1C3.6 7.8 2 12 2 12s4 7 10 7a9.6 9.6 0 0 0 5-1.4"/></svg>';
+
+  function field(id, label, type, icon, ac, extra) {
+    var pw = type === 'password';
+    return '<div class="ag-f"><label dir="auto" for="' + id + '">' + esc(label) + '</label><div class="ag-in">' + icon +
+      '<input id="' + id + '" name="' + id + '" type="' + type + '" autocomplete="' + ac + '" ' + (extra || '') +
+      ' autocapitalize="none" spellcheck="false" dir="ltr" maxlength="128">' +
+      (pw ? '<button type="button" class="ag-eye" data-for="' + id + '" aria-label="' + esc(t('show')) + '" aria-pressed="false">' + IC_EYE + '</button>' : '') +
+      '</div></div>';
+  }
+  function button(label) { return '<button class="ag-btn" type="submit"><span class="ag-spin" aria-hidden="true"></span><span>' + esc(label) + '</span></button>'; }
+
+  // Language icon: one speech bubble, A (English) on the left and ع (Arabic) on the right; the active language is the dark half.
+  var LIC = 0;
+  function langIcon(size) {
+    var id = 'agl' + (++LIC), en = LANG === 'en', D = '#1c1c1c', L = '#e9e7e2';
+    return '<svg class="ag-licon" width="' + size + '" height="' + Math.round(size * 0.84) + '" viewBox="0 0 120 100" aria-hidden="true">' +
+      '<defs><clipPath id="' + id + '"><rect x="4" y="6" width="112" height="70" rx="35"/></clipPath></defs>' +
+      '<g clip-path="url(#' + id + ')"><rect x="0" y="0" width="120" height="100" fill="' + (en ? D : L) + '"/>' +
+      '<polygon points="62,0 120,0 120,100 70,100" fill="' + (en ? L : D) + '"/></g>' +
+      '<path d="M52 75 L62 94 L72 75 Z" fill="' + D + '"/>' +
+      '<text x="33" y="54" text-anchor="middle" font-family="IBM Plex Sans,Arial,sans-serif" font-weight="700" font-size="40" fill="' + (en ? '#fff' : '#3a3a3a') + '">A</text>' +
+      '<text x="87" y="54" text-anchor="middle" font-family="IBM Plex Sans Arabic,Arial,sans-serif" font-weight="700" font-size="38" fill="' + (en ? '#3a3a3a' : '#fff') + '">ع</text></svg>';
+  }
+  function show(v, errKey) {
+    view = v;
+    setState(v === 'forbidden' ? 'ACCESS_DENIED' : (STATE === 'SESSION_EXPIRED' ? 'SESSION_EXPIRED' : 'UNAUTHENTICATED'));
+    document.documentElement.lang = LANG; $('ag').dir = 'rtl';   // layout never moves with the language; each text keeps its own reading direction (dir=auto)
+    $('ag-lang').innerHTML = langIcon(46); $('ag-lang').title = LANG === 'en' ? 'العربية' : 'English'; $('ag-lang').setAttribute('aria-label', LANG === 'en' ? 'التبديل إلى العربية' : 'Switch to English');
+    $('ag-sub').hidden = v !== 'login'; $('ag-sub').textContent = t('welcome');
+    $('ag').hidden = false; $('ag-err').textContent = errKey ? t(errKey) : '';
+    var f = $('ag-form'), note = $('ag-note'), alt = $('ag-alt');
+    note.hidden = true; alt.hidden = true;
+    if (v === 'login') {
+      $('ag-title').textContent = t('signin');
+      f.innerHTML = field('ag-u', t('user'), 'text', IC_USER, 'username', 'required placeholder="' + esc(t('userPh')) + '"') + field('ag-p', t('pass'), 'password', IC_LOCK, 'current-password', 'required placeholder="' + esc(t('passPh')) + '"') +
+        '<div class="ag-row"><button type="button" class="ag-forgot" id="ag-forgot" dir="auto">' + t('forgot') + '</button></div>' + button(t('signin'));
+      $('ag-forgot').onclick = function () { $('ag-err').textContent = t('forgotMsg'); };
+      if (bootstrap && cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toSetup'); alt.onclick = function () { show('setup'); }; }
+      else if (recovery && cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toRecover'); alt.onclick = function () { show('recover'); }; }
+      else if (cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toSignup'); alt.onclick = function () { show('signup'); }; }
+    } else if (v === 'signup') {
+      $('ag-title').textContent = t('signup'); note.hidden = false; note.textContent = t('signupNote');
+      f.innerHTML = field('ag-e', t('empno'), 'text', IC_USER, 'off', 'required') + field('ag-u', t('user'), 'text', IC_USER, 'username', 'required') +
+        field('ag-n', t('pass'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + field('ag-n2', t('newp2'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + button(t('signup'));
+      alt.hidden = false; alt.textContent = t('toLogin'); alt.onclick = function () { show('login'); };
+    } else if (v === 'change') {
+      $('ag-title').textContent = t('change'); note.hidden = false; note.textContent = t('changeNote');
+      f.innerHTML = field('ag-o', t('oldp'), 'password', IC_LOCK, 'current-password', 'required') + field('ag-n', t('newp'), 'password', IC_KEY, 'new-password', 'required minlength="10"') +
+        field('ag-n2', t('newp2'), 'password', IC_KEY, 'new-password', 'required minlength="10"') + button(t('save'));
+      alt.hidden = false; alt.textContent = t('out'); alt.onclick = logout;
+    } else if (v === 'setup') {
+      $('ag-title').textContent = t('setup'); note.hidden = false; note.textContent = t('setupNote');
+      f.innerHTML = field('ag-c', t('code'), 'text', IC_KEY, 'one-time-code', 'required') + field('ag-u', t('user'), 'text', IC_USER, 'username', 'required') +
+        field('ag-d', t('dname'), 'text', IC_USER, 'name', '') + field('ag-n', t('pass'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') +
+        field('ag-n2', t('newp2'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + button(t('create'));
+      alt.hidden = false; alt.textContent = t('toLogin'); alt.onclick = function () { show('login'); };
+    } else if (v === 'recover') {
+      $('ag-title').textContent = t('toRecover'); note.hidden = false; note.textContent = t('setupNote');
+      f.innerHTML = field('ag-c', t('code'), 'text', IC_KEY, 'one-time-code', 'required') + field('ag-n', t('newp'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') +
+        field('ag-n2', t('newp2'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + button(t('save'));
+      alt.hidden = false; alt.textContent = t('toLogin'); alt.onclick = function () { show('login'); };
+    } else if (v === 'forbidden') {
+      $('ag-title').textContent = t('forbidden'); f.innerHTML = '';
+      alt.hidden = false; alt.textContent = t('out'); alt.onclick = logout;
+    }
+    f.querySelectorAll('.ag-eye').forEach(function (b) {
+      b.onclick = function () {
+        var i = $(b.dataset.for), on = i.type === 'password';
+        i.type = on ? 'text' : 'password'; b.innerHTML = on ? IC_EYEOFF : IC_EYE;
+        b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', t(on ? 'hide' : 'show'));
+      };
+    });
+    var first = f.querySelector('input'); if (first) setTimeout(function () { if (!f.contains(document.activeElement)) first.focus(); }, 30);
+  }
+
+  function busy(on) { var b = $('ag-form').querySelector('.ag-btn'); if (b) { b.disabled = on; b.classList.toggle('busy', on); } }
+  function fail(e) { busy(false); $('ag-err').textContent = t(TX[codeOf(e)] ? codeOf(e) : 'NETWORK'); }
+
+  function onSubmit(ev) {
+    ev.preventDefault();
+    var v = function (id) { var el = $(id); return el ? el.value : ''; };
+    $('ag-err').textContent = '';
+    if (view === 'login') {
+      var u = v('ag-u').trim(), p = v('ag-p');
+      if (!u || !p) { $('ag-err').textContent = t('empty'); return; }
+      busy(true);
+      call('authLogin', u, p).then(function (r) { $('ag-p').value = ''; token = r.token; user = r.user; save(); busy(false); proceed(true); }, fail);
+    } else if (view === 'change') {
+      if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
+      busy(true);
+      call('authChangePassword', token, v('ag-o'), v('ag-n')).then(function (r) { token = r.token; user = r.user; save(); busy(false); proceed(true); }, function (e) {
+        if (codeOf(e) === 'AUTH_EXPIRED') { expire(); return; } fail(e);
+      });
+    } else if (view === 'recover') {
+      if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
+      busy(true);
+      call('authOwnerRecover', v('ag-c'), v('ag-n')).then(function () {
+        recovery = false; busy(false); show('login'); $('ag-err').style.color = '#276b3e'; $('ag-err').textContent = t('created');
+      }, fail);
+    } else if (view === 'signup') {
+      if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
+      busy(true);
+      call('authSignup', v('ag-e'), v('ag-u'), v('ag-n')).then(function () {
+        busy(false); show('login'); $('ag-err').style.color = '#276b3e'; $('ag-err').textContent = t('signupDone');
+        setTimeout(function () { $('ag-err').style.color = ''; }, 8000);
+      }, fail);
+    } else if (view === 'setup') {
+      if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
+      busy(true);
+      call('authBootstrapAdmin', v('ag-c'), v('ag-u'), v('ag-d'), v('ag-n')).then(function () {
+        bootstrap = false; busy(false); show('login'); $('ag-err').style.color = '#276b3e'; $('ag-err').textContent = t('created');
+        setTimeout(function () { $('ag-err').style.color = ''; }, 6000);
+      }, fail);
+    }
+  }
+
+  // Fast front end (GitHub Pages): pages are static files, so moving between them needs no server round trip.
+  // The identity handed over is for display only; every data call is still validated by the server.
+  var STATIC = { owner: 'owner.html', supervisor: 'supervisor.html', pack: 'pack.html', inventory: 'inventory.html', invread: 'inventory.html?mode=invread',
+    dash: 'dash.html', labels: 'labels.html', schedule: 'schedule.html', adc: 'adc.html', ward: 'ward.html', wardreq: 'myrequests.html' };
+  function fastGo(page) {
+    if (!window.PT_SITE || PREVIEW || !STATIC[page] || !token || !user) return false;
+    if (!user.isOwner && (user.pages || []).indexOf(page) === -1) return false;
+    try { sessionStorage.setItem('pt_boot', JSON.stringify({ token: token, user: user, page: page, at: Date.now() })); } catch (e) { return false; }
+    location.href = STATIC[page]; return true;
+  }
+  /** Loads the page of the account's own module, as decided by the server (unified sign-in). */
+  function goHome() {
+    if (user && user.home && fastGo(user.home)) return;
+    if (STATE !== 'AUTHENTICATED') { setState('INITIALIZING'); $('ag').hidden = false; }   // loader, not the form
+    call('authHomePage', token).then(render, function (e) { if (codeOf(e) === 'AUTH_EXPIRED') { expire(); return; } show('forbidden'); });
+  }
+
+  /**
+   * Swaps in the next page. The server already validated the session and the page permission for
+   * this response; the new page receives that identity so it does not show the gate again.
+   * Its data calls are still validated by the server one by one.
+   */
+  function render(r, opts) {
+    opts = opts || {};
+    var boot = '<script>window.__IPQ_BOOT=' + JSON.stringify({ token: token, user: r.user, page: r.mode }).replace(/</g, '\\u003c') + ';<\/script>';
+    var html = r.html, at = html.indexOf('<head>');
+    html = at > -1 ? html.slice(0, at + 6) + boot + html.slice(at + 6) : boot + html;
+    if (!opts.noPush) { try { google.script.history.push({ page: r.mode }, { mode: r.mode }); } catch (e) {} }
+    document.open(); document.write(html); document.close();
+  }
+
+  function showLogin() {
+    if (cfg.allowBootstrap) call('authStatus').then(function (s) { bootstrap = !!s.bootstrap; recovery = !!s.recovery; if (view === 'login' && STATE !== 'AUTHENTICATED' && !$('ag-err').textContent) show('login'); }, function () {});
+    show('login');
+  }
+  function proceed(fresh) {
+    if (user.mustChange) { show('change'); return; }
+    // Unified entry page, or a fresh sign-in on another module's link → the server routes to the account's module.
+    // A restored session on another module's link is refused (no module switching by URL).
+    var allowed = !cfg.page || (user.pages || []).indexOf(cfg.page) > -1;
+    if (cfg.route || (fresh && !allowed)) { goHome(); return; }
+    if (!allowed) { show('forbidden'); return; }
+    setState('AUTHENTICATED'); $('ag').hidden = true;
+    bar(); watchIdle();
+    if (cfg.onReady) { var cb = cfg.onReady; cfg.onReady = null; cb(user); }   // page loads its data once
+    setTimeout(function () {   // warm the copies of the heavy pages this account can open, so the first visit is instant too
+      if (PREVIEW || !user) return; var pg = user.isOwner ? ['labels', 'supervisor'] : (user.pages || []);
+      var d = new Date(), ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (pg.indexOf('labels') > -1 && cfg.page !== 'labels') run('getLabelsPage').catch(function () {});
+      if ((pg.indexOf('supervisor') > -1 || user.isOwner) && cfg.page !== 'supervisor' && cfg.page !== 'owner') run('dutyGet', ym).catch(function () {});
+    }, 2500);
+  }
+
+  /* Sidebar shell (monochrome): navigation to the pages this account may open (server re-checks every page). */
+  var ICON = {
+    owner: '<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/>',
+    supervisor: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>',
+    dash: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    pack: '<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/>',
+    inventory: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>',
+    invread: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    labels: '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+    schedule: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    adc: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M4 8h16M4 14h16M10 5h4M10 11h4M10 17h4"/>',
+    wardreq: '<path d="M9 3h6v4H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M9 14l2 2 4-4"/>',
+    ward: '<path d="M9 3h6v4H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M12 11v6M9 14h6"/>'
+  };
+  var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
+    inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], wardreq: ['My requests', 'طلباتي'], schedule: ['My tasks', 'مهامي'] };
+  var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
+  var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'] };
+  function L(p) { return LANG === 'en' ? p[0] : p[1]; }
+  function bar() {
+    var old = $('ag-bar'); if (old) old.remove();
+    ['ag-side', 'ag-top', 'ag-pv', 'ag-scrim'].forEach(function (id) { var x = $(id); if (x) x.remove(); });
+    var pages = user.pages || [];
+    var dir = document.documentElement.getAttribute('dir') || 'rtl';
+    var nav = GROUPS.map(function (g) {
+      var items = g[2].filter(function (p) { return pages.indexOf(p) > -1; });
+      if (!items.length) return '';
+      return '<div class="ag-sec"><span>' + L(g) + '</span></div>' + items.map(function (p) {
+        return '<button type="button" class="ag-item ag-nav" data-p="' + p + '"' + (p === cfg.page ? ' aria-current="page"' : '') + '><svg viewBox="0 0 24 24">' + ICON[p] + '</svg><span>' + L(NAV[p]) + '<em>' + (LANG === 'en' ? NAV[p][1] : NAV[p][0]) + '</em></span></button>';
+      }).join('');
+    }).join('');
+    var nm = user.displayName || user.username, ini = nm.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+    var side = document.createElement('aside'); side.id = 'ag-side'; side.className = 'ag-side'; side.setAttribute('dir', LANG === 'en' ? 'ltr' : 'rtl');
+    side.innerHTML = '<div class="ag-brand"><i>PT</i><div><b>Pharmacy Tracker</b><small>by WaadAlwagdani</small></div>' + '<button type="button" class="ag-chip ag-lchip" id="ag-lang2" title="' + (LANG === 'en' ? 'العربية' : 'English') + '" aria-label="' + (LANG === 'en' ? 'التبديل إلى العربية' : 'Switch to English') + '">' + langIcon(40) + '</button>' + '</div>' +
+      '<nav class="ag-nav-list" aria-label="Pages">' + nav + '</nav>' +
+      '<div class="ag-me"><div class="ag-av">' + esc(ini) + '</div><div><b dir="auto">' + esc(nm) + '</b><small>' + L(ROLE[user.sysRole] || ['', '']) + '</small></div></div>' +
+      (PREVIEW ? '' : '<button type="button" class="ag-item ag-out" id="ag-out"><svg viewBox="0 0 24 24"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/></svg><span>' + L(['Sign out', 'تسجيل الخروج']) + '<em>' + (LANG === 'en' ? 'تسجيل الخروج' : 'Sign out') + '</em></span></button>');
+    var top = document.createElement('div'); top.id = 'ag-top'; top.className = 'ag-top';
+    top.innerHTML = '<div class="ag-crumb"><button type="button" class="ag-burger" id="ag-burger" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0a0a0a" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
+      '<span class="ag-hi">' + (LANG === 'en' ? 'Welcome, ' : 'مرحبًا، ') + '<b dir="auto">' + esc(nm) + '</b></span><span class="ag-role">' + esc(L(ROLE[user.isOwner ? 'OWNER' : user.sysRole] || ['', ''])) + '</span></div>';
+    var scrim = document.createElement('div'); scrim.id = 'ag-scrim'; scrim.className = 'ag-scrim';
+    document.body.insertBefore(top, document.body.firstChild);
+    if (PREVIEW) {
+      var pv = document.createElement('div'); pv.id = 'ag-pv'; pv.className = 'ag-pv';
+      pv.innerHTML = '<div><span>👁 Preview — read-only · معاينة للقراءة فقط: ' + esc(nm) + '</span><button type="button" id="ag-endpv">End preview · إنهاء المعاينة</button></div>';
+      top.after(pv); $('ag-endpv').onclick = endPreview;
+    }
+    document.body.appendChild(scrim); document.body.appendChild(side);
+    document.body.classList.add('ag-shell');
+    if (!PREVIEW) $('ag-out').onclick = logout;
+    $('ag-burger').onclick = function () { document.body.classList.toggle('ag-menu'); };
+    scrim.onclick = function () { document.body.classList.remove('ag-menu'); };
+    $('ag-lang2').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} bar(); };
+    side.querySelectorAll('.ag-nav').forEach(function (x) { x.onclick = function () { document.body.classList.remove('ag-menu'); if (x.dataset.p !== cfg.page) open(x.dataset.p); }; });
+    renderSub();
+  }
+
+  /* In-page tabs (e.g. Supervision: Monitoring / Task distribution / My team …) are shown in the sidebar,
+     under the current page — Pharmacy Tracker by WaadAlwagdani. The page's own tab buttons stay as the source of truth. */
+  var SUB = null;
+  function tabBtnOn(b) { return b.getAttribute('aria-selected') === 'true' || b.classList.contains('on') || /rgb\(10, 10, 10\)|#0a0a0a/i.test(b.style.background); }
+  function mirrorTabs() {
+    var bar = document.querySelector('.ou-tabs, .ptabs');
+    if (!bar || bar === (SUB && SUB.bar)) return;
+    var btns = [].slice.call(bar.querySelectorAll('button'));
+    if (btns.length < 2) return;
+    bar.style.display = 'none';
+    var cur = 0; btns.forEach(function (b, i) { if (tabBtnOn(b)) cur = i; });
+    SUB = { bar: bar, btns: btns, cur: cur };
+    renderSub();
+  }
+  function renderSub() {
+    var side = $('ag-side'); if (!side) return;
+    var old = side.querySelector('.ag-subs'); if (old) old.remove();
+    if (!SUB || !document.body.contains(SUB.bar)) return;
+    var host = side.querySelector('.ag-nav[aria-current=page]'); if (!host) return;
+    var box = document.createElement('div'); box.className = 'ag-subs';
+    box.innerHTML = SUB.btns.map(function (b, i) {
+      var t = b.textContent.split(' · '), en = (t[0] || '').trim(), ar = (t[1] || t[0] || '').trim();
+      return '<button type="button" class="ag-tabi" data-i="' + i + '" aria-current="' + (i === SUB.cur) + '"><span>' + esc(LANG === 'en' ? en : ar) + '</span><em>' + esc(LANG === 'en' ? ar : en) + '</em></button>';
+    }).join('');
+    host.after(box);
+    setTitle();
+    box.querySelectorAll('.ag-tabi').forEach(function (x) { x.onclick = function () {
+      var i = +x.dataset.i; SUB.cur = i; SUB.btns[i].click(); document.body.classList.remove('ag-menu'); renderSub();
+    }; });
+  }
+  /* page heading follows the open tab (e.g. Re-packaging → Stock shows «الرصيد · Stock») */
+  function setTitle() {
+    var bn = document.querySelector('.banner'); if (!bn || !SUB) return;
+    var t = SUB.btns[SUB.cur].textContent.split(' · '), en = (t[0] || '').trim(), ar = (t[1] || t[0] || '').trim();
+    var bi = bn.querySelector('.bi'), b = bn.querySelector(':scope > b');
+    if (bi && bi.querySelector('.en')) { bi.querySelector('.en').textContent = en; bi.querySelector('.ar').textContent = ar; }
+    else if (b) b.textContent = ar + ' · ' + en;
+    [].forEach.call(bn.children, function (c) { if (c !== bi && c !== b && c.tagName === 'SPAN') c.style.display = SUB.cur === 0 ? '' : 'none'; });
+  }
+  try { new MutationObserver(function () { mirrorTabs(); }).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+
+  /* 15 minutes without any activity → signed out. Activity keeps the server session alive (every 2 minutes at most);
+     the server also ends every session 40 minutes after sign-in, whatever the activity. */
+  var IDLE_MS = 15 * 60000, idleT = null, lastPing = Date.now(), watching = false;
+  function watchIdle() {
+    if (watching) return; watching = true;
+    var reset = function () {
+      clearTimeout(idleT); idleT = setTimeout(function () { if (STATE === 'AUTHENTICATED') expire(); }, IDLE_MS);
+      if (Date.now() - lastPing > 120000 && token) { lastPing = Date.now(); call('authWhoAmI', token).then(null, function (e) { var c = codeOf(e); if (c === 'AUTH_EXPIRED' || c === 'AUTH_REVOKED') expire(); }); }
+    };
+    ['click', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach(function (ev) { document.addEventListener(ev, reset, { passive: true, capture: true }); });
+    reset();
+  }
+  // on the fast front end (GitHub Pages) sign-in stays on that site; otherwise the Apps Script URL
+  var APP_URL = window.PT_SITE || (/github\.io$/.test(location.hostname) ? location.origin + location.pathname.replace(/[^\/]*$/, '') + 'index.html' : '') || 'https://script.google.com/macros/s/AKfycbxZWqepiEwUOl9sgLKNR7QjPRs3VJod_KcSgXHpdOOBqFQaRxKZ80Gg2MYOvZfy0zRF/exec';
+  function wipe() {
+    // drop the page and its in-memory data, then open the sign-in page in the whole tab
+    token = null; user = null; save(); cacheClear();
+    var u = APP_URL + '?mode=login';
+    // visible fallback: if the browser blocks the automatic redirect, the page is never left blank
+    document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f4f5;font-family:IBM Plex Sans,IBM Plex Sans Arabic,Arial,sans-serif">' +
+      '<div style="text-align:center;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:28px 32px;color:#0a0a0a">' +
+      '<div style="font-weight:700;font-size:16px;margin-bottom:6px">Signed out · تم تسجيل الخروج</div>' +
+      '<div style="color:#71717a;font-size:13px;margin-bottom:16px">Pharmacy Tracker by WaadAlwagdani</div>' +
+      '<a href="' + u + '" target="_top" style="display:inline-block;background:#0a0a0a;color:#fff;text-decoration:none;border-radius:8px;padding:9px 18px;font-weight:600;font-size:13px">Sign in again · تسجيل الدخول مجددًا</a></div></div>';
+    try { window.top.location.href = u; } catch (e) { try { window.open(u, '_top'); } catch (x) {} }
+  }
+  function logout() { if (PREVIEW) return endPreview(); var tk = token; token = null; save(); call('authLogout', tk).then(wipe, wipe); }
+  /* Owner preview: the preview token lives only in this tab (sessionStorage), never replaces the Owner's own session. */
+  function startPreview(r) {
+    try { sessionStorage.setItem(PKEY, JSON.stringify({ token: r.token, name: r.user.displayName })); } catch (e) {}
+    PREVIEW = r.token; token = r.token; user = r.user; open(r.home);
+  }
+  function endPreview() {
+    var pt = PREVIEW; PREVIEW = null; try { sessionStorage.removeItem(PKEY); } catch (e) {}
+    var own = null; try { own = localStorage.getItem(KEY) || sessionStorage.getItem(KEY); } catch (e) {}
+    var back = function () { if (own) { token = own; open('owner'); } else { wipe(); } };
+    call('authPreviewEnd', pt).then(back, back);
+  }
+  function expire() { if (PREVIEW) return endPreview(); token = null; user = null; save(); try { sessionStorage.setItem('ipq_expired', '1'); } catch (e) {} wipe(); }
+
+  function start(o) {
+    cfg = o || {};
+    $('ag').style.setProperty('--ag-accent', '#0a0a0a'); $('ag').style.setProperty('--ag-bg', '#f4f4f5');   // monochrome theme on every page
+    if (cfg.barWidth) document.documentElement.style.setProperty('--ag-barw', cfg.barWidth);
+    $('ag-form').addEventListener('submit', onSubmit);
+    $('ag-lang').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} show(view); };
+    var stored = null; try { stored = localStorage.getItem(KEY) || sessionStorage.getItem(KEY); } catch (e) {}
+    try { var pv = JSON.parse(sessionStorage.getItem(PKEY) || 'null'); if (pv && pv.token) { PREVIEW = pv.token; stored = pv.token; } } catch (e) {}
+    // back / forward between pages of the app
+    try { google.script.history.setChangeHandler(function (e) { var pg = (e && e.state && e.state.page) || (e && e.location && e.location.parameter && e.location.parameter.mode); if (pg && STATE === 'AUTHENTICATED' && pg !== cfg.page) open(pg, { noPush: true }); }); } catch (e) {}
+    var boot = window.__IPQ_BOOT; window.__IPQ_BOOT = null;
+    if (!boot && window.PT_SITE) { try { var pb = JSON.parse(sessionStorage.getItem('pt_boot') || 'null'); sessionStorage.removeItem('pt_boot');
+      if (pb && pb.token && Date.now() - pb.at < 30000 && pb.page === cfg.page) boot = pb; } catch (e) {} }
+    if (cfg.fresh && !PREVIEW) {                                   // the sign-in page never reuses a saved session
+      if (stored) { try { call('authLogout', stored); } catch (e) {} }
+      token = null; save(); stored = null; boot = null;
+    }
+    if (boot && boot.token && boot.user && (!stored || stored === boot.token)) {
+      token = boot.token; user = boot.user; proceed();                     // navigation inside the app: no gate at all
+      return;
+    }
+    if (stored) {
+      token = stored; setState('INITIALIZING');
+      call('authWhoAmI', stored).then(function (u) { user = u; proceed(); }, function (e) {
+        if (PREVIEW) { endPreview(); return; }
+        token = null; save();
+        var c = codeOf(e); if (c === 'AUTH_EXPIRED') { setState('SESSION_EXPIRED'); show('login', 'AUTH_EXPIRED'); } else showLogin();
+      });
+    } else {
+      var was = false; try { was = sessionStorage.getItem('ipq_expired') === '1'; sessionStorage.removeItem('ipq_expired'); } catch (e) {}
+      if (was) { setState('SESSION_EXPIRED'); show('login', 'AUTH_EXPIRED'); } else showLogin();
+    }
+  }
+
+  /** Opens another page the account may see (server checks the role), with a "home" chip for supervisors. */
+  function open(page, opts) {
+    if (fastGo(page)) return;
+    call('authPage', token, page).then(function (r) { render(r, opts); },
+      function (e) { if (codeOf(e) === 'AUTH_EXPIRED') expire(); else alertBox(); });
+  }
+  function alertBox() { var b = document.getElementById('ag-top') || document.getElementById('ag-bar'); if (b) b.insertAdjacentHTML('beforeend', '<span style="color:#a3231b">' + esc(t('forbidden')) + '</span>'); }
+
+  return { start: start, run: run, open: open, call: call, logout: logout, startPreview: startPreview, get preview() { return !!PREVIEW; }, get token() { return token; }, get user() { return user; } };
+})();
+</script>
+
+<div class="wrap" style="max-width:760px">
+  <div class="banner" style="margin-bottom:10px"><b>طلب جديد · New request</b><span class="bsub">يُرسل الطلب مسبقًا مع موعد الاحتياج، ويصل إشعار عند جاهزيته</span></div>
+  <div class="ptabs" style="display:flex;gap:8px;margin-bottom:12px"><button type="button" class="pill on" data-t="new" aria-checked="true">New request · طلب جديد</button><button type="button" class="pill" data-t="mine">My requests · طلباتي</button></div>
+  <div id="ready" hidden></div>
+  <div class="msg" id="msg" role="status" aria-live="polite" hidden></div>
+  <div id="app"><div class="loading">Loading · جاري التحميل</div></div>
+  <div id="mine" hidden></div>
+  <footer>Pharmacy Tracker by WaadAlwagdani</footer>
+</div>
+<script>
+/* Floor stock & Crash cart request — Pharmacy Tracker by WaadAlwagdani. No sign-in, no approval step. */
+(function(){
+  var ME=(AuthGate.user&&(AuthGate.user.displayName||AuthGate.user.username))||'', SEEN={}, MINE=null;
+  var CFG=null, SEL=null, TYPE=null, ROWS=[], SUB=null, BUSY=false, rid=0;
+  var ERR={NAME_REQUIRED:['Enter medication','اسم الدواء مطلوب'],QTY_INVALID:['Whole number ≥ 1','رقم صحيح ١ أو أكثر'],UNKNOWN_DRUG:['Pick from the list','يُختار من القائمة'],
+    DEPT_REQUIRED:['Select department','القسم مطلوب'],TYPE_REQUIRED:['Select request type','نوع الطلب مطلوب'],BY_REQUIRED:['Name required','الاسم مطلوب'],
+    NET:['Not sent — check connection','لم يُرسل — يُرجى التحقق من الاتصال'],TOO_MANY_ITEMS:['Too many items','عدد الأصناف كبير'],ITEMS_REQUIRED:['Add at least one item','يلزم إضافة صنف واحد على الأقل'],
+    NO_LIST:['No saved list for this department yet','لا توجد قائمة محفوظة لهذا القسم بعد']};
+  function bi(k){var v=ERR[k]||ERR.NET;return '<span class="bi"><span class="en">'+v[0]+'</span><span class="ar">'+v[1]+'</span></span>';}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function $(id){return document.getElementById(id);}
+  function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(x){return null;}}
+  function newSub(){SUB=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));}
+  function dirty(){SUB=null;}
+
+  function render(){
+    var h='<div class="card"><div class="lbl bi" id="typeLbl"><span class="en">Request type</span><span class="ar">نوع الطلب</span></div><div class="err" id="typeErr"></div><div class="pills">'+
+      CFG.types.map(function(t){return '<button type="button" class="pill tp" role="radio" aria-checked="false" data-t="'+t.key+'">'+esc(t.en)+' · '+(t.key==='crash'?'عربة الطوارئ':'مخزون القسم')+'</button>';}).join('')+'</div></div>';
+    h+='<div class="card"><div class="lbl bi" id="deptLbl"><span class="en">Department</span><span class="ar">القسم الطالب</span></div><div class="err" id="deptErr"></div>';
+    if(!CFG.hospitals.length)h+='<div class="err" style="display:block">Departments are not set up yet · لم تُعدّ الأقسام بعد</div>';
+    CFG.hospitals.forEach(function(H){
+      h+='<div class="grp">'+esc(H.name)+'</div><div class="pills">'+
+        H.depts.map(function(d){return '<button type="button" class="pill dp" role="radio" aria-checked="false" data-h="'+H.key+'" data-d="'+esc(d)+'">'+esc(d)+'</button>';}).join('')+'</div>';
+    });
+    h+='</div><input type="hidden" id="by" value="'+esc(ME)+'">';
+    h+='<div class="card"><div class="lbl bi"><span class="en">Items</span><span class="ar">الأصناف المطلوبة</span></div>'+
+      '<div class="tools"><button type="button" id="load">Load default list<br><span class="ar">تحميل القائمة الافتراضية</span></button>'+
+      '<button type="button" id="save">Save as default<br><span class="ar">حفظ كقائمة افتراضية</span></button></div>'+
+      '<div class="hint" dir="rtl">القائمة الافتراضية محفوظة لكل قسم ونوع طلب، وتُحمَّل بضغطة واحدة بدل إدخال الأصناف كل مرة.</div><div id="rows" style="margin-top:10px"></div>'+
+      '<button type="button" class="add" id="add"><span class="btnbi"><span class="en">+ Add Item</span><span class="ar">إضافة صنف</span></span></button>'+
+      '<div class="fld" style="margin-top:10px"><div class="cap"><span>Needed by (optional — schedule ahead)</span><span class="ar">موعد الاحتياج (اختياري — للجدولة مسبقًا)</span></div><input type="datetime-local" id="need"></div>'+
+      '<div class="fld" style="margin-top:10px"><div class="cap"><span>Note (optional)</span><span class="ar">ملاحظة (اختياري)</span></div><input type="text" id="note" maxlength="200" autocomplete="off"></div></div>'+
+      '<button type="button" class="go" id="go"><span class="btnbi"><span class="en">Send request</span><span class="ar">إرسال الطلب</span></span></button>';
+    $('app').innerHTML=h;
+    document.querySelectorAll('.tp').forEach(function(p){p.onclick=function(){TYPE=p.dataset.t;dirty();document.querySelectorAll('.tp').forEach(function(x){x.setAttribute('aria-checked',x===p?'true':'false');});$('typeErr').innerHTML='';};});
+    document.querySelectorAll('.dp').forEach(function(p){p.onclick=function(){SEL={h:p.dataset.h,d:p.dataset.d};dirty();document.querySelectorAll('.dp').forEach(function(x){x.setAttribute('aria-checked',x===p?'true':'false');});$('deptErr').innerHTML='';};});
+    $('add').onclick=function(){addRow(true);};
+    $('go').onclick=send; $('load').onclick=loadList; $('save').onclick=saveList;
+    ROWS=[];$('rows').innerHTML='';addRow(false);
+  }
+  function addRow(focus,pre){
+    var r={id:++rid,drugNo:pre?pre.drugNo:''};ROWS.push(r);
+    var el=document.createElement('div');el.className='row';
+    el.innerHTML='<div class="head"><span>#'+ROWS.length+'</span><button type="button" class="rm"><span class="en">Remove</span> | <span class="ar">حذف</span></button></div>'+
+      '<div class="fld"><div class="cap"><span>Medication</span><span class="ar">اسم الصنف</span></div>'+
+        '<input type="text" class="nm" autocomplete="off" spellcheck="false" maxlength="80"><div class="sugg" hidden></div><div class="err"></div></div>'+
+      '<div class="fld"><div class="cap"><span>Qty</span><span class="ar">الكمية</span></div>'+
+        '<input type="text" class="qt" inputmode="numeric" maxlength="5" autocomplete="off"><div class="err"></div></div>';
+    $('rows').appendChild(el);r.el=el;
+    var nm=el.querySelector('.nm'),qt=el.querySelector('.qt'),box=el.querySelector('.sugg');
+    if(pre){nm.value=pre.name+(pre.strength?' '+pre.strength:'');qt.value=pre.qty;}
+    auto(nm,box,function(d){r.drugNo=d.no;nm.value=d.name+(d.strength?' '+d.strength:'');clearErr(nm);dirty();qt.focus();});
+    nm.addEventListener('input',function(){r.drugNo='';clearErr(nm);dirty();});
+    qt.addEventListener('input',function(){qt.value=qt.value.replace(/[^0-9]/g,'');clearErr(qt);dirty();});
+    el.querySelector('.rm').onclick=function(){ROWS=ROWS.filter(function(x){return x!==r;});el.remove();renumber();dirty();if(!ROWS.length)addRow(false);};
+    if(focus)nm.focus();
+  }
+  function renumber(){ROWS.forEach(function(r,i){r.el.querySelector('.head span').textContent='#'+(i+1);});}
+  function clearErr(inp){inp.classList.remove('bad');inp.parentNode.querySelector('.err').innerHTML='';}
+  function setErr(inp,k){inp.classList.add('bad');inp.parentNode.querySelector('.err').innerHTML=bi(k);}
+  function auto(inp,box,onPick){
+    var list=[],idx=-1;
+    function show(){var q=inp.value.trim().toLowerCase();idx=-1;
+      list=q.length<2?[]:CFG.drugs.filter(function(d){return d.name.toLowerCase().indexOf(q)===0;})
+        .concat(CFG.drugs.filter(function(d){return d.name.toLowerCase().indexOf(q)>0;})).slice(0,8);
+      if(!list.length){box.hidden=true;return;}
+      box.innerHTML=list.map(function(d,i){return '<div data-i="'+i+'">'+esc(d.name)+' <small>'+esc(d.strength||'')+'</small></div>';}).join('');box.hidden=false;
+      box.querySelectorAll('div').forEach(function(el){el.onmousedown=function(e){e.preventDefault();onPick(list[+el.dataset.i]);box.hidden=true;};});}
+    inp.addEventListener('input',show);inp.addEventListener('blur',function(){setTimeout(function(){box.hidden=true;},150);});
+    inp.addEventListener('keydown',function(e){if(box.hidden)return;
+      if(e.key==='ArrowDown')idx=Math.min(idx+1,list.length-1);else if(e.key==='ArrowUp')idx=Math.max(idx-1,0);
+      else if(e.key==='Enter'){e.preventDefault();onPick(list[Math.max(idx,0)]);box.hidden=true;return;}else return;
+      box.querySelectorAll('div').forEach(function(el,i){el.classList.toggle('on',i===idx);});});
+  }
+  function msg(html,ok,retry){var m=$('msg');m.className='msg '+(ok?'ok':'bad');m.innerHTML=html+(retry?'<button type="button" class="retry"><span class="btnbi"><span class="en">Retry</span><span class="ar">إعادة المحاولة</span></span></button>':'');m.hidden=false;
+    if(retry)m.querySelector('.retry').onclick=send;window.scrollTo(0,0);}
+  function needPlace(){var bad=false;if(!TYPE){$('typeErr').innerHTML=bi('TYPE_REQUIRED');bad=true;}if(!SEL){$('deptErr').innerHTML=bi('DEPT_REQUIRED');bad=true;}
+    if(bad)$('typeLbl').scrollIntoView({block:'center',behavior:'smooth'});return bad;}
+  function collect(){
+    var bad=false,items=[];
+    ROWS.forEach(function(r){var nm=r.el.querySelector('.nm'),qt=r.el.querySelector('.qt'),n=nm.value.trim(),q=qt.value.trim();
+      if(!n&&!q&&ROWS.length>1)return;
+      if(!r.drugNo){setErr(nm,n?'UNKNOWN_DRUG':'NAME_REQUIRED');bad=true;}
+      if(!/^\d+$/.test(q)||+q<1||+q>10000){setErr(qt,'QTY_INVALID');bad=true;}
+      items.push({drugNo:r.drugNo,qty:+q});});
+    if(bad){var f=document.querySelector('input.bad');if(f)f.scrollIntoView({block:'center',behavior:'smooth'});return null;}
+    return items;
+  }
+  function serverErr(e){
+    var m=String(e&&e.message||''),v=m.match(/VALIDATION:(\[.*\])/);
+    if(v){try{JSON.parse(v[1]).forEach(function(x){var r=ROWS[x.i];if(r)setErr(r.el.querySelector(x.f==='qty'?'.qt':'.nm'),x.e);});}catch(z){}return;}
+    var k=(m.match(/DEPT_REQUIRED|TOO_MANY_ITEMS|ITEMS_REQUIRED|NAME_REQUIRED/)||['NET'])[0];if(k==='NAME_REQUIRED')k='BY_REQUIRED';
+    msg(bi(k),false,k==='NET');
+  }
+  function loadList(){
+    if(needPlace())return;
+    $('load').disabled=true;
+    google.script.run.withSuccessHandler(function(list){$('load').disabled=false;
+      if(!list.length){msg(bi('NO_LIST'),false,false);return;}
+      $('msg').hidden=true;ROWS=[];$('rows').innerHTML='';list.forEach(function(it){addRow(false,it);});dirty();
+    }).withFailureHandler(function(e){$('load').disabled=false;serverErr(e);}).wardGetList(SEL.h,SEL.d,TYPE);
+  }
+  function saveList(){
+    if(needPlace())return;var items=collect();if(!items)return;
+    $('save').disabled=true;
+    google.script.run.withSuccessHandler(function(r){$('save').disabled=false;
+      msg('<span class="bi"><span class="en">Default list saved ✓ ('+r.count+')</span><span class="ar">تم حفظ القائمة الافتراضية ✓ ('+r.count+')</span></span>',true,false);
+    }).withFailureHandler(function(e){$('save').disabled=false;serverErr(e);}).wardSaveList({hospital:SEL.h,dept:SEL.d,type:TYPE,items:items,by:$('by').value.trim()});
+  }
+  function send(){
+    if(BUSY)return;$('msg').hidden=true;
+    var by=ME,bad=needPlace();
+    var items=collect();if(bad||!items)return;
+    if(!SUB)newSub();store('ward_by',by);
+    BUSY=true;$('go').disabled=true;
+    AuthGate.run('wardSubmitMe',{submissionId:SUB,type:TYPE,hospital:SEL.h,dept:SEL.d,items:items,note:$('note').value.trim(),needBy:$('need').value}).then(function(r){
+      BUSY=false;SUB=null;TYPE=null;SEL=null;render();loadMine();
+      msg('<span class="bi"><span class="en">Request sent ✓</span><span class="ar">تم إرسال الطلب ✓</span></span><small style="direction:ltr;text-align:left">'+esc(r.type)+' · '+esc(r.dept)+' · '+r.count+' item'+(r.count>1?'s':'')+' · '+esc(r.id)+(r.needBy?' · Needed by '+esc(r.needBy):'')+'</small>',true,false);
+    },function(e){BUSY=false;$('go').disabled=false;serverErr(e);});
+  }
+  /* My requests + "ready" alert (checked every minute) */
+  var AR={New:'جديد',Preparing:'قيد التجهيز',Ready:'جاهز للاستلام',Delivered:'تم التسليم',Cancelled:'ملغى'};
+  var SC={New:'#b91c1c;background:#fde8e8',Preparing:'#a16207;background:#fef6dc',Ready:'#1e40af;background:#e8eefc',Delivered:'#15803d;background:#e6f4ea',Cancelled:'#6b6862;background:#eeeeec'};
+  try{SEEN=JSON.parse(localStorage.getItem('ward_seen_ready')||'{}');}catch(x){SEEN={};}
+  function loadMine(){AuthGate.run('wardMine').then(function(d){MINE=d.rows;drawMine();},function(){});}
+  function drawMine(){
+    var ready=MINE.filter(function(r){return r.status==='Ready';});
+    var fresh=ready.filter(function(r){return !SEEN[r.id];});
+    $('ready').hidden=!ready.length;
+    $('ready').innerHTML=ready.length?'<div class="msg ok" style="border:2px solid #1e40af;background:#e8eefc;color:#1e40af"><span class="bi"><span class="en">'+ready.length+' request(s) ready for pickup</span><span class="ar">'+ready.length+' طلب جاهز للاستلام</span></span><small>'+ready.map(function(r){return esc(r.type)+' · '+esc(r.dept)+' · '+esc(r.id);}).join('<br>')+'</small></div>':'';
+    if(fresh.length){document.title='● '+document.title.replace(/^● /,'');try{if(window.Notification&&Notification.permission==='granted')new Notification('Pharmacy Tracker',{body:'طلبك جاهز للاستلام · Your request is ready'});}catch(x){}
+      fresh.forEach(function(r){SEEN[r.id]=1;});try{localStorage.setItem('ward_seen_ready',JSON.stringify(SEEN));}catch(x){}}
+    $('mine').innerHTML=MINE.length?MINE.map(function(r){
+      return '<div class="card"><div class="bi" style="align-items:center"><span class="en"><b>'+esc(r.type)+'</b> · '+esc(r.dept)+'<br><small style="color:var(--muted)">'+esc(r.id)+' · '+esc(r.at)+(r.needBy?' · Needed by '+esc(r.needBy):'')+'</small></span>'+
+        '<span style="border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap;color:'+(SC[r.status]||SC.New)+'">'+esc(AR[r.status]||r.status)+' · '+esc(r.status)+'</span></div>'+
+        '<ul style="margin:8px 0 0;padding:0 18px;direction:ltr;text-align:left">'+r.items.map(function(it){return '<li>'+esc(it.name)+(it.strength?' '+esc(it.strength):'')+' — <b>'+it.qty+'</b></li>';}).join('')+'</ul>'+
+        (r.handler?'<small style="display:block;color:var(--muted);margin-top:6px">'+esc(r.handler)+' · '+esc(r.updated)+'</small>':'')+'</div>';
+    }).join(''):'<div class="card" style="color:var(--muted)"><span class="bi"><span class="en">No requests yet</span><span class="ar">لا توجد طلبات بعد</span></span></div>';
+  }
+  function tab(t){document.querySelectorAll('.ptabs .pill').forEach(function(b){var on=b.dataset.t===t;b.classList.toggle('on',on);b.setAttribute('aria-checked',on);});
+    $('app').hidden=t!=='new';$('mine').hidden=t!=='mine';}
+  document.querySelectorAll('.ptabs .pill').forEach(function(b){b.onclick=function(){tab(b.dataset.t);};});
+  AuthGate.start({accent:'#0a0a0a',bg:'#f6f5f2',barWidth:'760px',page:'wardreq',onReady:function(){
+    ME=(AuthGate.user&&(AuthGate.user.displayName||AuthGate.user.username))||'';
+    google.script.run.withSuccessHandler(function(c){CFG=c;render();})
+      .withFailureHandler(function(){$('app').innerHTML='<div class="msg bad">'+bi('NET')+'</div>';}).wardConfig();
+    loadMine();setInterval(function(){if(!document.hidden)loadMine();},60000);
+    try{if(window.Notification&&Notification.permission==='default')Notification.requestPermission();}catch(x){}
+  }});
+})();
+</script>
+</body>
+</html>

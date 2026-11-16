@@ -121,6 +121,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
       '<button type="button" id="save">Save as default<br><span class="ar">حفظ كقائمة افتراضية</span></button></div>'+
       '<div class="hint" dir="rtl">القائمة الافتراضية محفوظة لكل قسم ونوع طلب، وتُحمَّل بضغطة واحدة بدل إدخال الأصناف كل مرة.</div><div id="rows" style="margin-top:10px"></div>'+
       '<button type="button" class="add" id="add"><span class="btnbi"><span class="en">+ Add Item</span><span class="ar">إضافة صنف</span></span></button>'+
+      '<div class="fld" style="margin-top:10px"><div class="cap"><span>Needed by (optional — schedule ahead)</span><span class="ar">موعد الاحتياج (اختياري — للجدولة مسبقًا)</span></div><input type="datetime-local" id="need"></div>'+
       '<div class="fld" style="margin-top:10px"><div class="cap"><span>Note (optional)</span><span class="ar">ملاحظة (اختياري)</span></div><input type="text" id="note" maxlength="200" autocomplete="off"></div></div>'+
       '<button type="button" class="go" id="go"><span class="btnbi"><span class="en">Send request</span><span class="ar">إرسال الطلب</span></span></button>';
     $('app').innerHTML=h;
@@ -209,9 +210,9 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     BUSY=true;$('go').disabled=true;
     google.script.run.withSuccessHandler(function(r){
       BUSY=false;SUB=null;TYPE=null;SEL=null;render();
-      msg('<span class="bi"><span class="en">Request sent ✓</span><span class="ar">تم إرسال الطلب ✓</span></span><small style="direction:ltr;text-align:left">'+esc(r.type)+' · '+esc(r.dept)+' · '+r.count+' item'+(r.count>1?'s':'')+' · '+esc(r.id)+'</small>',true,false);
+      msg('<span class="bi"><span class="en">Request sent ✓</span><span class="ar">تم إرسال الطلب ✓</span></span><small style="direction:ltr;text-align:left">'+esc(r.type)+' · '+esc(r.dept)+' · '+r.count+' item'+(r.count>1?'s':'')+' · '+esc(r.id)+(r.needBy?' · Needed by '+esc(r.needBy):'')+'</small>',true,false);
     }).withFailureHandler(function(e){BUSY=false;$('go').disabled=false;serverErr(e);})
-      .wardSubmit({submissionId:SUB,type:TYPE,hospital:SEL.h,dept:SEL.d,by:by,items:items,note:$('note').value.trim()});
+      .wardSubmit({submissionId:SUB,type:TYPE,hospital:SEL.h,dept:SEL.d,by:by,items:items,note:$('note').value.trim(),needBy:$('need').value});
   }
   google.script.run.withSuccessHandler(function(c){CFG=c;render();})
     .withFailureHandler(function(){$('app').innerHTML='<div class="msg bad">'+bi('NET')+'</div>';}).wardConfig();
