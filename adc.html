@@ -777,6 +777,7 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    ADC_NOT_ASSIGNED: ['This cabinet is not assigned to you', 'هذه الكابينة غير مُسندة إليك'],
     FORBIDDEN: ['Not permitted', 'غير مصرّح'], CONFLICT: ['Changed by someone else — reloaded', 'عُدّل من مستخدم آخر — أُعيد التحميل'],
     OVERLAP: ['Overlaps another shift', 'يتداخل مع مناوبة أخرى'], OUTSIDE_VALIDITY: ['Outside the account validity period', 'خارج فترة صلاحية الحساب'],
     RESP_NOT_AUTHORISED: ['Responsibility not assigned to this employee', 'المسؤولية غير مسندة لهذا الموظف'], EMPLOYEE_INACTIVE: ['Account not active', 'الحساب غير نشط'],
@@ -1565,7 +1566,7 @@ var OrgUI = (function () {
           return load().then(function () { dr = {}; draw(); var mm = el.querySelector('#c-m'); mm.className = 'msg ok';
             mm.textContent = '✓ أُغلق شهر ' + r.closed + ' — صافي الفارق ' + r.netVariance + (r.varianceSAR !== null ? ' (' + sar(r.varianceSAR) + ' SAR)' : '') + '. الفترة المفتوحة الآن ' + r.next; }); },
           function (e) { m.className = 'msg err'; var c = String(e && e.message || e);
-            m.textContent = /ROOT_CAUSE/.test(c) ? 'يلزم إدخال السبب الجذري لكل عجز (' + c.split(':')[1] + ' صنف)' : /INCOMPLETE/.test(c) ? 'لم يكتمل عدّ ' + c.split(':')[1] + ' صنف' : OrgUI.err(e); });
+            m.textContent = /ROOT_CAUSE/.test(c) ? 'يلزم إدخال السبب الجذري لكل عجز (' + c.split(':')[1] + ' صنف)' : /INCOMPLETE/.test(c) ? (D.scoped ? '✓ حُفظ عدّ كابيناتك — الاعتماد والتصفير بعد اكتمال عدّ بقية الكابينات (' + c.split(':')[1] + ' صنف متبقٍ)' : 'لم يكتمل عدّ ' + c.split(':')[1] + ' صنف') : OrgUI.err(e); });
       };
     }
     function confirmZero() { var b = el.querySelector('#c-ok'); if (b.dataset.sure) return true; b.dataset.sure = '1'; b.textContent = 'اضغط مرة أخرى للتأكيد · Click again to confirm'; return false; }
@@ -1573,13 +1574,36 @@ var OrgUI = (function () {
   }
 
   /* ---------- 4) Supervisor — executive view ---------- */
+  /* who is responsible for which cabinet — each employee then sees only their cabinet(s) */
+  function assignCard() {
+    if (!D.staff) return '';
+    return '<div class="card"><div class="row" style="justify-content:space-between"><b>المسؤولون عن الكابينات · Cabinet assignment</b><button class="btn" id="as-save">حفظ التعيين · Save</button></div>' +
+      '<div class="muted" style="margin:4px 0 10px">كل موظف يرى الكابينة المُسندة إليه فقط (السحب والتعبئة والجرد). المشرف يرى الكل.</div>' +
+      (D.staff.length ? '<div class="tw"><table><tr><th class="l">الكابينة · Cabinet</th><th class="l">الموظفون المسؤولون · Responsible staff</th></tr>' +
+        D.clusters.map(function (c) { var on = (D.assign && D.assign[c]) || [];
+          return '<tr><td class="l"><b>' + E(c) + '</b></td><td class="l"><div class="row" style="gap:6px">' + D.staff.map(function (u) {
+            return '<label style="flex-direction:row;align-items:center;gap:6px;border:1px solid #e7e4de;border-radius:999px;padding:4px 10px;font-weight:600"><input type="checkbox" data-as="' + E(c) + '" value="' + E(u.id) + '"' + (on.indexOf(u.id) > -1 ? ' checked' : '') + '>' + E(u.name) + '</label>';
+          }).join('') + '</div></td></tr>'; }).join('') + '</table></div>'
+        : '<div class="muted">لا يوجد موظفون لديهم محطات الكابينات بعد — تُضاف المحطات من لوحة المالك · No staff with ADC stations yet</div>') +
+      '<div class="msg" id="as-m"></div></div>';
+  }
+  function bindAssign(el) {
+    var b = el.querySelector('#as-save'); if (!b) return;
+    b.onclick = function () {
+      var map = {}; D.clusters.forEach(function (c) { map[c] = []; });
+      el.querySelectorAll('input[data-as]:checked').forEach(function (i) { map[i.dataset.as].push(i.value); });
+      var m = el.querySelector('#as-m'); b.disabled = true;
+      AuthGate.run('adcAssignSave', map).then(function (r) { D.assign = r.assign; b.disabled = false; m.className = 'msg ok'; m.textContent = '✓ تم حفظ التعيين · Saved'; },
+        function (e) { b.disabled = false; m.className = 'msg err'; m.textContent = OrgUI.err(e); });
+    };
+  }
   function sup(el) {
     var M = 'all', C = 'all';
     function go() {
       el.innerHTML = '<div class="card muted">…</div>';
       AuthGate.run('adcSummary', M, C).then(function (s) {
         var t = s.totals;
-        el.innerHTML = '<div class="card"><div class="row" style="justify-content:space-between"><div class="row"><label>الفترة · Period<select id="s-m"><option value="all">كل الأشهر · All</option>' + s.months.map(function (m) { return '<option' + (m === M ? ' selected' : '') + '>' + E(m) + '</option>'; }).join('') + '</select></label>' +
+        el.innerHTML = assignCard() + '<div class="card"><div class="row" style="justify-content:space-between"><div class="row"><label>الفترة · Period<select id="s-m"><option value="all">كل الأشهر · All</option>' + s.months.map(function (m) { return '<option' + (m === M ? ' selected' : '') + '>' + E(m) + '</option>'; }).join('') + '</select></label>' +
           '<label>الكابينة · Cabinet<select id="s-c"><option value="all">كل الكابينات · All</option>' + s.clusters.map(function (c) { return '<option' + (c === C ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label></div>' +
           '<button class="btn" id="s-x">تصدير الإكسل المحدّث · Download master Excel</button></div><div class="msg" id="s-msg"></div></div>' +
           '<div class="k"><div><b>' + t.rec + '</b><span>كم دخل · Received</span></div><div><b>' + t.scan + '</b><span>طلع بالباركود · Scanned out</span></div><div><b style="color:#b91c1c">' + t.over + '</b><span>طلع بدون مسح · Overrides</span></div>' +
@@ -1593,6 +1617,7 @@ var OrgUI = (function () {
         el.querySelector('#s-m').onchange = function () { M = this.value; go(); };
         el.querySelector('#s-c').onchange = function () { C = this.value; go(); };
         el.querySelector('#s-x').onclick = exportExcel;
+        bindAssign(el);
       }, function (e) { el.innerHTML = '<div class="card msg err">' + E(OrgUI.err(e)) + '</div>'; });
     }
     go();
@@ -1674,6 +1699,8 @@ var OrgUI = (function () {
       if (d.perms.refill) tabs.push({ en: 'Daily refill', ar: 'التعبئة اليومية', render: refill });
       if (d.perms.count) tabs.push({ en: 'Count & zeroing', ar: 'الجرد والتصفير', render: count });
       if (d.perms.sup) tabs.push({ en: 'Supervisor view', ar: 'لوحة المشرف', render: sup });
+      if (d.scoped) { var bs = document.querySelector('.banner small'); if (bs) bs.textContent = d.clusters.length ? 'كابيناتك · Your cabinets: ' + d.clusters.join(' · ') : ''; }
+      if (d.scoped && !d.clusters.length) { main.innerHTML = '<div class="card msg err">لم تُسند إليك أي كابينة بعد — يُرجى مراجعة المشرف · No cabinet assigned to you yet</div>'; return; }
       if (!tabs.length) { main.innerHTML = '<div class="card msg err">لا توجد صلاحية على الكابينات · No ADC permission</div>'; return; }
       OrgUI.tabs(main, tabs);
     }, function (e) { main.innerHTML = '<div class="card msg err">' + E(/ADC_NOT_INSTALLED/.test(String(e && e.message)) ? 'وحدة الكابينات غير مثبّتة — يُرجى تشغيل adcInstall من المحرر' : OrgUI.err(e)) + '</div>'; });

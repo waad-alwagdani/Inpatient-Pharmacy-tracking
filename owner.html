@@ -761,6 +761,7 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    ADC_NOT_ASSIGNED: ['This cabinet is not assigned to you', 'هذه الكابينة غير مُسندة إليك'],
     FORBIDDEN: ['Not permitted', 'غير مصرّح'], CONFLICT: ['Changed by someone else — reloaded', 'عُدّل من مستخدم آخر — أُعيد التحميل'],
     OVERLAP: ['Overlaps another shift', 'يتداخل مع مناوبة أخرى'], OUTSIDE_VALIDITY: ['Outside the account validity period', 'خارج فترة صلاحية الحساب'],
     RESP_NOT_AUTHORISED: ['Responsibility not assigned to this employee', 'المسؤولية غير مسندة لهذا الموظف'], EMPLOYEE_INACTIVE: ['Account not active', 'الحساب غير نشط'],
