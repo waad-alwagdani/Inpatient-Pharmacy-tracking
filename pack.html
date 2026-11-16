@@ -616,9 +616,19 @@ var AuthGate = (function () {
       return '<button type="button" class="ag-tabi" data-i="' + i + '" aria-current="' + (i === SUB.cur) + '"><span>' + esc(LANG === 'en' ? en : ar) + '</span><em>' + esc(LANG === 'en' ? ar : en) + '</em></button>';
     }).join('');
     host.after(box);
+    setTitle();
     box.querySelectorAll('.ag-tabi').forEach(function (x) { x.onclick = function () {
       var i = +x.dataset.i; SUB.cur = i; SUB.btns[i].click(); document.body.classList.remove('ag-menu'); renderSub();
     }; });
+  }
+  /* page heading follows the open tab (e.g. Re-packaging → Stock shows «الرصيد · Stock») */
+  function setTitle() {
+    var bn = document.querySelector('.banner'); if (!bn || !SUB) return;
+    var t = SUB.btns[SUB.cur].textContent.split(' · '), en = (t[0] || '').trim(), ar = (t[1] || t[0] || '').trim();
+    var bi = bn.querySelector('.bi'), b = bn.querySelector(':scope > b');
+    if (bi && bi.querySelector('.en')) { bi.querySelector('.en').textContent = en; bi.querySelector('.ar').textContent = ar; }
+    else if (b) b.textContent = ar + ' · ' + en;
+    [].forEach.call(bn.children, function (c) { if (c !== bi && c !== b && c.tagName === 'SPAN') c.style.display = SUB.cur === 0 ? '' : 'none'; });
   }
   try { new MutationObserver(function () { mirrorTabs(); }).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
 
