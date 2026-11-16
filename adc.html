@@ -1391,6 +1391,8 @@ var OrgUI = (function () {
   function load() { return AuthGate.run('adcGet').then(function (d) { D = d; document.getElementById('per').textContent = 'الفترة المفتوحة · Open period: ' + d.period; return d; }); }
   function find(q) { q = String(q || '').trim().toUpperCase(); return D.items.filter(function (x) { return x.code.toUpperCase() === q || x.nupco === q; })[0]; }
   function sar(n) { return (Math.round(n * 100) / 100).toLocaleString('en-US'); }
+  // money is optional: an item without a unit cost shows a dash, and totals appear only when costs exist
+  function money(q, cost) { return cost ? sar(q * cost) : '—'; }
 
   /* ---------- 1) Withdraw (nursing) — barcode wedge: scan + Enter opens the drug card ---------- */
   function withdraw(el) {
@@ -1446,10 +1448,10 @@ var OrgUI = (function () {
     var CL = 'all', sel = {};
     function draw() {
       var rows = D.items.filter(function (x) { return CL === 'all' || x.adc === CL; }), n = { STAT: 0, REORDER: 0, OK: 0 }, units = 0, cost = 0;
-      rows.forEach(function (x) { n[x.status]++; units += x.refill; cost += x.refill * x.cost; });
+      rows.forEach(function (x) { n[x.status]++; units += x.refill; if (x.cost) cost += x.refill * x.cost; });
       var due = rows.filter(function (x) { return x.status !== 'OK'; }).sort(function (a, b) { return (a.status === 'STAT' ? 0 : 1) - (b.status === 'STAT' ? 0 : 1) || a.fill - b.fill; });
       el.innerHTML = '<div class="k"><div><b style="color:#b91c1c">' + n.STAT + '</b><span>🔴 تدخل عاجل · STAT</span></div><div><b style="color:#a16207">' + n.REORDER + '</b><span>🟡 تعبئة يومية · Reorder</span></div>' +
-        '<div><b style="color:#15803d">' + n.OK + '</b><span>🟢 رصيد آمن · OK</span></div><div><b>' + units + '</b><span>وحدات مطلوبة · Units to refill</span></div><div><b>' + sar(cost) + '</b><span>قيمة التعبئة · SAR</span></div></div>' +
+        '<div><b style="color:#15803d">' + n.OK + '</b><span>🟢 رصيد آمن · OK</span></div><div><b>' + units + '</b><span>وحدات مطلوبة · Units to refill</span></div>' + (D.priced ? '<div><b>' + sar(cost) + '</b><span>قيمة التعبئة (للأصناف المسعّرة) · SAR</span></div>' : '') + '</div>' +
         '<div class="card"><div class="row" style="justify-content:space-between"><label>الكابينة · Cabinet<select id="r-cl"><option value="all">كل الكابينات · All</option>' + D.clusters.map(function (c) { return '<option' + (c === CL ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label>' +
         '<div class="row"><button class="btn sec" id="r-pick">قائمة التجهيز · Pick list</button><button class="btn sec" id="r-all">تحديد الكل · Select all</button><button class="btn" id="r-go" disabled>تأكيد التعبئة · Confirm refill</button></div></div>' +
         '<div class="tw" style="margin-top:10px"><table><tr><th></th><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>Par Min</th><th>Par Max</th><th>الرصيد · SOH</th><th>الامتلاء · Fill</th><th>يكفي · Days</th><th>الحالة · Status</th><th>المطلوب · Qty</th></tr>' +
@@ -1483,16 +1485,16 @@ var OrgUI = (function () {
     var dr = D.draft || {}, Q = '';
     function draw() {
       var done = D.items.filter(function (x) { return dr[x.code]; }).length, net = 0, vsar = 0;
-      D.items.forEach(function (x) { if (dr[x.code]) { var v = dr[x.code].physical - x.soh; net += v; vsar += v * x.cost; } });
+      D.items.forEach(function (x) { if (dr[x.code]) { var v = dr[x.code].physical - x.soh; net += v; if (x.cost) vsar += v * x.cost; } });
       var rows = D.items.filter(function (x) { return !Q || (x.name + ' ' + x.code).toLowerCase().indexOf(Q) > -1; });
-      el.innerHTML = '<div class="k"><div><b>' + done + ' / ' + D.items.length + '</b><span>تم عدّها · Counted</span></div><div><b style="color:' + (net < 0 ? '#b91c1c' : '#15803d') + '">' + net + '</b><span>صافي الفارق · Net variance</span></div><div><b style="color:' + (vsar < 0 ? '#b91c1c' : '#15803d') + '">' + sar(vsar) + '</b><span>تكلفة الفارق · SAR</span></div><div><b>' + E(D.period) + '</b><span>الشهر · Month</span></div></div>' +
+      el.innerHTML = '<div class="k"><div><b>' + done + ' / ' + D.items.length + '</b><span>تم عدّها · Counted</span></div><div><b style="color:' + (net < 0 ? '#b91c1c' : '#15803d') + '">' + net + '</b><span>صافي الفارق · Net variance</span></div>' + (D.priced ? '<div><b style="color:' + (vsar < 0 ? '#b91c1c' : '#15803d') + '">' + sar(vsar) + '</b><span>تكلفة الفارق (المسعّر) · SAR</span></div>' : '') + '<div><b>' + E(D.period) + '</b><span>الشهر · Month</span></div></div>' +
         '<div class="card"><div class="row" style="justify-content:space-between"><input type="search" id="c-q" placeholder="بحث أو مسح · Search / scan" value="' + E(Q) + '" style="min-width:260px">' +
         '<div class="row"><button class="btn sec" id="c-save">حفظ المسودة · Save draft</button><button class="btn" id="c-ok"' + (done === D.items.length ? '' : ' disabled') + '>اعتماد الجرد والتصفير · Approve & zero</button></div></div>' +
-        '<div class="tw" style="margin-top:10px"><table><tr><th class="l">الصنف · Item</th><th>الافتتاحي · Opening</th><th>المُدخل · Received</th><th>المسحوب · Out</th><th>الدفتري · System</th><th>الفعلي · Physical</th><th>الفارق · Variance</th><th>SAR</th><th class="l">السبب الجذري · Root cause</th></tr>' +
+        '<div class="tw" style="margin-top:10px"><table><tr><th class="l">الصنف · Item</th><th>الافتتاحي · Opening</th><th>المُدخل · Received</th><th>المسحوب · Out</th><th>الدفتري · System</th><th>الفعلي · Physical</th><th>الفارق · Variance</th>' + (D.priced ? '<th>SAR</th>' : '') + '<th class="l">السبب الجذري · Root cause</th></tr>' +
         rows.map(function (x) { var d = dr[x.code], v = d ? d.physical - x.soh : null;
           return '<tr><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span></td><td>' + x.opening + '</td><td>' + x.rec + '</td><td>' + x.out + '</td><td><b>' + x.soh + '</b></td>' +
             '<td><input type="number" min="0" data-p="' + E(x.code) + '" value="' + (d ? d.physical : '') + '" style="width:84px"></td>' +
-            '<td style="font-weight:700;color:' + (v === null ? '#999' : v < 0 ? '#b91c1c' : v > 0 ? '#a16207' : '#15803d') + '">' + (v === null ? '—' : v) + '</td><td>' + (v === null ? '' : sar(v * x.cost)) + '</td>' +
+            '<td style="font-weight:700;color:' + (v === null ? '#999' : v < 0 ? '#b91c1c' : v > 0 ? '#a16207' : '#15803d') + '">' + (v === null ? '—' : v) + '</td>' + (D.priced ? '<td>' + (v === null ? '' : money(v, x.cost)) + '</td>' : '') +
             '<td class="l"><input type="text" data-r="' + E(x.code) + '" value="' + E(d && d.cause || '') + '" placeholder="' + (v !== null && v < 0 ? 'مطلوب للعجز · required' : '') + '" style="width:220px;' + (v !== null && v < 0 && !(d && d.cause) ? 'border-color:#b91c1c' : '') + '"></td></tr>'; }).join('') +
         '</table></div><div class="msg" id="c-m"></div></div>';
       var cq = el.querySelector('#c-q');
@@ -1508,7 +1510,7 @@ var OrgUI = (function () {
         m.textContent = '…';
         AuthGate.run('adcCountSave', dr).then(function () { return AuthGate.run('adcCountApprove'); }).then(function (r) {
           return load().then(function () { dr = {}; draw(); var mm = el.querySelector('#c-m'); mm.className = 'msg ok';
-            mm.textContent = '✓ أُغلق شهر ' + r.closed + ' — صافي الفارق ' + r.netVariance + ' (' + sar(r.varianceSAR) + ' SAR). الفترة المفتوحة الآن ' + r.next; }); },
+            mm.textContent = '✓ أُغلق شهر ' + r.closed + ' — صافي الفارق ' + r.netVariance + (r.varianceSAR !== null ? ' (' + sar(r.varianceSAR) + ' SAR)' : '') + '. الفترة المفتوحة الآن ' + r.next; }); },
           function (e) { m.className = 'msg err'; var c = String(e && e.message || e);
             m.textContent = /ROOT_CAUSE/.test(c) ? 'يلزم إدخال السبب الجذري لكل عجز (' + c.split(':')[1] + ' صنف)' : /INCOMPLETE/.test(c) ? 'لم يكتمل عدّ ' + c.split(':')[1] + ' صنف' : OrgUI.err(e); });
       };
@@ -1528,13 +1530,13 @@ var OrgUI = (function () {
           '<label>الكابينة · Cabinet<select id="s-c"><option value="all">كل الكابينات · All</option>' + s.clusters.map(function (c) { return '<option' + (c === C ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label></div>' +
           '<button class="btn" id="s-x">تصدير الإكسل المحدّث · Download master Excel</button></div><div class="msg" id="s-msg"></div></div>' +
           '<div class="k"><div><b>' + t.rec + '</b><span>كم دخل · Received</span></div><div><b>' + t.scan + '</b><span>طلع بالباركود · Scanned out</span></div><div><b style="color:#b91c1c">' + t.over + '</b><span>طلع بدون مسح · Overrides</span></div>' +
-          '<div><b>' + sar(t.outSAR) + '</b><span>قيمة المنصرف · Out SAR</span></div><div><b style="color:' + (t.bcma >= 95 ? '#15803d' : '#b91c1c') + '">' + t.bcma + '%</b><span>الامتثال للمسح · BCMA</span></div></div>' +
-          '<div class="card"><b>فين راح؟ · Consumption by ward</b><div class="tw"><table><tr><th class="l">القسم · Ward</th><th>الكابينة · ADC</th><th>دخل · In</th><th>باركود · Scanned</th><th>طارئ · Override</th><th>SAR</th><th>BCMA</th></tr>' +
-          s.wards.map(function (w) { return '<tr><td class="l"><b>' + E(w.ward) + '</b></td><td class="muted">' + E(w.adc.slice(0, 6)) + '</td><td>' + w.rec + '</td><td>' + w.scan + '</td><td style="color:' + (w.over ? '#b91c1c' : '') + '">' + w.over + '</td><td>' + sar(w.outSAR) + '</td><td>' + w.bcma + '%</td></tr>'; }).join('') + '</table></div></div>' +
+          (s.priced ? '<div><b>' + sar(t.outSAR) + '</b><span>قيمة المنصرف (المسعّر) · Out SAR</span></div>' : '') + '<div><b style="color:' + (t.bcma >= 95 ? '#15803d' : '#b91c1c') + '">' + t.bcma + '%</b><span>الامتثال للمسح · BCMA</span></div></div>' +
+          '<div class="card"><b>فين راح؟ · Consumption by ward</b><div class="tw"><table><tr><th class="l">القسم · Ward</th><th>الكابينة · ADC</th><th>دخل · In</th><th>باركود · Scanned</th><th>طارئ · Override</th>' + (s.priced ? '<th>SAR</th>' : '') + '<th>BCMA</th></tr>' +
+          s.wards.map(function (w) { return '<tr><td class="l"><b>' + E(w.ward) + '</b></td><td class="muted">' + E(w.adc.slice(0, 6)) + '</td><td>' + w.rec + '</td><td>' + w.scan + '</td><td style="color:' + (w.over ? '#b91c1c' : '') + '">' + w.over + '</td>' + (s.priced ? '<td>' + sar(w.outSAR) + '</td>' : '') + '<td>' + w.bcma + '%</td></tr>'; }).join('') + '</table></div></div>' +
           '<div class="card"><b>مين سحب أو عبّأ؟ · Staff accountability</b><div class="tw"><table><tr><th class="l">الموظف · User</th><th>الصفة · Role</th><th>عبّأ · Refilled</th><th>باركود · Scanned</th><th>طارئ · Override</th><th>طارئ لدواء مراقب · Controlled overrides</th><th>BCMA</th></tr>' +
           s.staff.map(function (u) { return '<tr><td class="l">' + E(u.user) + '</td><td class="muted">' + E(u.role) + '</td><td>' + u.rec + '</td><td>' + u.scan + '</td><td style="color:' + (u.over ? '#b91c1c' : '') + '">' + u.over + '</td><td style="color:' + (u.ctrl ? '#5b21b6;font-weight:700' : '') + '">' + u.ctrl + '</td><td>' + u.bcma + '%</td></tr>'; }).join('') + '</table></div></div>' +
-          '<div class="card"><b>الجرد الشهري · Monthly reconciliation</b><div class="tw"><table><tr><th>الشهر · Month</th><th>الأصناف · Items</th><th>مطابق · Zero variance</th><th>دقة الجرد · Accuracy</th><th>صافي الفارق · Net</th><th>SAR</th></tr>' +
-          s.variance.map(function (v) { return '<tr><td>' + E(v.month) + '</td><td>' + v.items + '</td><td>' + v.zero + '</td><td>' + v.accuracy + '%</td><td style="color:' + (v.net < 0 ? '#b91c1c' : '') + '">' + v.net + '</td><td>' + sar(v.sar) + '</td></tr>'; }).join('') + '</table></div></div>';
+          '<div class="card"><b>الجرد الشهري · Monthly reconciliation</b><div class="tw"><table><tr><th>الشهر · Month</th><th>الأصناف · Items</th><th>مطابق · Zero variance</th><th>دقة الجرد · Accuracy</th><th>صافي الفارق · Net</th>' + (s.priced ? '<th>SAR</th>' : '') + '</tr>' +
+          s.variance.map(function (v) { return '<tr><td>' + E(v.month) + '</td><td>' + v.items + '</td><td>' + v.zero + '</td><td>' + v.accuracy + '%</td><td style="color:' + (v.net < 0 ? '#b91c1c' : '') + '">' + v.net + '</td>' + (s.priced ? '<td>' + sar(v.sar) + '</td>' : '') + '</tr>'; }).join('') + '</table></div></div>';
         el.querySelector('#s-m').onchange = function () { M = this.value; go(); };
         el.querySelector('#s-c').onchange = function () { C = this.value; go(); };
         el.querySelector('#s-x').onclick = exportExcel;
@@ -1559,7 +1561,7 @@ var OrgUI = (function () {
     // supervisor summary — SUMIFS over the transactions sheet
     var s = wb.addWorksheet('ملخص مشرف الصيدلية', { views: [{ rightToLeft: true }] });
     s.getCell('A1').value = 'لوحة تحكم مشرف الصيدلية — Pharmacy Tracker by WaadAlwagdani'; s.getCell('A1').font = { bold: true, size: 14 };
-    head(s, 3, ['كم دخل (Received)', 'طلع بالباركود (Scanned Out)', 'طلع بدون مسح (Override)', 'قيمة المنصرف (SAR)', 'الامتثال للمسح (BCMA %)']);
+    head(s, 3, ['كم دخل (Received)', 'طلع بالباركود (Scanned Out)', 'طلع بدون مسح (Override)', 'قيمة المنصرف للأصناف المسعّرة (SAR)', 'الامتثال للمسح (BCMA %)']);
     var T = "'" + TXN + "'!";
     s.getRow(4).values = [{ formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"RECEIVED")+SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"RETURN")' }, { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"SCANNED")' },
       { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"OVERRIDE")' }, { formula: 'SUMIFS(' + T + '$M:$M,' + T + '$E:$E,"SCANNED")+SUMIFS(' + T + '$M:$M,' + T + '$E:$E,"OVERRIDE")' }, { formula: 'IF((B4+C4)=0,1,B4/(B4+C4))' }];
@@ -1572,9 +1574,9 @@ var OrgUI = (function () {
     s.columns = [{ width: 14 }, { width: 38 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 12 }];
     // daily refill — live SOH as values, Fill %, Days, Status and Qty to Refill as formulas
     var d = wb.addWorksheet('التعبئة اليومية (Daily Refill)', { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] });
-    head(d, 1, ['Barcode ID', 'NUPCO Code', 'Drug & Strength', 'ADC Cluster', 'Ward', 'ABC-VEN', 'Unit Cost', 'Par Min', 'Par Max', 'Live Stock on Hand', 'Fill %', 'Avg Daily Use', 'Days of Supply', 'Replenishment Status', 'Qty to Refill to Max']);
+    head(d, 1, ['Barcode ID', 'NUPCO Code', 'Drug & Strength', 'ADC Cluster', 'Ward', 'ABC-VEN', 'Unit Cost (optional)', 'Par Min', 'Par Max', 'Live Stock on Hand', 'Fill %', 'Avg Daily Use', 'Days of Supply', 'Replenishment Status', 'Qty to Refill to Max']);
     items.forEach(function (x, i) { var r = i + 2;
-      d.getRow(r).values = [x.code, x.nupco, x.name, x.adc, x.ward, x.abc, x.cost, x.parMin, x.parMax, x.soh, { formula: 'IF(I' + r + '=0,0,J' + r + '/I' + r + ')' }, x.avg,
+      d.getRow(r).values = [x.code, x.nupco, x.name, x.adc, x.ward, x.abc, x.cost || null, x.parMin, x.parMax, x.soh, { formula: 'IF(I' + r + '=0,0,J' + r + '/I' + r + ')' }, x.avg,
         { formula: 'IF(L' + r + '=0,"",ROUND(J' + r + '/L' + r + ',1))' }, { formula: 'IF(J' + r + '<=MAX(1,ROUND(H' + r + '*0.45,0)),"🔴 تدخل عاجل (STAT Refill)",IF(J' + r + '<=H' + r + ',"🟡 تعبئة يومية (Reorder Due)","🟢 رصيد آمن (OK)"))' },
         { formula: 'IF(J' + r + '<=H' + r + ',I' + r + '-J' + r + ',0)' }]; d.getCell('K' + r).numFmt = '0%'; d.getCell('B' + r).numFmt = '@'; });
     d.columns = [{ width: 10 }, { width: 14 }, { width: 38 }, { width: 34 }, { width: 10 }, { width: 8 }, { width: 9 }, { width: 8 }, { width: 8 }, { width: 10 }, { width: 8 }, { width: 9 }, { width: 9 }, { width: 26 }, { width: 10 }];
@@ -1589,12 +1591,12 @@ var OrgUI = (function () {
     var prev = null;
     order.forEach(function (ym) {
       var nm = 'جرد ' + (AR_M[ym.slice(5)] || ym.slice(5)) + ' ' + ym.slice(0, 4), w = wb.addWorksheet(nm, { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] }), rec = months[ym] || {}, open = ym === X.period;
-      head(w, 1, ['Barcode ID', 'NUPCO Code', 'Drug & Strength', 'ADC Cluster', 'Primary Ward', 'ABC-VEN', 'Unit Cost', 'Par Max', 'Opening Balance', 'Received', 'Scanned Out', 'System Balance', 'Physical Count', 'Variance Qty', 'Variance SAR', 'New Opening Balance', 'Root Cause']);
+      head(w, 1, ['Barcode ID', 'NUPCO Code', 'Drug & Strength', 'ADC Cluster', 'Primary Ward', 'ABC-VEN', 'Unit Cost (optional)', 'Par Max', 'Opening Balance', 'Received', 'Scanned Out', 'System Balance', 'Physical Count', 'Variance Qty', 'Variance SAR', 'New Opening Balance', 'Root Cause']);
       items.forEach(function (x, i) { var r = i + 2, c = rec[x.code];
         var opening = prev ? { formula: "'" + prev + "'!P" + r } : (c ? Number(c[3]) : x.opening);
         var received = open ? x.rec : (c ? Number(c[4]) : 0), out = open ? x.out : (c ? Number(c[5]) : 0), phys = open ? null : (c ? Number(c[7]) : null);
-        w.getRow(r).values = [x.code, x.nupco, x.name, x.adc, x.ward, x.abc, x.cost, x.parMax, opening, received, out, { formula: 'I' + r + '+J' + r + '-K' + r }, phys,
-          { formula: 'IF(M' + r + '="","",M' + r + '-L' + r + ')' }, { formula: 'IF(N' + r + '="","",N' + r + '*G' + r + ')' }, { formula: 'IF(M' + r + '="",L' + r + ',M' + r + ')' }, c ? String(c[10] || '') : ''];
+        w.getRow(r).values = [x.code, x.nupco, x.name, x.adc, x.ward, x.abc, x.cost || null, x.parMax, opening, received, out, { formula: 'I' + r + '+J' + r + '-K' + r }, phys,
+          { formula: 'IF(M' + r + '="","",M' + r + '-L' + r + ')' }, { formula: 'IF(OR(N' + r + '="",G' + r + '=""),"",N' + r + '*G' + r + ')' }, { formula: 'IF(M' + r + '="",L' + r + ',M' + r + ')' }, c ? String(c[10] || '') : ''];
         w.getCell('B' + r).numFmt = '@'; });
       w.columns = [{ width: 10 }, { width: 14 }, { width: 36 }, { width: 32 }, { width: 10 }, { width: 8 }, { width: 9 }, { width: 8 }, { width: 10 }, { width: 9 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 9 }, { width: 10 }, { width: 11 }, { width: 34 }];
       prev = nm;
