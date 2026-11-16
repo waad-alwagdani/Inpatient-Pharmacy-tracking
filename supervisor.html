@@ -1561,6 +1561,32 @@ var OosUI = (function () {
     }
     load();
   }
+  /* medication error reports (quality + owner only — they carry the patient MRN) */
+  function medErrors(el){
+    var E=OrgUI.esc,D=null,F='',T='';
+    var box='background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px;margin-bottom:12px';
+    var inp='height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit;width:auto';
+    function go(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';
+      AuthGate.run('merReports',F,T).then(function(d){D=d;F=d.from;T=d.to;draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+    function bars(title,col){var c={};D.rows.forEach(function(r){c[r[col]]=(c[r[col]]||0)+1;});var k=Object.keys(c).sort(function(a,b){return c[b]-c[a];}),mx=Math.max.apply(null,k.map(function(x){return c[x];}).concat([1]));
+      return '<div style="'+box+';flex:1;min-width:280px"><b style="font-size:13.5px">'+title+'</b>'+(k.length?k.map(function(x){return '<div style="margin-top:8px;direction:ltr"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>'+E(x)+'</span><b>'+c[x]+'</b></div><div style="height:8px;background:#f2f1ed;border-radius:99px;margin-top:3px"><div style="height:8px;border-radius:99px;background:#1c1c1c;width:'+Math.round(c[x]/mx*100)+'%"></div></div></div>';}).join(''):'<div style="color:#71717a;font-size:13px;margin-top:8px">—</div>')+'</div>';}
+    function draw(){
+      var link=(window.PT_EXEC||'')||'',n=D.rows.length,near=D.rows.filter(function(r){return /Near miss/.test(r[15]);}).length;
+      var h='<div style="'+box+'"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+        '<label style="font-size:13px;font-weight:600;color:#71717a">من · From <input type="date" id="me-f" value="'+E(F)+'" style="'+inp+'"></label><label style="font-size:13px;font-weight:600;color:#71717a">إلى · To <input type="date" id="me-t" value="'+E(T)+'" style="'+inp+'"></label></div>'+
+        '<div style="display:flex;gap:8px"><button type="button" id="me-csv" style="'+inp+';background:#fff;cursor:pointer;font-weight:600">تصدير CSV · Export</button></div></div>'+
+        '<div id="me-lm" style="font-size:12.5px;color:#71717a;margin-top:8px;direction:ltr;text-align:left;word-break:break-all"></div></div>';
+      h+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">'+[[n,'إجمالي البلاغات · Reports'],[near,'أخطاء وشيكة تم اعتراضها · Near misses'],[n-near,'وصلت للمريض أو لم تُعترض · Other']].map(function(k){return '<div style="'+box+';flex:1;min-width:160px;margin:0"><b style="font-size:26px;display:block">'+k[0]+'</b><span style="font-size:12.5px;color:#71717a">'+k[1]+'</span></div>';}).join('')+'</div>';
+      h+='<div style="display:flex;gap:12px;flex-wrap:wrap">'+bars('حسب المرحلة · By stage',9)+bars('حسب فئة الخطأ · By category',13)+'</div><div style="display:flex;gap:12px;flex-wrap:wrap">'+bars('حسب القسم · By unit',3)+bars('حسب التخصص · By reporter specialty',6)+'</div>';
+      h+='<div style="'+box+'"><div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse;font-size:12.5px;direction:ltr"><tr style="background:#f4f4f5">'+D.head.map(function(c){return '<th style="padding:7px 8px;text-align:left;white-space:nowrap">'+E(c)+'</th>';}).join('')+'</tr>'+
+        (n?D.rows.map(function(r){return '<tr style="border-top:1px solid #f1f1f1">'+r.map(function(c){return '<td style="padding:6px 8px;white-space:nowrap">'+E(c)+'</td>';}).join('')+'</tr>';}).join(''):'<tr><td colspan="'+D.head.length+'" style="padding:12px;color:#71717a">لا توجد بلاغات في هذه الفترة · No reports in this period</td></tr>')+'</table></div></div>';
+      el.innerHTML=h;
+      el.querySelector('#me-f').onchange=function(){F=this.value;go();};el.querySelector('#me-t').onchange=function(){T=this.value;go();};
+      el.querySelector('#me-csv').onclick=function(){var q=function(v){v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+        var csv='\ufeff'+[D.head].concat(D.rows).map(function(r){return r.map(q).join(',');}).join('\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='medication-errors_'+F+'_'+T+'.csv';document.body.appendChild(a);a.click();a.remove();};
+    }
+    go();
+  }
   /* the quality department's own spreadsheet: send reports to it, read its tabs */
   function qualitySheet(el){
     var E=OrgUI.esc,S=null;
@@ -1615,6 +1641,7 @@ var OosUI = (function () {
     tabs.push({en:'Re-packaging stock',ar:'رصيد إعادة التغليف',render:pstock});
     tabs.push({en:'OOS alerts',ar:'بلاغات عدم التوفر',render:function(el){OosUI.panel(el,'supervisor');}});
     if(u.sysRole==='QUALITY') tabs.push({en:'Audit log',ar:'سجل التدقيق',render:auditLog});
+    if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Medication errors',ar:'الأخطاء الدوائية',render:medErrors});
     if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR'||u.sysRole==='QUALITY') tabs.push({en:'Quality sheet',ar:'شيت الجودة',render:qualitySheet});
     OrgUI.tabs(document.getElementById('main'),tabs);
   }});
