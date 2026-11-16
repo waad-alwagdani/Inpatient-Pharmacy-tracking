@@ -726,7 +726,8 @@ var AuthGate = (function () {
   .oos-k b{display:block;font-size:24px}.oos-k span{font-size:12px;color:#5f5c57}
   .oos-f{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
   .oos-f button{height:36px!important;border:1px solid #d3cfc8;border-radius:999px;background:#fff;color:#1c1c1c;padding:0 14px;cursor:pointer;font:inherit;font-size:13px;font-weight:600}
-  .oos-f button.on{background:#1c1c1c;color:#fff;border-color:#1c1c1c}
+  .oos-f label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#55534e}
+  .oos-f select{width:auto!important;min-width:170px;height:36px!important;border:1px solid #d3cfc8;border-radius:10px;background:#fff;color:#1c1c1c;font:inherit;font-size:13px;font-weight:600;padding:0 10px}
   .oos-c{border:1px solid #e7e4de;border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--pt-card,#fff)}
   .oos-c.open{border-inline-start:4px solid #b91c1c}.oos-c.prog{border-inline-start:4px solid #a16207}
   .oos-c .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
@@ -760,8 +761,8 @@ var OosUI = (function () {
       if (F === 'open') list.sort(function (a, b) { return a.t - b.t; });
       var h = '<div class="oos-k"><div><b style="color:#b91c1c">' + cnt('Open') + '</b><span>بلاغ جديد · New</span></div><div><b style="color:#a16207">' + cnt('Refilling') + '</b><span>جاري التعبئة · Refilling</span></div>' +
         '<div><b style="color:#15803d">' + cnt('Refilled') + '</b><span>تم التعبئة · Refilled</span></div><div><b>' + cnt('Unavailable') + '</b><span>غير متوفر · Unavailable</span></div></div>';
-      h += '<div class="oos-f">' + [['open', 'المفتوحة · Open'], ['done', 'المغلقة · Closed'], ['all', 'الكل · All']].map(function (f) { return '<button type="button" data-f="' + f[0] + '" class="' + (F === f[0] ? 'on' : '') + '">' + f[1] + '</button>'; }).join('');
-      if (page === 'supervisor') h += '<span style="width:10px"></span>' + [['', 'كل الأنواع · All types'], ['Unit Dose', 'وحدة جرعية · Unit dose'], ['Other', 'أصناف الصيدلية · Pharmacy items']].map(function (g) { return '<button type="button" data-g="' + g[0] + '" class="' + (G === g[0] ? 'on' : '') + '">' + g[1] + '</button>'; }).join('');
+      h += '<div class="oos-f"><label>الحالة · Status <select data-f>' + [['open', 'المفتوحة · Open'], ['done', 'المغلقة · Closed'], ['all', 'الكل · All']].map(function (f) { return '<option value="' + f[0] + '"' + (F === f[0] ? ' selected' : '') + '>' + f[1] + '</option>'; }).join('') + '</select></label>';
+      if (page === 'supervisor') h += '<label>النوع · Type <select data-g>' + [['', 'الكل · All'], ['Unit Dose', 'وحدة جرعية · Unit dose'], ['Other', 'أصناف الصيدلية · Pharmacy items']].map(function (g) { return '<option value="' + g[0] + '"' + (G === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label>';
       h += '<button type="button" data-r="1" style="margin-inline-start:auto">↻ تحديث · Refresh</button></div>';
       h += list.length ? list.map(function (r) {
         var s = ST[r.status] || ST.Open, g = GR[r.group] || [r.group, r.group];
@@ -773,8 +774,8 @@ var OosUI = (function () {
             '<button type="button" class="pri" data-s="Refilled">تم التعبئة · Refilled</button><button type="button" data-s="Unavailable">الصنف غير متوفر · Unavailable</button></div><div class="oos-m"></div>' : '') + '</div>';
       }).join('') : '<div class="oos-c" style="color:#6b6862">لا توجد بلاغات · No alerts</div>';
       host.innerHTML = h;
-      host.querySelectorAll('[data-f]').forEach(function (b) { b.onclick = function () { F = b.dataset.f; draw(); }; });
-      host.querySelectorAll('[data-g]').forEach(function (b) { b.onclick = function () { G = b.dataset.g; draw(); }; });
+      host.querySelector('select[data-f]').onchange = function () { F = this.value; draw(); };
+      var sg = host.querySelector('select[data-g]'); if (sg) sg.onchange = function () { G = this.value; draw(); };
       host.querySelector('[data-r]').onclick = load;
       host.querySelectorAll('.oos-a [data-s]').forEach(function (b) { b.onclick = function () {
         var box = b.parentNode, m = box.nextElementSibling; box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
