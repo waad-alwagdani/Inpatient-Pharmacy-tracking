@@ -624,8 +624,8 @@ var AuthGate = (function () {
   var SUB = null;
   function tabBtnOn(b) { return b.getAttribute('aria-selected') === 'true' || b.classList.contains('on') || /rgb\(10, 10, 10\)|#0a0a0a/i.test(b.style.background); }
   function mirrorTabs() {
-    var bar = document.querySelector('.ou-tabs, .ptabs');
-    if (!bar || bar === (SUB && SUB.bar)) return;
+    var bar = document.querySelector('.ou-tabs, .ptabs, .tabs[role=tablist]');
+    if (!bar || bar === (SUB && SUB.bar) || bar.hasAttribute('data-noside')) return;
     var btns = [].slice.call(bar.querySelectorAll('button'));
     if (btns.length < 2) return;
     bar.style.display = 'none';
@@ -636,7 +636,7 @@ var AuthGate = (function () {
   function renderSub() {
     var side = $('ag-side'); if (!side) return;
     var old = side.querySelector('.ag-subs'); if (old) old.remove();
-    if (!SUB || !document.body.contains(SUB.bar)) return;
+    if (!SUB || !document.body.contains(SUB.bar) || SUB.bar.hasAttribute('data-noside')) return;
     var host = side.querySelector('.ag-nav[aria-current=page]'); if (!host) return;
     var box = document.createElement('div'); box.className = 'ag-subs';
     box.innerHTML = SUB.btns.map(function (b, i) {

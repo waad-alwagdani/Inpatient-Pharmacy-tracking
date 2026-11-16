@@ -616,8 +616,8 @@ var AuthGate = (function () {
   var SUB = null;
   function tabBtnOn(b) { return b.getAttribute('aria-selected') === 'true' || b.classList.contains('on') || /rgb\(10, 10, 10\)|#0a0a0a/i.test(b.style.background); }
   function mirrorTabs() {
-    var bar = document.querySelector('.ou-tabs, .ptabs');
-    if (!bar || bar === (SUB && SUB.bar)) return;
+    var bar = document.querySelector('.ou-tabs, .ptabs, .tabs[role=tablist]');
+    if (!bar || bar === (SUB && SUB.bar) || bar.hasAttribute('data-noside')) return;
     var btns = [].slice.call(bar.querySelectorAll('button'));
     if (btns.length < 2) return;
     bar.style.display = 'none';
@@ -628,7 +628,7 @@ var AuthGate = (function () {
   function renderSub() {
     var side = $('ag-side'); if (!side) return;
     var old = side.querySelector('.ag-subs'); if (old) old.remove();
-    if (!SUB || !document.body.contains(SUB.bar)) return;
+    if (!SUB || !document.body.contains(SUB.bar) || SUB.bar.hasAttribute('data-noside')) return;
     var host = side.querySelector('.ag-nav[aria-current=page]'); if (!host) return;
     var box = document.createElement('div'); box.className = 'ag-subs';
     box.innerHTML = SUB.btns.map(function (b, i) {
@@ -741,10 +741,10 @@ var AuthGate = (function () {
 <div class="wrap">
   <div class="banner"><b>المخزون</b><span>الاستلام والجرد والرصيد وتتبّع الانتهاء لكل الأصناف</span></div>
   <div class="tabs" role="tablist">
-    <button type="button" data-tab="bal" class="on" role="tab">الرصيد</button>
-    <button type="button" data-tab="rcv" role="tab">استلام</button>
-    <button type="button" data-tab="cnt" role="tab">جرد</button>
-    <button type="button" data-tab="exp" role="tab">الانتهاء</button>
+    <button type="button" data-tab="bal" class="on" role="tab">Balance · الرصيد</button>
+    <button type="button" data-tab="rcv" role="tab">Receive · استلام</button>
+    <button type="button" data-tab="cnt" role="tab">Count · جرد</button>
+    <button type="button" data-tab="exp" role="tab">Expiry · الانتهاء</button>
   </div>
   <div id="app"><div class="empty">جاري التحميل…</div></div>
   <footer>Pharmacy Tracker by WaadAlwagdani</footer>
@@ -904,7 +904,7 @@ var AuthGate = (function () {
   document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){TAB=b.dataset.tab;
     document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b);});render();};});
   function load(){return AuthGate.run('invGetData').then(function(d){D=d;});}
-  if(RO){document.querySelector('.tabs').style.display='none';document.querySelector('.banner').innerHTML='<b>رصيد المخزون</b><span>للاطلاع فقط — الرصيد والتشغيلات وحدود إعادة الطلب</span>';}
+  if(RO){document.querySelector('.tabs').setAttribute('data-noside','1');document.querySelector('.tabs').style.display='none';document.querySelector('.banner').innerHTML='<b>رصيد المخزون</b><span>للاطلاع فقط — الرصيد والتشغيلات وحدود إعادة الطلب</span>';}
   AuthGate.start({accent:'#0a0a0a',bg:'#f4f4f5',barWidth:'640px',page:RO?'invread':'inventory',onReady:function(){
     load().then(render).catch(function(){$('app').innerHTML='<div class="msg err" style="display:block">تعذّر تحميل البيانات</div>';});
   }});
