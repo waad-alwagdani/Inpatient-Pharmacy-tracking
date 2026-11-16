@@ -1503,6 +1503,7 @@ var OrgUI = (function () {
         (isNew?'<div><label class="f">'+B('Username','اسم المستخدم')+'</label><input id="f-u" class="ltr" maxlength="32" autocapitalize="none"></div>':'')+
         '<div><label class="f">'+B('Display name','الاسم الظاهر')+'</label><input id="f-d" maxlength="60" value="'+esc(u.displayName||'')+'"></div>'+
         '<div><label class="f">'+B('Employees tab ID','الرقم في تبويب Employees')+'</label><input id="f-ref" class="ltr" maxlength="30" value="'+esc(u.empRef||'')+'"></div>'+
+        '<div id="f-ww"><label class="f">'+B('Department (nursing account)','القسم (لحساب التمريض)')+'</label><select id="f-w"><option value="">'+(u.ward?esc(u.ward.split('|').slice(1).join('|')):'—')+'</option></select></div>'+
         '<div><label class="f">'+B('System role','الدور')+'</label><select id="f-r">'+ROLES.map(function(r){return '<option value="'+r[0]+'"'+(r[0]===u.sysRole?' selected':'')+'>'+r[1]+' · '+r[2]+'</option>'}).join('')+'</select></div>'+
         '<div><label class="f">'+B('Supervisor category','فئة الإشراف')+'</label><select id="f-c"><option value=""></option>'+CATS.map(function(c){return '<option value="'+esc(c.id)+'"'+(c.id===u.category?' selected':'')+'>'+esc((c.en?c.en+' · ':'')+c.label)+'</option>'}).join('')+'</select></div>'+
         '<div><label class="f">'+B('Landing page','الصفحة الافتراضية')+'</label><select id="f-h">'+HOMES.map(function(h){return '<option value="'+h[0]+'"'+(h[0]===(u.home===undefined?'':u.home)?' selected':'')+'>'+h[1]+' · '+h[2]+'</option>'}).join('')+'</select></div>'+
@@ -1513,10 +1514,15 @@ var OrgUI = (function () {
         '<fieldset class="fs" style="margin-top:10px"><legend>'+B('Extra pages','صفحات إضافية')+'</legend>'+checks(EXTRA,u.extraPages,'f-x')+'</fieldset>'+
         '<fieldset class="fs" style="margin-top:10px"><legend>'+B('Responsibilities','المسؤوليات')+'</legend>'+checks(RESP.map(function(r){return [r.code,r.en,r.ar]}),u.resps,'f-rs')+'</fieldset>'+
         '<div class="row" style="margin-top:12px"><button type="button" class="pri" id="f-save">'+B('Save','حفظ')+'</button><button type="button" id="f-close">'+B('Close','إغلاق')+'</button></div><div class="msg" id="f-m"></div>';
+      (function(){var sel=d.querySelector('#f-w'),cur=u.ward||'',ww=d.querySelector('#f-ww'),rr=d.querySelector('#f-r');
+        function vis(){ww.style.display=rr.value==='NURSE'?'':'none';if(rr.value!=='NURSE')sel.value='';}
+        rr.addEventListener('change',vis);vis();
+        google.script.run.withSuccessHandler(function(c){sel.innerHTML='<option value="">— بلا قسم ثابت · Any department —</option>'+c.hospitals.map(function(h){return '<optgroup label="'+esc(h.name)+'">'+h.depts.map(function(x){var v=h.key+'|'+x;return '<option value="'+esc(v)+'"'+(v===cur?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</optgroup>';}).join('');vis();}).getNursingConfig();
+      })();
       d.querySelector('#f-close').onclick=function(){d.hidden=true};
       d.querySelector('#f-save').onclick=function(){
         var b=this,g=function(c){return [].slice.call(d.querySelectorAll('.'+c+':checked')).map(function(x){return x.value})};
-        var data={displayName:d.querySelector('#f-d').value,empRef:d.querySelector('#f-ref').value,sysRole:d.querySelector('#f-r').value,category:d.querySelector('#f-c').value,
+        var data={ward:d.querySelector('#f-w').value,displayName:d.querySelector('#f-d').value,empRef:d.querySelector('#f-ref').value,sysRole:d.querySelector('#f-r').value,category:d.querySelector('#f-c').value,
           home:d.querySelector('#f-h').value,validFrom:d.querySelector('#f-vf').value,validTo:d.querySelector('#f-vt').value,stations:g('f-st'),extraPages:g('f-x'),resps:g('f-rs')};
         if(isNew){data.username=d.querySelector('#f-u').value.trim().toLowerCase();data.tempPassword=d.querySelector('#f-p').value;}
         b.disabled=true;

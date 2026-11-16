@@ -771,16 +771,21 @@ var AuthGate = (function () {
   function newSub(){SUB=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));}
   function dirty(){SUB=null;}
 
+  function myWard(){var w=(AuthGate.user&&AuthGate.user.ward)||'';if(!w)return null;var k=w.split('|');return {h:k[0],d:k.slice(1).join('|')};}
   function render(){
     var h='<div class="card"><div class="lbl bi" id="typeLbl"><span class="en">Request type</span><span class="ar">نوع الطلب</span></div><div class="err" id="typeErr"></div><div class="pills">'+
       CFG.types.map(function(t){return '<button type="button" class="pill tp" role="radio" aria-checked="false" data-t="'+t.key+'">'+esc(t.en)+' · '+(t.key==='crash'?'عربة الطوارئ':'مخزون القسم')+'</button>';}).join('')+'</div></div>';
-    h+='<div class="card"><div class="lbl bi" id="deptLbl"><span class="en">Department</span><span class="ar">القسم الطالب</span></div><div class="err" id="deptErr"></div>';
+    var MW=myWard();
+    if(MW) h+='<div class="card"><div class="lbl bi" id="deptLbl"><span class="en">Department</span><span class="ar">القسم</span></div><div style="font-size:18px;font-weight:700;direction:ltr;text-align:left">'+esc(MW.d)+'</div><div class="err" id="deptErr"></div></div>';
+    else h+='<div class="card"><div class="lbl bi" id="deptLbl"><span class="en">Department</span><span class="ar">القسم الطالب</span></div><div class="err" id="deptErr"></div>';
+    if(!MW){
     if(!CFG.hospitals.length)h+='<div class="err" style="display:block">Departments are not set up yet · لم تُعدّ الأقسام بعد</div>';
     CFG.hospitals.forEach(function(H){
       h+='<div class="grp">'+esc(H.name)+'</div><div class="pills">'+
         H.depts.map(function(d){return '<button type="button" class="pill dp" role="radio" aria-checked="false" data-h="'+H.key+'" data-d="'+esc(d)+'">'+esc(d)+'</button>';}).join('')+'</div>';
     });
-    h+='</div><input type="hidden" id="by" value="'+esc(ME)+'">';
+    h+='</div>';}
+    h+='<input type="hidden" id="by" value="'+esc(ME)+'">';
     h+='<div class="card"><div class="lbl bi"><span class="en">Items</span><span class="ar">الأصناف المطلوبة</span></div>'+
       '<div class="tools"><button type="button" id="load">Load default list<br><span class="ar">تحميل القائمة الافتراضية</span></button>'+
       '<button type="button" id="save">Save as default<br><span class="ar">حفظ كقائمة افتراضية</span></button></div>'+
@@ -795,6 +800,7 @@ var AuthGate = (function () {
     $('add').onclick=function(){addRow(true);};
     $('go').onclick=send; $('load').onclick=loadList; $('save').onclick=saveList;
     ROWS=[];$('rows').innerHTML='';addRow(false);
+    if(MW)SEL={h:MW.h,d:MW.d};
   }
   function addRow(focus,pre){
     var r={id:++rid,drugNo:pre?pre.drugNo:''};ROWS.push(r);
