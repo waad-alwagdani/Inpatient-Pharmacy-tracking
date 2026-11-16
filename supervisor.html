@@ -1359,12 +1359,34 @@ var OrgUI = (function () {
         var body = el.querySelector('.s-body');
         var catOpt = function (v) { return '<option value=""></option>' + d.categories.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === v ? ' selected' : '') + '>' + esc((c.en ? c.en + ' · ' : '') + c.label) + '</option>'; }).join(''); };
         var respName = function (c) { var x = d.resps.filter(function (y) { return y.code === c; })[0]; return x ? esc(x.en + ' · ' + x.ar) : esc(c); };
-        if (!d.canManage) {
-          body.innerHTML = '<div class="panel"><h3>' + B('My team', 'فريقي') + '</h3>' + (d.mine.emps.length ? '<table><tbody>' + d.mine.emps.map(function (e) {
-            return '<tr><td>' + esc(e.name) + '</td><td>' + e.resps.map(respName).join('<br>') + '</td><td><span class="tag ' + (e.active ? 't-ok' : 't-warn') + '">' + (e.active ? 'active' : 'inactive') + '</span></td></tr>'; }).join('') + '</tbody></table>'
+        /* responsibilities per employee — editable by the supervisor (descriptive only, no permissions) */
+        var team = d.canManage ? d.employees : d.mine.emps;
+        var respPanel = '<div class="panel"><h3>' + B(d.canManage ? 'Employees · responsibilities' : 'My team', d.canManage ? 'الموظفون · المسؤوليات' : 'فريقي') + '</h3>' +
+          '<div style="color:#5b6472;font-size:12.5px;margin:-4px 0 10px">' + B('Click Edit to set what each employee does', 'يُضغط «تعديل» لتحديد مسؤوليات كل موظف') + '</div>' +
+          (team.length ? '<table><tbody>' + team.map(function (e) {
+            return '<tr data-e="' + esc(e.id) + '"><td style="white-space:nowrap"><b>' + esc(e.name) + '</b></td><td class="r-view">' + (e.resps.length ? e.resps.map(respName).join('<br>') : '<span style="color:#a1a1aa">—</span>') + '</td>' +
+              '<td style="white-space:nowrap"><span class="tag ' + (e.active ? 't-ok' : 't-warn') + '">' + (e.active ? 'active' : 'inactive') + '</span></td>' +
+              '<td style="white-space:nowrap"><button type="button" class="r-ed">' + B('Edit', 'تعديل') + '</button></td></tr>' +
+              '<tr class="r-form" data-f="' + esc(e.id) + '" hidden><td colspan="4"><div class="chips">' + d.resps.map(function (r) {
+                return '<label class="chk"><input type="checkbox" value="' + r.code + '"' + (e.resps.indexOf(r.code) > -1 ? ' checked' : '') + '>' + esc(r.en) + ' · ' + esc(r.ar) + '</label>'; }).join('') + '</div>' +
+              '<div class="row" style="margin-top:8px"><button type="button" class="pri r-save">' + B('Save', 'حفظ') + '</button><button type="button" class="r-cancel">' + B('Cancel', 'إلغاء') + '</button></div><div class="msg r-msg"></div></td></tr>'; }).join('') + '</tbody></table>'
             : '<div class="empty">' + B('No employees assigned yet', 'لا موظفين مسندين بعد') + '</div>') + '</div>';
-          return;
+        function bindResp() {
+          body.querySelectorAll('tr[data-e]').forEach(function (tr) {
+            var f = body.querySelector('tr[data-f="' + tr.dataset.e + '"]');
+            tr.querySelector('.r-ed').onclick = function () { f.hidden = !f.hidden; };
+            f.querySelector('.r-cancel').onclick = function () { f.hidden = true; };
+            f.querySelector('.r-save').onclick = function () {
+              var b = this, codes = [].slice.call(f.querySelectorAll('input:checked')).map(function (x) { return x.value; }); b.disabled = true;
+              AuthGate.run('orgSetResps', tr.dataset.e, codes).then(function (r) {
+                b.disabled = false; team.filter(function (x) { return x.id === tr.dataset.e; })[0].resps = r.resps;
+                tr.querySelector('.r-view').innerHTML = r.resps.length ? r.resps.map(respName).join('<br>') : '<span style="color:#a1a1aa">—</span>';
+                f.hidden = true; msg(f.querySelector('.r-msg'), '', true);
+              }, function (e) { b.disabled = false; msg(f.querySelector('.r-msg'), err(e), false); });
+            };
+          });
         }
+        if (!d.canManage) { body.innerHTML = respPanel; bindResp(); return; }
         body.innerHTML = d.supervisors.length ? d.supervisors.map(function (s) {
           return '<div class="panel" data-s="' + esc(s.id) + '"><div class="row" style="justify-content:space-between"><h3 style="margin:0">' + esc(s.name) + ' <span class="ltr" style="color:#5b6472;font-weight:500">@' + esc(s.username) + '</span></h3>' +
             '<select class="s-cat" aria-label="category">' + catOpt(s.category) + '</select></div>' +
@@ -1374,6 +1396,7 @@ var OrgUI = (function () {
               return '<label class="chk"><input type="checkbox" value="' + r.code + '"' + (s.scopeResps.indexOf(r.code) > -1 ? ' checked' : '') + ' class="s-resp">' + esc(r.en) + ' · ' + esc(r.ar) + '</label>'; }).join('') + '</div>' +
             '<div class="row" style="margin-top:10px"><button type="button" class="pri s-save">' + B('Save', 'حفظ') + '</button></div><div class="msg s-msg"></div></div>';
         }).join('') : '<div class="panel empty">' + B('No department supervisor accounts yet — the Owner creates them', 'لا حسابات لمشرفي الأقسام بعد — ينشئها المالك') + '</div>';
+        body.insertAdjacentHTML('beforeend', respPanel); bindResp();
         if (flash) { var fp = body.querySelector('[data-s="' + flash + '"] .s-msg'); if (fp) msg(fp, B('Saved', 'تم الحفظ'), true); flash = null; }
         body.querySelectorAll('[data-s]').forEach(function (p) {
           p.querySelector('.s-save').onclick = function () {
