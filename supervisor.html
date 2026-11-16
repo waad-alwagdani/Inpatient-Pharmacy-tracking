@@ -749,6 +749,7 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    CAPA_REQUIRED: ['A corrective action is required for every partial / non-compliant item', 'يلزم إجراء تصحيحي لكل بند جزئي أو غير ممتثل'],
     QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet', 'لم يُربط شيت الجودة بعد'],
     QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة شيت الجودة (محرر) مع حساب المنصة'],
     READ_ONLY: ['Quality accounts are view-only — nothing was changed', 'حساب الجودة للاطلاع فقط — لم يُحفظ أي تعديل'],
@@ -1657,6 +1658,85 @@ var OosUI = (function () {
     }
     go();
   }
+  /* pharmacy governance monthly audit: form · cross-unit comparison · records (quality + owner) */
+  function govAudit(el){
+    var E=OrgUI.esc,C=null,R=[],V='form',A=null,MONTH='';
+    var box='background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:14px;padding:14px;margin-bottom:12px';
+    var inp='height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit;background:#fff';
+    var LBL={'2':['ممتثل','Compliant','#15803d','#e6f1ea'],'1':['جزئي','Partial','#a16207','#fef6dc'],'0':['غير ممتثل','Non-compliant','#b91c1c','#fde8e8'],'na':['لا ينطبق','N/A','#55534e','#f2f1ed']};
+    function ym(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);}
+    function today(){var d=new Date();return ym()+'-'+('0'+d.getDate()).slice(-2);}
+    function col(p){return p>=90?'#15803d':p>=75?'#a16207':'#b91c1c';}
+    function score(a){var x=a.filter(function(v){return v&&v!=='na';});return x.length?Math.round(x.reduce(function(s,v){return s+Number(v);},0)/(x.length*2)*1000)/10:0;}
+    function coreQ(){return [].concat.apply([],C.core.map(function(d){return d.items.map(function(it){return {d:d.domain,it:it};});}));}
+    function fresh(unit){return {month:ym(),date:today(),unit:unit||Object.keys(C.units)[0],core:coreQ().map(function(){return '';}),unitAns:C.units[unit||Object.keys(C.units)[0]].items.map(function(){return '';}),actions:{}};}
+    function load(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';
+      Promise.all([AuthGate.run('govConfig'),AuthGate.run('govList')]).then(function(x){C=x[0];R=x[1].rows;if(!A)A=fresh();if(!MONTH)MONTH=ym();draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+    function head(){return '<div style="'+box+';display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label style="font-size:13px;font-weight:600;color:#71717a">العرض · View <select id="g-v" style="'+inp+';min-width:240px">'+
+      [['form','نموذج التدقيق · Audit form'],['cmp','مقارنة الأقسام وتحليل الفجوات · Comparison & gaps'],['rec','سجل التدقيقات · Records ('+R.length+')']].map(function(o){return '<option value="'+o[0]+'"'+(V===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></label></div>';}
+    function draw(){var h=head()+(V==='form'?form():V==='cmp'?cmp():recs());el.innerHTML=h;el.querySelector('#g-v').onchange=function(){V=this.value;draw();};(V==='form'?bindForm:V==='cmp'?bindCmp:bindRecs)();}
+    function q(key,i,it,v){var bad=v==='0'||v==='1';
+      return '<div style="padding:10px 0;border-top:1px solid #f1f1f1"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div style="flex:1;min-width:260px"><div style="font-weight:600;font-size:13.5px">'+E(it.ar)+'</div><div style="font-size:12px;color:#71717a;direction:ltr;text-align:left">'+E(it.en)+'</div></div>'+
+        '<div style="display:flex;gap:4px">'+['2','1','0','na'].map(function(o){var on=v===o,L=LBL[o];return '<button type="button" data-q="'+key+'" data-i="'+i+'" data-o="'+o+'" style="height:34px;border-radius:8px;padding:0 10px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?L[2]:'#e4e4e7')+';background:'+(on?L[3]:'#fff')+';color:'+(on?L[2]:'#55534e')+'">'+L[0]+(o==='na'?'':' ('+o+')')+'</button>';}).join('')+'</div></div>'+
+        (bad?'<input data-act="'+key[0]+i+'" value="'+E(A.actions[key[0]+i]||'')+'" placeholder="الإجراء التصحيحي (مطلوب) · Corrective action (required)" style="'+inp+';width:100%;margin-top:8px;border-color:#f1c27d">':'')+'</div>';}
+    function form(){
+      var cs=score(A.core),us=score(A.unitAns),all=score(A.core.concat(A.unitAns)),done=A.core.concat(A.unitAns).filter(function(v){return v;}).length,tot=A.core.length+A.unitAns.length,U=C.units[A.unit],idx=0;
+      var h='<div style="'+box+';position:sticky;top:8px;z-index:5;display:flex;gap:16px;flex-wrap:wrap;align-items:center"><div><b style="font-size:24px;color:'+col(all)+'">'+all+'%</b><div style="font-size:12px;color:#71717a">النتيجة الكلية · Overall</div></div><div><b style="font-size:18px">'+cs+'%</b><div style="font-size:12px;color:#71717a">الحوكمة (20) · Core</div></div><div><b style="font-size:18px">'+us+'%</b><div style="font-size:12px;color:#71717a">مؤشرات الوحدة · Unit KPIs</div></div><div style="font-size:13px;color:#71717a">'+done+' / '+tot+' بند مُجاب · answered</div>'+
+        '<span style="margin-inline-start:auto;display:flex;gap:8px"><button type="button" id="g-last" style="'+inp+';cursor:pointer;font-weight:600">استرجاع آخر تدقيق · Load last</button><button type="button" id="g-clr" style="'+inp+';cursor:pointer;font-weight:600">مسح · Clear</button></span></div>';
+      h+='<div style="'+box+'"><b>١. بيانات الجولة · Audit details</b><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">'+
+        '<label style="font-size:13px;font-weight:600;color:#71717a">شهر التدقيق · Month <input type="month" id="g-m" value="'+E(A.month)+'" style="'+inp+'"></label>'+
+        '<label style="font-size:13px;font-weight:600;color:#71717a">تاريخ التدقيق · Date <input type="date" id="g-d" value="'+E(A.date)+'" max="'+today()+'" style="'+inp+'"></label>'+
+        '<label style="font-size:13px;font-weight:600;color:#71717a">الوحدة · Unit <select id="g-u" style="'+inp+';min-width:260px">'+Object.keys(C.units).map(function(k){return '<option value="'+E(k)+'"'+(A.unit===k?' selected':'')+'>'+E(C.units[k].ar)+' · '+E(k)+'</option>';}).join('')+'</select></label></div></div>';
+      h+='<div style="'+box+'"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>٢. محاور الحوكمة الأساسية (20 بنداً) · Core governance</b><button type="button" data-all="core" style="'+inp+';cursor:pointer;font-weight:600">تحديد الكل كممتثل (2)</button></div>'+
+        C.core.map(function(d){return '<div style="margin-top:12px;font-weight:700;font-size:13px;color:#1c1c1c;background:#f7f6f3;border-radius:8px;padding:6px 10px">'+E(d.domain)+'</div>'+d.items.map(function(it){var i=idx++;return q('core',i,it,A.core[i]);}).join('');}).join('')+'</div>';
+      h+='<div style="'+box+'"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>٣. مؤشرات الوحدة التخصصية · '+E(U.ar)+' ('+U.items.length+')</b><button type="button" data-all="unit" style="'+inp+';cursor:pointer;font-weight:600">تحديد الكل كممتثل (2)</button></div>'+U.items.map(function(it,i){return q('unit',i,it,A.unitAns[i]);}).join('')+'</div>';
+      h+='<div style="display:flex;gap:10px;align-items:center"><button type="button" id="g-save" style="height:48px;border:0;border-radius:12px;background:#1c1c1c;color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:0 24px;cursor:pointer">اعتماد وحفظ التدقيق · Approve & save</button><span id="g-msg" style="font-size:13px;font-weight:600"></span></div>';
+      return h;}
+    function bindForm(){
+      el.querySelector('#g-m').onchange=function(){A.month=this.value;};el.querySelector('#g-d').onchange=function(){A.date=this.value;};
+      el.querySelector('#g-u').onchange=function(){var a=fresh(this.value);a.month=A.month;a.date=A.date;a.core=A.core;a.actions={};Object.keys(A.actions).forEach(function(k){if(k[0]==='c')a.actions[k]=A.actions[k];});A=a;draw();};
+      el.querySelectorAll('[data-q]').forEach(function(b){b.onclick=function(){var arr=b.dataset.q==='core'?A.core:A.unitAns;arr[+b.dataset.i]=b.dataset.o;var y=window.scrollY;draw();window.scrollTo(0,y);};});
+      el.querySelectorAll('[data-act]').forEach(function(i){i.oninput=function(){A.actions[i.dataset.act]=i.value;};});
+      el.querySelectorAll('[data-all]').forEach(function(b){b.onclick=function(){var arr=b.dataset.all==='core'?A.core:A.unitAns;for(var i=0;i<arr.length;i++)arr[i]='2';var y=window.scrollY;draw();window.scrollTo(0,y);};});
+      el.querySelector('#g-clr').onclick=function(){A=fresh(A.unit);draw();};
+      el.querySelector('#g-last').onclick=function(){var r=R.filter(function(x){return x.unit===A.unit&&x.ans;})[0],m=el.querySelector('#g-msg');if(!r){m.style.color='#a3231b';m.textContent='لا يوجد تدقيق سابق لهذه الوحدة';return;}
+        A.core=r.ans.core.slice();A.unitAns=r.ans.unit.slice();A.actions=JSON.parse(JSON.stringify(r.ans.actions||{}));draw();};
+      el.querySelector('#g-save').onclick=function(){var m=el.querySelector('#g-msg'),b=this;
+        if(A.core.concat(A.unitAns).indexOf('')>-1){m.style.color='#a3231b';m.textContent='يلزم الإجابة على كل البنود · Answer every item';return;}
+        b.disabled=true;m.style.color='#71717a';m.textContent='جاري الحفظ…';
+        AuthGate.run('govSave',A).then(function(r){m.style.color='#15803d';m.textContent='✓ تم الحفظ · '+r.ref+' · '+r.scores.overall+'%';
+          AuthGate.run('govList').then(function(x){R=x.rows;var last=R[0];A=fresh(A.unit);V='rec';draw();report(last);});},function(e){b.disabled=false;m.style.color='#a3231b';m.innerHTML=OrgUI.err(e);});};
+    }
+    function latest(month){var o={};R.forEach(function(r){if((!month||r.month===month)&&!o[r.unit])o[r.unit]=r;});return o;}
+    function cmp(){
+      var L=latest(MONTH),keys=Object.keys(C.units),done=keys.filter(function(k){return L[k];}),avg=done.length?Math.round(done.reduce(function(s,k){return s+L[k].overall;},0)/done.length*10)/10:0;
+      var hi=done.slice().sort(function(a,b){return L[b].overall-L[a].overall;}),qs=coreQ();
+      var sys=qs.map(function(q,i){var units=done.filter(function(k){var v=L[k].ans&&L[k].ans.core[i];return v==='0'||v==='1';});return {q:q,units:units};}).filter(function(x){return x.units.length>=2;});
+      var months=R.map(function(r){return r.month;}).filter(function(m,i,a){return a.indexOf(m)===i;});if(months.indexOf(MONTH)===-1)months.unshift(MONTH);
+      var h='<div style="'+box+'"><label style="font-size:13px;font-weight:600;color:#71717a">الشهر · Month <select id="g-cm" style="'+inp+';min-width:160px">'+months.map(function(m){return '<option'+(m===MONTH?' selected':'')+'>'+E(m)+'</option>';}).join('')+'</select></label> <button type="button" id="g-cp" style="'+inp+';cursor:pointer;font-weight:600;margin-inline-start:8px">🖨 طباعة المقارنة · Print</button></div>';
+      h+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">'+[[avg+'%','متوسط الامتثال · Average',col(avg)],[hi[0]?C.units[hi[0]].ar+' · '+L[hi[0]].overall+'%':'—','الأعلى أداءً · Highest','#15803d'],[hi.length>1?C.units[hi[hi.length-1]].ar+' · '+L[hi[hi.length-1]].overall+'%':'—','الأدنى أداءً · Lowest','#b91c1c'],[done.length+' / '+keys.length,'الأقسام المدققة · Audited','#1c1c1c'],[sys.length,'فجوات مشتركة · Systemic gaps','#a16207']].map(function(k){return '<div style="'+box+';flex:1;min-width:160px;margin:0"><b style="font-size:18px;display:block;color:'+k[2]+'">'+E(k[0])+'</b><span style="font-size:12.5px;color:#71717a">'+k[1]+'</span></div>';}).join('')+'</div>';
+      h+='<div style="'+box+'"><b>مقارنة الوحدات (من 100%) · Unit comparison</b>'+keys.map(function(k){var r=L[k],p=r?r.overall:0;return '<div style="margin-top:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>'+E(C.units[k].ar)+' · <span style="color:#71717a">'+E(k)+'</span></span><b style="color:'+(r?col(p):'#a1a1aa')+'">'+(r?p+'%':'لم يُدقق')+'</b></div><div style="height:10px;background:#f2f1ed;border-radius:99px;margin-top:4px"><div style="height:10px;border-radius:99px;background:'+(r?col(p):'transparent')+';width:'+p+'%"></div></div></div>';}).join('')+'</div>';
+      h+='<div style="'+box+'"><b>الفجوات المشتركة بين الأقسام · Systemic gaps</b><div style="font-size:12.5px;color:#71717a">بنود الحوكمة التي سجلت أقل من (2) في وحدتين أو أكثر</div>'+(sys.length?sys.map(function(x){return '<div style="padding:8px 0;border-top:1px solid #f1f1f1"><b style="font-size:13.5px">'+E(x.q.it.ar)+'</b><div style="font-size:12px;color:#71717a;direction:ltr;text-align:left">'+E(x.q.it.en)+'</div><div style="font-size:12.5px;margin-top:3px">'+x.units.map(function(k){return '<span style="background:#fde8e8;color:#b91c1c;border-radius:999px;padding:1px 8px;margin-inline-end:4px;font-weight:600">'+E(C.units[k].ar)+'</span>';}).join('')+'</div></div>';}).join(''):'<div style="color:#15803d;font-weight:600;margin-top:8px">✓ لا توجد فجوات مشتركة</div>')+'</div>';
+      h+='<div style="'+box+'"><b>الفجوات الخاصة بكل وحدة · Unit-specific variances</b>'+done.map(function(k){var r=L[k],its=C.units[k].items,g=its.map(function(it,i){return {it:it,v:r.ans&&r.ans.unit[i],a:r.ans&&r.ans.actions&&r.ans.actions['u'+i]};}).filter(function(x){return x.v==='0'||x.v==='1';});
+        return g.length?'<div style="padding:8px 0;border-top:1px solid #f1f1f1"><b>'+E(C.units[k].ar)+'</b>'+g.map(function(x){return '<div style="font-size:12.5px;margin-top:4px"><span style="color:'+LBL[x.v][2]+';font-weight:700">'+LBL[x.v][0]+'</span> — '+E(x.it.ar)+(x.a?' <span style="color:#71717a">· الإجراء: '+E(x.a)+'</span>':'')+'</div>';}).join('')+'</div>':'';}).join('')+'</div>';
+      return h;}
+    function bindCmp(){el.querySelector('#g-cm').onchange=function(){MONTH=this.value;draw();};el.querySelector('#g-cp').onclick=function(){printHtml('مقارنة الأقسام — '+MONTH,el.innerHTML.replace(/<select[\s\S]*?<\/select>/g,'').replace(/<button[\s\S]*?<\/button>/g,''));};}
+    function recs(){return '<div style="'+box+'"><div style="display:flex;justify-content:space-between;align-items:center"><b>سجل التدقيقات المعتمدة · Records</b><button type="button" id="g-csv" style="'+inp+';cursor:pointer;font-weight:600">تصدير CSV</button></div><div style="overflow:auto;margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f4f4f5">'+
+      ['التاريخ','الشهر','الوحدة','المدقق','النتيجة','الحوكمة','الوحدة','الفجوات',''].map(function(c){return '<th style="padding:7px 8px;text-align:start;white-space:nowrap">'+c+'</th>';}).join('')+'</tr>'+
+      (R.length?R.map(function(r,i){return '<tr style="border-top:1px solid #f1f1f1"><td style="padding:6px 8px">'+E(r.date)+'</td><td style="padding:6px 8px">'+E(r.month)+'</td><td style="padding:6px 8px">'+E((C.units[r.unit]||{}).ar||r.unit)+'</td><td style="padding:6px 8px">'+E(r.auditor)+'</td><td style="padding:6px 8px;font-weight:700;color:'+col(r.overall)+'">'+r.overall+'%</td><td style="padding:6px 8px">'+r.core+'%</td><td style="padding:6px 8px">'+r.unitScore+'%</td><td style="padding:6px 8px">'+r.gaps+'</td><td style="padding:6px 8px"><button type="button" data-r="'+i+'" style="'+inp+';height:30px;cursor:pointer;font-size:12px">التقرير · Report</button></td></tr>';}).join(''):'<tr><td colspan="9" style="padding:12px;color:#71717a">لا توجد تدقيقات بعد</td></tr>')+'</table></div></div>';}
+    function bindRecs(){el.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){report(R[+b.dataset.r]);};});
+      el.querySelector('#g-csv').onclick=function(){var qv=function(v){v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};var rows=[['Date','Month','Unit','Auditor','Overall%','Core%','Unit%','Gaps','CAPA','Ref']].concat(R.map(function(r){return [r.date,r.month,r.unit,r.auditor,r.overall,r.core,r.unitScore,r.gaps,r.capa,r.ref];}));
+        var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+rows.map(function(r){return r.map(qv).join(',');}).join('\n')],{type:'text/csv'}));a.download='governance-audits.csv';document.body.appendChild(a);a.click();a.remove();};}
+    function printHtml(title,body){var w=window.open('','_blank');if(!w)return;w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>'+E(title)+'</title><style>body{font-family:Arial,sans-serif;color:#1c1c1c;margin:24px}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #ddd;padding:5px 7px;text-align:start}@page{size:A4;margin:12mm}</style></head><body><h2>'+E(title)+'</h2>'+body+'<script>onload=function(){print()}<\/script></body></html>');w.document.close();}
+    function report(r){if(!r||!r.ans)return;var qs=coreQ(),U=C.units[r.unit]||{ar:r.unit,items:[]};
+      var row=function(it,v,a){var L=LBL[v]||LBL.na;return '<tr><td>'+E(it.ar)+'<br><small style="color:#6b6862">'+E(it.en)+'</small></td><td style="color:'+L[2]+';font-weight:700;white-space:nowrap">'+L[0]+'</td><td>'+E(a||'')+'</td></tr>';};
+      printHtml('التقرير الرسمي للتدقيق الشهري لحوكمة الصيدلية','<p>الوحدة: <b>'+E(U.ar)+' · '+E(r.unit)+'</b> — الشهر: <b>'+E(r.month)+'</b> — التاريخ: '+E(r.date)+' — المدقق: '+E(r.auditor)+' — المرجع: '+E(r.ref)+'</p>'+
+        '<table><tr><th>النتيجة الكلية</th><th>محاور الحوكمة (20)</th><th>مؤشرات الوحدة</th><th>عدد الفجوات</th></tr><tr><td><b>'+r.overall+'%</b></td><td>'+r.core+'%</td><td>'+r.unitScore+'%</td><td>'+r.gaps+'</td></tr></table>'+
+        '<h3>محاور الحوكمة الأساسية</h3><table><tr><th>البند</th><th>التقييم</th><th>الإجراء التصحيحي</th></tr>'+qs.map(function(q,i){return row(q.it,r.ans.core[i],r.ans.actions&&r.ans.actions['c'+i]);}).join('')+'</table>'+
+        '<h3>مؤشرات الوحدة التخصصية</h3><table><tr><th>البند</th><th>التقييم</th><th>الإجراء التصحيحي</th></tr>'+U.items.map(function(it,i){return row(it,r.ans.unit[i],r.ans.actions&&r.ans.actions['u'+i]);}).join('')+'</table>'+
+        '<p style="margin-top:30px">توقيع المدقق: ____________________ &nbsp;&nbsp; اعتماد رئيس الجودة: ____________________</p>');}
+    load();
+  }
   /* the quality department's own spreadsheet: send reports to it, read its tabs */
   function qualitySheet(el){
     var E=OrgUI.esc,S=null;
@@ -1713,6 +1793,7 @@ var OosUI = (function () {
     if(u.sysRole==='QUALITY') tabs.push({en:'Audit log',ar:'سجل التدقيق',render:auditLog});
     if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Medication errors',ar:'الأخطاء الدوائية',render:medErrors});
     if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Inspections',ar:'جولات التفتيش',render:inspections});
+    if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Governance audit',ar:'التدقيق الشهري للحوكمة',render:govAudit});
     if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR'||u.sysRole==='QUALITY') tabs.push({en:'Quality sheet',ar:'شيت الجودة',render:qualitySheet});
     OrgUI.tabs(document.getElementById('main'),tabs);
   }});
