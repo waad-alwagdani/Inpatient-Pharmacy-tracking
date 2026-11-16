@@ -852,7 +852,9 @@ var OrgUI = (function () {
       '.ou .tk td,.ou .tk th{padding:4px}.ou .tk input[type=text]{height:34px;width:100%}.ou .tk input[type=number]{height:34px;width:64px}' +
       '</style><div class="panel"><div class="row" style="justify-content:space-between">' +
       '<div class="row"><div><label class="f">' + B('Month', 'الشهر') + '</label><input type="month" class="d-m" value="' + ym + '"></div>' +
-      '<div class="row vt"><button type="button" class="sm" data-v="day" aria-pressed="false">' + B('Daily', 'يومي') + '</button>' +
+      '<label class="vt-l" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#5b6472">' + B('View', 'العرض') + '<select class="vt-s" style="width:auto;min-width:170px;height:36px;border:1px solid #dde1e7;border-radius:10px;font:inherit;font-size:13px;font-weight:600;padding:0 10px;background:#fff">' +
+      [['day', 'Daily', 'يومي'], ['week', 'Weekly', 'أسبوعي'], ['grid', 'Monthly', 'شهري'], ['emp', 'Employee', 'جدول موظف'], ['sum', 'Summary', 'الملخص']].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === 'week' ? ' selected' : '') + '>' + o[2] + ' · ' + o[1] + '</option>'; }).join('') + '</select></label>' +
+      '<div class="row vt" hidden style="display:none"><button type="button" class="sm" data-v="day" aria-pressed="false">' + B('Daily', 'يومي') + '</button>' +
       '<button type="button" class="sm" data-v="week" aria-pressed="true">' + B('Weekly', 'أسبوعي') + '</button>' +
       '<button type="button" class="sm" data-v="grid" aria-pressed="false">' + B('Monthly', 'شهري') + '</button>' +
       '<button type="button" class="sm" data-v="emp" aria-pressed="false">' + B('Employee', 'جدول موظف') + '</button>' +
@@ -871,7 +873,8 @@ var OrgUI = (function () {
         '<div class="sc-msg" style="font-size:12px;margin-top:6px;color:var(--muted)"></div></div></div></div></div>';
     var mEl = el.querySelector('.d-m'), saveB = el.querySelector('.d-save'), M = el.querySelector('.d-msg');
     mEl.onchange = function () { if (dirty() && !confirm('Unsaved changes will be lost · ستُفقد التعديلات غير المحفوظة')) { mEl.value = D.month; return; } load(); };
-    el.querySelectorAll('[data-v]').forEach(function (b) { b.onclick = function () { view = b.dataset.v; el.querySelectorAll('[data-v]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); draw(); }; });
+    el.querySelector('.vt-s').onchange = function () { var b = el.querySelector('[data-v="' + this.value + '"]'); if (b) b.click(); };
+    el.querySelectorAll('[data-v]').forEach(function (b) { b.onclick = function () { view = b.dataset.v; var vs = el.querySelector('.vt-s'); if (vs) vs.value = view; el.querySelectorAll('[data-v]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); draw(); }; });
     saveB.onclick = doSave;
     el.querySelector('.d-quick').onclick = function () { var p = el.querySelector('.d-qp'); p.hidden = !p.hidden; if (!p.hidden) quickForm(p, ''); };
     el.querySelector('.d-cfg').onclick = function () { var p = el.querySelector('.d-cfgp'); p.hidden = !p.hidden; if (!p.hidden) cfgForm(p); };
