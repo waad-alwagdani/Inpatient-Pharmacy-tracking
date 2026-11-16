@@ -1561,29 +1561,99 @@ var OosUI = (function () {
     }
     load();
   }
-  /* medication error reports (quality + owner only — they carry the patient MRN) */
+  /* medication error reports — readable cards, review workflow, printable period report (quality + owner) */
+  var NCC={A:'A — ظروف قد تسبب خطأ · Circumstances',B:'B — خطأ لم يصل للمريض · Did not reach patient',C:'C — وصل للمريض بلا ضرر · Reached, no harm',D:'D — تطلب مراقبة · Monitoring required',E:'E — ضرر مؤقت تطلب تدخلاً · Temporary harm, intervention',F:'F — ضرر مؤقت مع تنويم · Temporary harm, hospitalisation',G:'G — ضرر دائم · Permanent harm',H:'H — تدخل لإنقاذ الحياة · Life-sustaining intervention',I:'I — وفاة · Death'};
+  var CAUSES=['Communication','Knowledge / training','Workload / staffing','Look-alike / sound-alike','Labeling / packaging','Policy / procedure','Equipment / system','Environment / distraction','Patient factor','Other'];
+  var MST={New:['جديد','#b91c1c','#fde8e8'],'Under review':['قيد المراجعة','#a16207','#fef6dc'],Closed:['مغلق','#15803d','#e6f1ea']};
   function medErrors(el){
-    var E=OrgUI.esc,D=null,F='',T='';
-    var box='background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px;margin-bottom:12px';
-    var inp='height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit;width:auto';
+    var E=OrgUI.esc,D=null,F='',T='',FS='',OPEN=null;
+    var box='background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:14px;padding:14px;margin-bottom:12px';
+    var inp='height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit;width:auto;background:#fff';
+    function rec(r){var o={};D.head.forEach(function(h,i){o[h]=r[i]||'';});o.status=o['Review Status']||'New';return o;}
     function go(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';
-      AuthGate.run('merReports',F,T).then(function(d){D=d;F=d.from;T=d.to;draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
-    function bars(title,col){var c={};D.rows.forEach(function(r){c[r[col]]=(c[r[col]]||0)+1;});var k=Object.keys(c).sort(function(a,b){return c[b]-c[a];}),mx=Math.max.apply(null,k.map(function(x){return c[x];}).concat([1]));
-      return '<div style="'+box+';flex:1;min-width:280px"><b style="font-size:13.5px">'+title+'</b>'+(k.length?k.map(function(x){return '<div style="margin-top:8px;direction:ltr"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>'+E(x)+'</span><b>'+c[x]+'</b></div><div style="height:8px;background:#f2f1ed;border-radius:99px;margin-top:3px"><div style="height:8px;border-radius:99px;background:#1c1c1c;width:'+Math.round(c[x]/mx*100)+'%"></div></div></div>';}).join(''):'<div style="color:#71717a;font-size:13px;margin-top:8px">—</div>')+'</div>';}
+      AuthGate.run('merReports',F,T).then(function(d){D=d;F=d.from;T=d.to;D.list=d.rows.map(rec);draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+    function bars(title,key,list){var c={};list.forEach(function(r){var k=r[key]||'—';c[k]=(c[k]||0)+1;});var k=Object.keys(c).sort(function(a,b){return c[b]-c[a];}),mx=Math.max.apply(null,k.map(function(x){return c[x];}).concat([1]));
+      return '<div style="'+box+';flex:1;min-width:260px"><b style="font-size:13.5px">'+title+'</b>'+(k.length?k.map(function(x){return '<div style="margin-top:8px;direction:ltr"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>'+E(x)+'</span><b>'+c[x]+'</b></div><div style="height:8px;background:#f2f1ed;border-radius:99px;margin-top:3px"><div style="height:8px;border-radius:99px;background:#1c1c1c;width:'+Math.round(c[x]/mx*100)+'%"></div></div></div>';}).join(''):'<div style="color:#71717a;font-size:13px;margin-top:8px">—</div>')+'</div>';}
+    function pill(st){var m=MST[st]||MST.New;return '<span style="background:'+m[2]+';color:'+m[1]+';border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;white-space:nowrap">'+m[0]+' · '+E(st)+'</span>';}
     function draw(){
-      var link=(window.PT_EXEC||'')||'',n=D.rows.length,near=D.rows.filter(function(r){return /Near miss/.test(r[15]);}).length;
-      var h='<div style="'+box+'"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-        '<label style="font-size:13px;font-weight:600;color:#71717a">من · From <input type="date" id="me-f" value="'+E(F)+'" style="'+inp+'"></label><label style="font-size:13px;font-weight:600;color:#71717a">إلى · To <input type="date" id="me-t" value="'+E(T)+'" style="'+inp+'"></label></div>'+
-        '<div style="display:flex;gap:8px"><button type="button" id="me-csv" style="'+inp+';background:#fff;cursor:pointer;font-weight:600">تصدير CSV · Export</button></div></div>'+
-        '<div id="me-lm" style="font-size:12.5px;color:#71717a;margin-top:8px;direction:ltr;text-align:left;word-break:break-all"></div></div>';
-      h+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">'+[[n,'إجمالي البلاغات · Reports'],[near,'أخطاء وشيكة تم اعتراضها · Near misses'],[n-near,'وصلت للمريض أو لم تُعترض · Other']].map(function(k){return '<div style="'+box+';flex:1;min-width:160px;margin:0"><b style="font-size:26px;display:block">'+k[0]+'</b><span style="font-size:12.5px;color:#71717a">'+k[1]+'</span></div>';}).join('')+'</div>';
-      h+='<div style="display:flex;gap:12px;flex-wrap:wrap">'+bars('حسب المرحلة · By stage',9)+bars('حسب فئة الخطأ · By category',13)+'</div><div style="display:flex;gap:12px;flex-wrap:wrap">'+bars('حسب القسم · By unit',3)+bars('حسب التخصص · By reporter specialty',6)+'</div>';
-      h+='<div style="'+box+'"><div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse;font-size:12.5px;direction:ltr"><tr style="background:#f4f4f5">'+D.head.map(function(c){return '<th style="padding:7px 8px;text-align:left;white-space:nowrap">'+E(c)+'</th>';}).join('')+'</tr>'+
-        (n?D.rows.map(function(r){return '<tr style="border-top:1px solid #f1f1f1">'+r.map(function(c){return '<td style="padding:6px 8px;white-space:nowrap">'+E(c)+'</td>';}).join('')+'</tr>';}).join(''):'<tr><td colspan="'+D.head.length+'" style="padding:12px;color:#71717a">لا توجد بلاغات في هذه الفترة · No reports in this period</td></tr>')+'</table></div></div>';
+      var L=D.list.filter(function(r){return !FS||r.status===FS;}),near=D.list.filter(function(r){return /Near miss/.test(r['Action Taken']);}).length;
+      var cnt=function(s){return D.list.filter(function(r){return r.status===s;}).length;};
+      var h='<div style="'+box+';display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
+        '<label style="font-size:13px;font-weight:600;color:#71717a">من · From <input type="date" id="me-f" value="'+E(F)+'" style="'+inp+'"></label><label style="font-size:13px;font-weight:600;color:#71717a">إلى · To <input type="date" id="me-t" value="'+E(T)+'" style="'+inp+'"></label>'+
+        '<label style="font-size:13px;font-weight:600;color:#71717a">الحالة · Status <select id="me-s" style="'+inp+';min-width:160px"><option value="">الكل · All</option>'+Object.keys(MST).map(function(k){return '<option value="'+k+'"'+(FS===k?' selected':'')+'>'+MST[k][0]+' · '+k+'</option>';}).join('')+'</select></label>'+
+        '<span style="margin-inline-start:auto;display:flex;gap:8px"><button type="button" id="me-pr" style="'+inp+';background:#1c1c1c;color:#fff;border-color:#1c1c1c;cursor:pointer;font-weight:600">🖨 تقرير الفترة · Period report</button><button type="button" id="me-csv" style="'+inp+';cursor:pointer;font-weight:600">CSV</button></span></div>';
+      h+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">'+[[D.list.length,'إجمالي البلاغات · Reports','#1c1c1c'],[cnt('New'),'جديد · New','#b91c1c'],[cnt('Under review'),'قيد المراجعة · Under review','#a16207'],[cnt('Closed'),'مغلق · Closed','#15803d'],[near,'أخطاء وشيكة · Near misses','#1e40af']].map(function(k){return '<div style="'+box+';flex:1;min-width:140px;margin:0"><b style="font-size:26px;display:block;color:'+k[2]+'">'+k[0]+'</b><span style="font-size:12.5px;color:#71717a">'+k[1]+'</span></div>';}).join('')+'</div>';
+      h+='<div style="display:flex;gap:12px;flex-wrap:wrap">'+bars('حسب المرحلة · By stage','Process Stage',D.list)+bars('حسب فئة الخطأ · By category','Error Category',D.list)+bars('حسب القسم · By unit','Location / Unit',D.list)+bars('حسب الشدة · By severity (NCC MERP)','Severity (NCC MERP)',D.list)+'</div>';
+      h+=L.length?L.map(function(r){var open=OPEN===r.Ref;
+        return '<div style="'+box+(open?';border-color:#1c1c1c':'')+'"><div data-ref="'+E(r.Ref)+'" style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;cursor:pointer">'+
+          '<div><div style="font-weight:700;font-size:15px;direction:ltr;text-align:left">'+E(r['Specific Error Type'])+'</div><div style="font-size:12.5px;color:#71717a;margin-top:3px;direction:ltr;text-align:left">'+E(r['Medication'])+' · '+E(r['Location / Unit'])+' · '+E(r['Process Stage'])+' · '+E(r['Incident Date'])+'</div></div>'+
+          '<div style="display:flex;gap:6px;align-items:center">'+(r['Severity (NCC MERP)']?'<span style="background:#f2f1ed;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700">'+E(r['Severity (NCC MERP)'])+'</span>':'')+pill(r.status)+'</div></div>'+
+          (open?detail(r):'')+'</div>';}).join(''):'<div style="'+box+';color:#71717a">لا توجد بلاغات · No reports</div>';
       el.innerHTML=h;
-      el.querySelector('#me-f').onchange=function(){F=this.value;go();};el.querySelector('#me-t').onchange=function(){T=this.value;go();};
+      el.querySelector('#me-f').onchange=function(){F=this.value;go();};el.querySelector('#me-t').onchange=function(){T=this.value;go();};el.querySelector('#me-s').onchange=function(){FS=this.value;draw();};
+      el.querySelectorAll('[data-ref]').forEach(function(x){x.onclick=function(){OPEN=OPEN===x.dataset.ref?null:x.dataset.ref;draw();};});
       el.querySelector('#me-csv').onclick=function(){var q=function(v){v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-        var csv='\ufeff'+[D.head].concat(D.rows).map(function(r){return r.map(q).join(',');}).join('\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='medication-errors_'+F+'_'+T+'.csv';document.body.appendChild(a);a.click();a.remove();};
+        var csv='﻿'+[D.head].concat(D.rows).map(function(r){return r.map(q).join(',');}).join('\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='medication-errors_'+F+'_'+T+'.csv';document.body.appendChild(a);a.click();a.remove();};
+      el.querySelector('#me-pr').onclick=printReport;
+      var fm=el.querySelector('#rv');if(fm)bindReview(fm);
+    }
+    function fld(l,v){return '<div style="padding:8px 0;border-top:1px solid #f1f1f1;display:grid;grid-template-columns:200px 1fr;gap:10px"><span style="color:#71717a;font-size:12.5px;font-weight:600">'+l+'</span><span style="direction:ltr;text-align:left;font-weight:600">'+E(v||'—')+'</span></div>';}
+    function detail(r){
+      return '<div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"><div>'+
+        fld('المرجع · Ref',r.Ref)+fld('وقت الإرسال · Submitted',r.Timestamp)+fld('تاريخ الحادثة · Incident date',r['Incident Date'])+fld('القسم · Unit',r['Location / Unit'])+fld('رقم الملف · MRN',r['Patient MRN'])+fld('الفئة العمرية · Age',r['Age Group'])+
+        fld('المُبلِّغ · Reporter',r['Reporter Name']+' (#'+r['Reporter Serial']+') · '+r['Reporter Specialty'])+fld('المرحلة · Stage',r['Process Stage']+' → '+r['Involved Discipline (auto)'])+
+        fld('الدواء · Medication',r['Medication']+' · '+r['Route (auto)'])+fld('فئة الخطأ · Category',r['Error Category'])+fld('نوع الخطأ · Error',r['Specific Error Type'])+fld('الإجراء · Action',r['Action Taken']+(r['Other Action']?' — '+r['Other Action']:''))+'</div>'+
+        '<div id="rv" data-ref="'+E(r.Ref)+'" style="background:#f7f6f3;border-radius:12px;padding:12px"><b>مراجعة الجودة · Quality review</b>'+
+        '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:10px">الحالة · Status<select id="rv-s" style="'+inp+';width:100%">'+Object.keys(MST).map(function(k){return '<option value="'+k+'"'+(r.status===k?' selected':'')+'>'+MST[k][0]+' · '+k+'</option>';}).join('')+'</select></label>'+
+        '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:10px">شدة الخطأ · Severity (NCC MERP)<select id="rv-v" style="'+inp+';width:100%"><option value="">—</option>'+Object.keys(NCC).map(function(k){return '<option value="'+k+'"'+(r['Severity (NCC MERP)']===k?' selected':'')+'>'+NCC[k]+'</option>';}).join('')+'</select></label>'+
+        '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:10px">السبب الجذري · Root cause<select id="rv-c" style="'+inp+';width:100%"><option value="">—</option>'+CAUSES.map(function(k){return '<option'+(r['Root Cause']===k?' selected':'')+'>'+k+'</option>';}).join('')+'</select></label>'+
+        '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:10px">الإجراء التصحيحي · Corrective action<textarea id="rv-a" rows="2" style="width:100%;border:1px solid #e4e4e7;border-radius:8px;padding:8px;font-family:inherit">'+E(r['Corrective Action'])+'</textarea></label>'+
+        '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:10px">ملاحظات المراجعة · Notes<textarea id="rv-n" rows="2" style="width:100%;border:1px solid #e4e4e7;border-radius:8px;padding:8px;font-family:inherit">'+E(r['Review Notes'])+'</textarea></label>'+
+        '<div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button type="button" id="rv-save" style="'+inp+';background:#1c1c1c;color:#fff;border-color:#1c1c1c;cursor:pointer;font-weight:600">حفظ المراجعة · Save review</button><span id="rv-m" style="font-size:12.5px;font-weight:600"></span></div>'+
+        (r['Reviewed By']?'<div style="font-size:12px;color:#71717a;margin-top:6px">آخر مراجعة · Last review: '+E(r['Reviewed By'])+' · '+E(r['Reviewed At'])+'</div>':'')+'</div></div>';
+    }
+    function bindReview(fm){var b=fm.querySelector('#rv-save'),m=fm.querySelector('#rv-m');
+      b.onclick=function(){b.disabled=true;var d={status:fm.querySelector('#rv-s').value,severity:fm.querySelector('#rv-v').value,cause:fm.querySelector('#rv-c').value,action:fm.querySelector('#rv-a').value,notes:fm.querySelector('#rv-n').value};
+        AuthGate.run('merReview',fm.dataset.ref,d).then(function(){m.style.color='#15803d';m.textContent='✓ تم الحفظ · Saved';setTimeout(go,600);},function(e){b.disabled=false;m.style.color='#a3231b';m.innerHTML=OrgUI.err(e);});};}
+    function printReport(){
+      var L=D.list,w=window.open('','_blank');if(!w)return;
+      var tb=function(t,k){var c={};L.forEach(function(r){var x=r[k]||'—';c[x]=(c[x]||0)+1;});return '<h3>'+t+'</h3><table>'+Object.keys(c).sort(function(a,b){return c[b]-c[a];}).map(function(x){return '<tr><td>'+E(x)+'</td><td style="width:60px;text-align:center"><b>'+c[x]+'</b></td></tr>';}).join('')+'</table>';};
+      w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>Medication error report '+E(F)+' – '+E(T)+'</title><style>body{font-family:Arial,sans-serif;color:#1c1c1c;margin:28px}h1{font-size:20px;margin:0}h3{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;font-size:12px;direction:ltr}td,th{border:1px solid #ddd;padding:5px 7px;text-align:left}th{background:#f2f1ed}.k{display:flex;gap:10px;margin:14px 0}.k div{flex:1;border:1px solid #ddd;border-radius:8px;padding:8px}.k b{font-size:22px;display:block}.g{display:grid;grid-template-columns:1fr 1fr;gap:16px}@page{size:A4;margin:14mm}</style></head><body>'+
+        '<h1>تقرير الأخطاء الدوائية · Medication Error Report</h1><div style="color:#6b6862;margin-top:4px">الفترة · Period: '+E(F)+' → '+E(T)+'</div>'+
+        '<div class="k"><div><b>'+L.length+'</b>البلاغات · Reports</div><div><b>'+L.filter(function(r){return /Near miss/.test(r['Action Taken']);}).length+'</b>وشيكة · Near misses</div><div><b>'+L.filter(function(r){return r.status==='Closed';}).length+'</b>مغلقة · Closed</div><div><b>'+L.filter(function(r){return /^[E-I]$/.test(r['Severity (NCC MERP)']);}).length+'</b>مع ضرر (E–I) · Harm</div></div>'+
+        '<div class="g"><div>'+tb('حسب المرحلة · By stage','Process Stage')+tb('حسب القسم · By unit','Location / Unit')+'</div><div>'+tb('حسب فئة الخطأ · By category','Error Category')+tb('حسب الشدة · By severity','Severity (NCC MERP)')+tb('السبب الجذري · Root cause','Root Cause')+'</div></div>'+
+        '<h3>تفاصيل البلاغات · Reports</h3><table><tr><th>Ref</th><th>Date</th><th>Unit</th><th>Stage</th><th>Medication</th><th>Error</th><th>Sev.</th><th>Status</th><th>Corrective action</th></tr>'+
+        L.map(function(r){return '<tr><td>'+E(r.Ref)+'</td><td>'+E(r['Incident Date'])+'</td><td>'+E(r['Location / Unit'])+'</td><td>'+E(r['Process Stage'])+'</td><td>'+E(r['Medication'])+'</td><td>'+E(r['Specific Error Type'])+'</td><td>'+E(r['Severity (NCC MERP)'])+'</td><td>'+E(r.status)+'</td><td>'+E(r['Corrective Action'])+'</td></tr>';}).join('')+'</table>'+
+        '<p style="color:#6b6862;font-size:11px;margin-top:18px">بلاغ غير عقابي وفق ثقافة العدالة · Non-punitive, Just Culture. أُعدّ في '+new Date().toLocaleString('en-GB')+'</p><script>onload=function(){print()}<\/script></body></html>');
+      w.document.close();
+    }
+    go();
+  }
+  /* unit inspection rounds (quality + owner) */
+  function inspections(el){
+    var E=OrgUI.esc,D=null,NEW=false;
+    var box='background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:14px;padding:14px;margin-bottom:12px';
+    var inp='height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit;background:#fff';
+    function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+    function go(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';AuthGate.run('inspList').then(function(d){D=d;draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+    function col(p){return p>=90?'#15803d':p>=75?'#a16207':'#b91c1c';}
+    function draw(){
+      var avg=D.rows.length?Math.round(D.rows.reduce(function(a,r){return a+r.pct;},0)/D.rows.length):0;
+      var h='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div style="'+box+';flex:1;margin:0"><b style="font-size:26px;display:block">'+D.rows.length+'</b><span style="font-size:12.5px;color:#71717a">جولات تفتيش · Inspections</span></div><div style="'+box+';flex:1;margin:0"><b style="font-size:26px;display:block;color:'+col(avg)+'">'+avg+'%</b><span style="font-size:12.5px;color:#71717a">متوسط الالتزام · Average compliance</span></div>'+
+        '<div style="'+box+';flex:1;margin:0;display:flex;align-items:center;justify-content:center"><button type="button" id="in-new" style="'+inp+';background:#1c1c1c;color:#fff;border-color:#1c1c1c;cursor:pointer;font-weight:600">+ جولة تفتيش جديدة · New inspection</button></div></div>';
+      if(NEW) h+='<div style="'+box+'"><b>جولة تفتيش جديدة · New inspection</b><div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0"><label style="font-size:13px;font-weight:600;color:#71717a">التاريخ · Date <input type="date" id="in-d" value="'+today()+'" max="'+today()+'" style="'+inp+'"></label>'+
+        '<label style="font-size:13px;font-weight:600;color:#71717a">القسم · Unit <input id="in-u" list="in-ul" style="'+inp+';min-width:200px"><datalist id="in-ul">'+D.units.map(function(u){return '<option value="'+E(u)+'">';}).join('')+'</datalist></label></div>'+
+        D.items.map(function(it,i){return '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-top:1px solid #f1f1f1"><span style="direction:ltr;text-align:left;font-size:13.5px">'+(i+1)+'. '+E(it)+'</span><span style="display:flex;gap:4px">'+[['yes','✓ نعم'],['no','✗ لا'],['na','N/A']].map(function(o){return '<label style="border:1px solid #e4e4e7;border-radius:8px;padding:4px 8px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap"><input type="radio" name="q'+i+'" value="'+o[0]+'"> '+o[1]+'</label>';}).join('')+'</span></div>';}).join('')+
+        '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:10px">ملاحظات · Notes<textarea id="in-n" rows="2" style="width:100%;border:1px solid #e4e4e7;border-radius:8px;padding:8px;font-family:inherit"></textarea></label>'+
+        '<div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button type="button" id="in-save" style="'+inp+';background:#1c1c1c;color:#fff;border-color:#1c1c1c;cursor:pointer;font-weight:600">حفظ الجولة · Save</button><button type="button" id="in-c" style="'+inp+';cursor:pointer">إلغاء · Cancel</button><span id="in-m" style="font-size:12.5px;font-weight:600;color:#a3231b"></span></div></div>';
+      h+=D.rows.length?D.rows.map(function(r){return '<div style="'+box+'"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><b>'+E(r.unit)+'</b> <span style="color:#71717a;font-size:12.5px">· '+E(r.date)+' · '+E(r.by)+' · '+E(r.ref)+'</span></div><b style="font-size:20px;color:'+col(r.pct)+'">'+r.pct+'%</b></div>'+
+        (r.findings?'<div style="margin-top:8px;font-size:12.5px;direction:ltr;text-align:left"><b style="color:#b91c1c">Findings:</b> '+r.findings.split(' | ').map(E).join(' · ')+'</div>':'<div style="margin-top:6px;font-size:12.5px;color:#15803d;font-weight:600">✓ لا توجد ملاحظات · No findings</div>')+(r.notes?'<div style="margin-top:6px;font-size:12.5px;color:#55534e">'+E(r.notes)+'</div>':'')+'</div>';}).join(''):'<div style="'+box+';color:#71717a">لا توجد جولات بعد · No inspections yet</div>';
+      el.innerHTML=h;
+      el.querySelector('#in-new').onclick=function(){NEW=true;draw();};
+      var c=el.querySelector('#in-c');if(c)c.onclick=function(){NEW=false;draw();};
+      var s=el.querySelector('#in-save');if(s)s.onclick=function(){var a=D.items.map(function(_,i){var x=el.querySelector('input[name="q'+i+'"]:checked');return x?x.value:'';});var m=el.querySelector('#in-m');
+        if(!el.querySelector('#in-u').value.trim()){m.textContent='القسم مطلوب · Unit required';return;}if(a.indexOf('')>-1){m.textContent='يلزم الإجابة على كل البنود · Answer every item';return;}
+        s.disabled=true;AuthGate.run('inspSave',{date:el.querySelector('#in-d').value,unit:el.querySelector('#in-u').value,answers:a,notes:el.querySelector('#in-n').value}).then(function(){NEW=false;go();},function(e){s.disabled=false;m.innerHTML=OrgUI.err(e);});};
     }
     go();
   }
@@ -1642,6 +1712,7 @@ var OosUI = (function () {
     tabs.push({en:'OOS alerts',ar:'بلاغات عدم التوفر',render:function(el){OosUI.panel(el,'supervisor');}});
     if(u.sysRole==='QUALITY') tabs.push({en:'Audit log',ar:'سجل التدقيق',render:auditLog});
     if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Medication errors',ar:'الأخطاء الدوائية',render:medErrors});
+    if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Inspections',ar:'جولات التفتيش',render:inspections});
     if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR'||u.sysRole==='QUALITY') tabs.push({en:'Quality sheet',ar:'شيت الجودة',render:qualitySheet});
     OrgUI.tabs(document.getElementById('main'),tabs);
   }});
