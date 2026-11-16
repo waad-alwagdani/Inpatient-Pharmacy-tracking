@@ -152,6 +152,13 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .ag-item span{flex:1;display:flex;justify-content:space-between;align-items:center;gap:6px;min-width:0;white-space:nowrap}.ag-item span em{overflow:hidden;text-overflow:ellipsis}.ag-item span em{font-style:normal;color:#a1a1aa;font-size:12px}
   .ag-item:hover{background:#f4f4f5;color:#0a0a0a}
   .ag-item[aria-current=page]{background:#0a0a0a;color:#fff}.ag-item[aria-current=page] em{color:#d4d4d8}
+  .ag-tabis{display:flex;flex-direction:column;gap:2px;margin:2px 0 6px;padding-inline-start:22px;position:relative}
+  .ag-tabis::before{content:"";position:absolute;inset-inline-start:19px;top:4px;bottom:4px;width:1.5px;background:#e4e2dd;border-radius:2px}
+  .ag-tabi{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;min-height:34px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#52525b;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:start;white-space:nowrap}
+  .ag-tabi em{font-style:normal;color:#a1a1aa;font-size:11.5px;overflow:hidden;text-overflow:ellipsis}
+  .ag-tabi:hover{background:#f4f4f5;color:#0a0a0a}
+  .ag-tabi[aria-current=true]{background:#efede8;color:#0a0a0a}
+  .ag-tabi[aria-current=true]::before{content:"";width:6px;height:6px;border-radius:50%;background:#0a0a0a;flex:none;margin-inline-end:4px}
   .ag-nav-list{flex:1;overflow:auto;margin:0 -4px;padding:0 4px}
   .ag-me{border:1px solid #e4e4e7;border-radius:14px;padding:10px;display:flex;align-items:center;gap:10px;margin-top:10px}
   .ag-av{width:36px;height:36px;border-radius:10px;background:#f4f4f5;color:#0a0a0a;display:grid;place-items:center;font:700 13px/1 "IBM Plex Sans",Arial;flex:none}
@@ -582,7 +589,39 @@ var AuthGate = (function () {
     scrim.onclick = function () { document.body.classList.remove('ag-menu'); };
     $('ag-lang2').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} bar(); };
     side.querySelectorAll('.ag-nav').forEach(function (x) { x.onclick = function () { document.body.classList.remove('ag-menu'); if (x.dataset.p !== cfg.page) open(x.dataset.p); }; });
+    renderSub();
   }
+
+  /* In-page tabs (e.g. Supervision: Monitoring / Task distribution / My team …) are shown in the sidebar,
+     under the current page — Pharmacy Tracker by WaadAlwagdani. The page's own tab buttons stay as the source of truth. */
+  var SUB = null;
+  function tabBtnOn(b) { return b.getAttribute('aria-selected') === 'true' || b.classList.contains('on') || /rgb\(10, 10, 10\)|#0a0a0a/i.test(b.style.background); }
+  function mirrorTabs() {
+    var bar = document.querySelector('.ou-tabs, .ptabs');
+    if (!bar || bar === (SUB && SUB.bar)) return;
+    var btns = [].slice.call(bar.querySelectorAll('button'));
+    if (btns.length < 2) return;
+    bar.style.display = 'none';
+    var cur = 0; btns.forEach(function (b, i) { if (tabBtnOn(b)) cur = i; });
+    SUB = { bar: bar, btns: btns, cur: cur };
+    renderSub();
+  }
+  function renderSub() {
+    var side = $('ag-side'); if (!side) return;
+    var old = side.querySelector('.ag-subs'); if (old) old.remove();
+    if (!SUB || !document.body.contains(SUB.bar)) return;
+    var host = side.querySelector('.ag-nav[aria-current=page]'); if (!host) return;
+    var box = document.createElement('div'); box.className = 'ag-subs';
+    box.innerHTML = SUB.btns.map(function (b, i) {
+      var t = b.textContent.split(' · '), en = (t[0] || '').trim(), ar = (t[1] || t[0] || '').trim();
+      return '<button type="button" class="ag-tabi" data-i="' + i + '" aria-current="' + (i === SUB.cur) + '"><span>' + esc(LANG === 'en' ? en : ar) + '</span><em>' + esc(LANG === 'en' ? ar : en) + '</em></button>';
+    }).join('');
+    host.after(box);
+    box.querySelectorAll('.ag-tabi').forEach(function (x) { x.onclick = function () {
+      var i = +x.dataset.i; SUB.cur = i; SUB.btns[i].click(); document.body.classList.remove('ag-menu'); renderSub();
+    }; });
+  }
+  try { new MutationObserver(function () { mirrorTabs(); }).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
 
   /* 15 minutes without any activity → signed out. Activity keeps the server session alive (every 2 minutes at most);
      the server also ends every session 40 minutes after sign-in, whatever the activity. */
