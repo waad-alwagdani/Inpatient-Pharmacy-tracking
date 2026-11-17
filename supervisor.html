@@ -812,8 +812,8 @@ var OrgUI = (function () {
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
     CAPA_REQUIRED: ['A corrective action is required for every partial / non-compliant item', 'يلزم إجراء تصحيحي لكل بند جزئي أو غير ممتثل'],
-    QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet — link it from the «Quality sheet» tab', 'لم يُربط شيت الجودة بعد — يُربط من تبويب «شيت الجودة»'],
-    QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة شيت الجودة (محرر) مع حساب المنصة'],
+    QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet — link it from the «Quality sheet» tab', 'لم تُربط ورقة الجودة بعد — تُربط من تبويب «ورقة الجودة»'],
+    QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة ورقة الجودة (محرر) مع حساب النظام'],
     READ_ONLY: ['Quality accounts are view-only — nothing was changed', 'حساب الجودة للاطلاع فقط — لم يُحفظ أي تعديل'],
     ADC_NOT_ASSIGNED: ['This cabinet is not assigned to you', 'هذه الكابينة غير مُسندة إليك'],
     FORBIDDEN: ['Not permitted', 'غير مصرّح'], CONFLICT: ['Changed by someone else — reloaded', 'عُدّل من مستخدم آخر — أُعيد التحميل'],
@@ -1752,17 +1752,17 @@ var QualityUI=(function(){
     function load(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';
       AuthGate.run('qualityGet').then(function(s){S=s;draw();},function(e){if(/QUALITY_SHEET_(NOT_SET|NO_ACCESS)/.test(String(e&&e.message)))return qualitySheet(el);el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
     function draw(){
-      var h='<div style="'+box+'"><b style="font-size:15px">شيت قسم الجودة · Quality department sheet</b>'+
-        '<div style="color:#71717a;font-size:13px;margin:4px 0 12px">شيت مستقل لقسم الجودة. ترسل المنصة تقاريرها إليه في تبويبات تبدأ بـ «PT ·»، ويمكن عرض أي تبويب منه هنا.</div>';
+      var h='<div style="'+box+'"><b style="font-size:15px">ورقة قسم الجودة · Quality department sheet</b>'+
+        '<div style="color:#71717a;font-size:13px;margin:4px 0 12px">ورقة مستقلة لقسم الجودة. تُرسل إليها تقارير النظام في صفحات تبدأ بـ «PT ·»، ويمكن عرض أي صفحة منها هنا.</div>';
       if(S.canSet) h+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input id="q-url" dir="ltr" value="'+E(S.url)+'" placeholder="https://docs.google.com/spreadsheets/d/…" style="flex:1;min-width:260px;height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit">'+
         '<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600"><input type="checkbox" id="q-auto"'+(S.auto?' checked':'')+'> إرسال يومي تلقائي · Daily send</label>'+
         '<button type="button" id="q-save" style="'+btn+';background:#0a0a0a;color:#fff;border-color:#0a0a0a">حفظ · Save</button></div>';
-      else h+='<div style="font-size:13px;margin-bottom:10px">'+(S.url?'<a href="'+E(S.url)+'" target="_blank" rel="noopener">'+E(S.name||S.url)+'</a>':'لم يُربط شيت الجودة بعد — يربطه المالك · Not linked yet')+'</div>';
+      else h+='<div style="font-size:13px;margin-bottom:10px">'+(S.url?'<a href="'+E(S.url)+'" target="_blank" rel="noopener">'+E(S.name||S.url)+'</a>':'لم تُربط ورقة الجودة بعد — يربطها المالك · Not linked yet')+'</div>';
       if(S.error) h+='<div style="color:#a3231b;font-size:13px;font-weight:600;margin-bottom:8px">'+OrgUI.err({message:S.error})+'</div>';
       if(S.url&&!S.error) h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button type="button" id="q-send" style="'+btn+'">إرسال التقارير الآن · Send reports now</button>'+
         '<span style="font-size:13px;color:#71717a">آخر إرسال · Last sent: '+E(S.last||'—')+(S.lastBy?' · '+E(S.lastBy):'')+(S.auto?' · يومياً الساعة 6 صباحاً · daily 06:00':'')+'</span></div>';
       h+='<div id="q-m" style="font-size:13px;font-weight:600;margin-top:8px"></div></div>';
-      if(S.tabs.length) h+='<div style="'+box+'"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><b>عرض الشيت · View sheet</b>'+
+      if(S.tabs.length) h+='<div style="'+box+'"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><b>عرض الورقة · View sheet</b>'+
         '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#71717a">التبويب · Tab <select id="q-tab" style="width:auto;min-width:200px;height:36px;border:1px solid #e4e4e7;border-radius:10px;font-family:inherit;padding:0 10px">'+S.tabs.map(function(t){return '<option>'+E(t)+'</option>';}).join('')+'</select></label></div><div id="q-view" style="overflow:auto;max-height:65vh"></div></div>';
       el.innerHTML=h;
       var m=el.querySelector('#q-m');
@@ -1783,14 +1783,39 @@ var QualityUI=(function(){
   }
   /* audit log — read-only, for the quality department */
   function auditLog(el){
-    var E=OrgUI.esc,rows=[];
-    el.innerHTML='<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px"><input id="aq" placeholder="تصفية · Filter" style="width:100%;max-width:320px;height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;margin-bottom:10px;font-family:inherit"><div style="overflow:auto;max-height:70vh"><table style="width:100%;border-collapse:collapse;font-size:13px;direction:ltr"><thead><tr style="background:#f4f4f5"><th style="padding:8px;text-align:left">Time · الوقت</th><th style="padding:8px;text-align:left">Event · الحدث</th><th style="padding:8px;text-align:left">Target · على</th><th style="padding:8px;text-align:left">By · بواسطة</th><th style="padding:8px;text-align:left">Detail · التفاصيل</th><th style="padding:8px;text-align:left">Outcome</th></tr></thead><tbody id="at"><tr><td style="padding:12px;color:#71717a">Loading · جاري التحميل</td></tr></tbody></table></div></div>';
+    var E=OrgUI.esc,rows=[],EN=(window.PTLang&&PTLang.lang)==='en';
+    var EV={login:['تسجيل دخول','Signed in'],logout:['تسجيل خروج','Signed out'],login_failed:['محاولة دخول فاشلة','Failed sign-in'],login_pending:['دخول بانتظار التفعيل','Sign-in pending activation'],
+      account_created:['إنشاء حساب','Account created'],account_updated:['تعديل حساب','Account updated'],account_disabled:['إيقاف حساب','Account disabled'],account_enabled:['تفعيل حساب','Account enabled'],account_deleted:['حذف حساب','Account deleted'],
+      password_changed:['تغيير كلمة المرور','Password changed'],password_reset:['إعادة تعيين كلمة المرور','Password reset'],sessions_revoked:['إنهاء جلسات حساب','Sessions revoked'],all_sessions_revoked:['إنهاء جميع الجلسات','All sessions revoked'],
+      access_denied:['محاولة وصول غير مصرح بها','Access denied'],editor_call_denied:['استدعاء مرفوض','Call denied'],preview_started:['بدء معاينة حساب','Preview started'],preview_ended:['إنهاء المعاينة','Preview ended'],
+      preview_refused:['رفض معاينة','Preview refused'],preview_write_blocked:['منع تعديل أثناء المعاينة','Change blocked in preview'],quality_write_blocked:['منع تعديل من حساب الجودة','Change blocked (quality account)'],
+      quality_sheet_set:['ربط ورقة الجودة','Quality sheet linked'],quality_sheet_sent:['إرسال التقارير إلى ورقة الجودة','Reports sent to quality sheet'],responsibilities_updated:['تعديل المسؤوليات','Responsibilities updated'],
+      supervision_set:['تعديل هيكل الإشراف','Supervision updated'],duty_saved:['حفظ جدول المهام','Task schedule saved'],duty_tasks_saved:['حفظ قائمة المهام','Task list saved'],duty_sheet_edit:['تعديل الجدول من الورقة','Schedule edited in sheet'],
+      categories_saved:['حفظ فئات الإشراف','Categories saved'],org_profile_saved:['حفظ بيانات المنشأة','Organisation profile saved'],backup_created:['نسخة احتياطية','Backup created'],restored_from_backup:['استعادة من نسخة احتياطية','Restored from backup'],
+      restore_denied:['رفض الاستعادة','Restore denied'],signup_requested:['طلب تسجيل','Sign-up requested'],signup_refused:['رفض طلب تسجيل','Sign-up refused'],setup_code_issued:['إصدار رمز إعداد','Setup code issued'],
+      owner_created:['إنشاء حساب المالك','Owner account created'],owner_bound:['ربط المالك','Owner bound'],owner_recovered:['استعادة حساب المالك','Owner recovered'],owner_recovery_code:['رمز استعادة المالك','Owner recovery code'],
+      owner_recovery_denied:['رفض استعادة المالك','Owner recovery denied'],owner_recovery_failed:['فشل استعادة المالك','Owner recovery failed'],owner_setup_denied:['رفض إعداد المالك','Owner setup denied'],owner_setup_opened:['فتح إعداد المالك','Owner setup opened'],weekly_sheet_error:['خطأ في الجدول الأسبوعي','Weekly schedule error']};
+    var FD={displayName:['الاسم','name'],sysRole:['الدور','role'],stations:['المحطات','stations'],extraPages:['الصفحات الإضافية','extra pages'],resps:['المسؤوليات','responsibilities'],home:['الصفحة الافتراضية','landing page'],
+      category:['فئة الإشراف','category'],empRef:['الرقم الوظيفي','employee ID'],ward:['القسم','department'],validFrom:['تاريخ البداية','valid from'],validTo:['تاريخ الانتهاء','valid to'],
+      QUALITY:['الجودة','Quality'],PHARMACIST:['صيدلي','Pharmacist'],NURSE:['تمريض','Nurse'],PHARMACY_SUPERVISOR:['مشرف الصيدلية','Pharmacy supervisor'],DEPT_SUPERVISOR:['مشرف قسم','Department supervisor'],
+      pack:['إعادة التغليف','Re-packaging'],inventory:['المخزون','Inventory'],supervisor:['الإشراف','Supervision'],owner:['لوحة المالك','Owner'],dash:['المؤشرات','Dashboard'],labels:['الليبلات','Labels'],adc:['الكابينات','ADC'],quality:['الجودة','Quality'],
+      'daily on':['إرسال يومي مفعّل','daily send on'],'daily off':['إرسال يومي متوقف','daily send off']};
+    function L(p){return p?p[EN?1:0]:'';}
+    function ev(c){return L(EV[c])||String(c||'').replace(/_/g,' ');}
+    function det(d){d=String(d||'');if(!d)return '';return d.split(/,\s*/).map(function(x){var k=x.trim();return FD[k]?L(FD[k]):k;}).join(EN?', ':'، ');}
+    var th='padding:8px 10px;text-align:start;white-space:nowrap;font-size:12.5px;color:#55534e',td='padding:8px 10px;vertical-align:top';
+    el.innerHTML='<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px"><input id="aq" placeholder="'+(EN?'Filter':'تصفية')+'" style="width:100%;max-width:320px;height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;margin-bottom:10px;font-family:inherit">'+
+      '<div style="overflow:auto;max-height:70vh"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#f4f4f5">'+
+      (EN?['Time','Action','Account','By','Details','Result']:['الوقت','الإجراء','الحساب المعني','بواسطة','التفاصيل','النتيجة']).map(function(h){return '<th style="'+th+'">'+h+'</th>';}).join('')+
+      '</tr></thead><tbody id="at"><tr><td style="padding:12px;color:#71717a">'+(EN?'Loading':'جاري التحميل')+'</td></tr></tbody></table></div></div>';
     AuthGate.run('authAdminAudit',1000).then(function(r){rows=r;draw();},function(e){el.querySelector('#at').innerHTML='<tr><td style="padding:12px;color:#a3231b">'+OrgUI.err(e)+'</td></tr>';});
     el.querySelector('#aq').oninput=draw;
     function draw(){var q=(el.querySelector('#aq').value||'').toLowerCase();
-      el.querySelector('#at').innerHTML=rows.filter(function(r){return !q||r.join(' ').toLowerCase().indexOf(q)>-1}).slice(0,500).map(function(r){
-        return '<tr style="border-top:1px solid #f1f1f1"><td style="padding:6px 8px;white-space:nowrap">'+E(new Date(r[0]).toLocaleString('en-GB',{dateStyle:'short',timeStyle:'short'}))+'</td><td style="padding:6px 8px">'+E(r[1])+'</td><td style="padding:6px 8px">'+E(r[2])+'</td><td style="padding:6px 8px">'+E(r[3])+'</td><td style="padding:6px 8px">'+E(r[4])+'</td><td style="padding:6px 8px;color:'+(r[9]==='denied'?'#a3231b':'#276b3e')+'">'+E(r[9]||'ok')+'</td></tr>';}).join('');}
+      el.querySelector('#at').innerHTML=rows.map(function(r){return {r:r,txt:[ev(r[1]),r[2],r[3],det(r[4])].join(' ').toLowerCase()};}).filter(function(x){return !q||x.txt.indexOf(q)>-1;}).slice(0,500).map(function(x){var r=x.r,bad=r[9]==='denied';
+        return '<tr style="border-top:1px solid #f1f1f1"><td style="'+td+';white-space:nowrap;direction:ltr;text-align:start">'+E(new Date(r[0]).toLocaleString('en-GB',{dateStyle:'short',timeStyle:'short'}))+'</td><td style="'+td+';font-weight:600">'+E(ev(r[1]))+'</td><td style="'+td+'">'+E(r[2])+'</td><td style="'+td+'">'+E(r[3])+'</td><td style="'+td+';color:#55534e">'+E(det(r[4]))+'</td>'+
+          '<td style="'+td+';white-space:nowrap;font-weight:700;color:'+(bad?'#a3231b':'#276b3e')+'">'+(bad?(EN?'Denied':'مرفوض'):(EN?'Done':'تم'))+'</td></tr>';}).join('')||'<tr><td colspan="6" style="padding:12px;color:#71717a">'+(EN?'No entries':'لا توجد سجلات')+'</td></tr>';}
   }
+
   return {medErrors:medErrors,inspections:inspections,govAudit:govAudit,qualitySheet:qualitySheet,auditLog:auditLog};
 })();
 </script>
@@ -1859,7 +1884,7 @@ var QualityUI=(function(){
     if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR'||u.sysRole==='QUALITY') tabs.push({en:'Expiry report',ar:'تقرير الانتهاء',render:expiry});
     tabs.push({en:'Re-packaging stock',ar:'رصيد إعادة التغليف',render:pstock});
     tabs.push({en:'OOS alerts',ar:'بلاغات عدم التوفر',render:function(el){OosUI.panel(el,'supervisor');}});
-    if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR') tabs.push({en:'Quality sheet',ar:'شيت الجودة',render:QualityUI.qualitySheet});
+    if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR') tabs.push({en:'Quality sheet',ar:'ورقة الجودة',render:QualityUI.qualitySheet});
     OrgUI.tabs(document.getElementById('main'),tabs);
   }});
 </script>
