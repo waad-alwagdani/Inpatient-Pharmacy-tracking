@@ -67,6 +67,56 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
 </style>
 </head>
 <body>
+<!-- One language at a time across the whole system (Arabic only or English only) — Pharmacy Tracker by WaadAlwagdani -->
+<style>
+  html[data-pl="ar"] .bi .en, html[data-pl="ar"] .btnbi .en, html[data-pl="ar"] .cap > span:first-child:not(.ar),
+  html[data-pl="en"] .bi .ar, html[data-pl="en"] .btnbi .ar, html[data-pl="en"] .cap .ar, html[data-pl="en"] .ar-only { display: none !important; }
+  .bi, .btnbi { justify-content: flex-start !important; }
+  .ag-item em, .ag-tabi em { display: none !important; }
+</style>
+<script>
+(function () {
+  var L = 'ar'; try { L = localStorage.getItem('ipq_lang') === 'en' ? 'en' : 'ar'; } catch (e) {}
+  var root = document.documentElement; root.setAttribute('data-pl', L);
+  var AR = /[؀-ۿ]/, EN = /[A-Za-z]{2,}/, SEP = /\s+[·|]\s+/;
+  function kind(s) { return AR.test(s) ? 'ar' : (EN.test(s) ? 'en' : ''); }
+  /* "عربي · English" → keep only the active language (segments without letters, like numbers, stay) */
+  function pick(t) {
+    if (!SEP.test(t)) return t;
+    var parts = t.split(/(\s+[·|]\s+)/), segs = [], seps = [];
+    for (var i = 0; i < parts.length; i++) (i % 2 ? seps : segs).push(parts[i]);
+    var ks = segs.map(kind);
+    if (ks.indexOf('ar') === -1 || ks.indexOf('en') === -1) return t;      // not a bilingual label (e.g. "Amoxicillin 500 mg · Tab.")
+    var out = [];
+    segs.forEach(function (s, i) { if (ks[i] === L || ks[i] === '') out.push(s.trim()); });
+    return out.join(' · ').replace(/^[\s·|]+|[\s·|]+$/g, '');
+  }
+  function fix(n) {
+    if (n.nodeType === 3) { if (n.parentNode && /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode.nodeName)) return; var v = n.nodeValue, w = pick(v); if (w !== v) n.nodeValue = (/^\s/.test(v) ? ' ' : '') + w + (/\s$/.test(v) ? ' ' : ''); return; }
+    if (n.nodeType !== 1 || /^(SCRIPT|STYLE)$/.test(n.nodeName)) return;
+    ['placeholder', 'title', 'aria-label'].forEach(function (a) { var v = n.getAttribute && n.getAttribute(a); if (v) { var w = pick(v); if (w !== v) n.setAttribute(a, w); } });
+    if (n.nodeName === 'INPUT' && /^(button|submit)$/i.test(n.type) && n.value) n.value = pick(n.value);
+    for (var c = n.firstChild; c; c = c.nextSibling) fix(c);
+  }
+  function run() { fix(document.body); if (document.title) document.title = pick(document.title); }
+  var busy = false;
+  new MutationObserver(function (ms) { if (busy) return; busy = true; try { ms.forEach(function (m) { if (m.type === 'characterData') fix(m.target); else m.addedNodes.forEach(fix); }); } finally { busy = false; } })
+    .observe(root, { childList: true, subtree: true, characterData: true });
+  if (document.readyState !== 'loading') run(); else document.addEventListener('DOMContentLoaded', run);
+  /* public pages (no sidebar) get a small language switch */
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (document.getElementById('ag-lang2') || document.getElementById('ag-lang') || document.getElementById('pl-sw')) return;
+      var b = document.createElement('button'); b.id = 'pl-sw'; b.type = 'button'; b.textContent = L === 'en' ? 'ع' : 'EN';
+      b.setAttribute('aria-label', L === 'en' ? 'العربية' : 'English');
+      b.style.cssText = 'position:fixed;top:12px;left:12px;z-index:50;width:40px;height:40px;border-radius:12px;border:1px solid #e4e2dd;background:#fff;color:#1c1c1c;font:700 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 12px -6px rgba(0,0,0,.25)';
+      b.onclick = function () { try { localStorage.setItem('ipq_lang', L === 'en' ? 'ar' : 'en'); } catch (e) {} location.reload(); };
+      document.body.appendChild(b);
+    }, 300);
+  });
+  window.PTLang = { lang: L, pick: pick };
+})();
+</script>
 <!-- AuthGate — sign-in gate shared by protected pages · Pharmacy Tracker by WaadAlwagdani -->
 <style>
   .ag{position:fixed;inset:0;z-index:2147483000;background:var(--ag-bg,#eef4f0);color:#171b1f;
@@ -283,7 +333,7 @@ var AuthGate = (function () {
   var KEY = 'ipq_session', PKEY = 'ipq_preview', PREVIEW = null, cfg = {}, token = null, user = null, view = 'login', bootstrap = false, recovery = false;
   var LANG = 'ar'; try { LANG = localStorage.getItem('ipq_lang') === 'en' ? 'en' : 'ar'; } catch (e) {}
   var TX = {
-    welcome: ['مرحبًا مجددًا! يُرجى إدخال بيانات الحساب.', 'Welcome back! Please enter your account details.'],
+    welcome: ['تسجيل الدخول إلى النظام. يُرجى إدخال بيانات الحساب.', 'Sign in to the system. Enter your account details.'],
     forgot: ['نسيت كلمة المرور؟', 'Forgot password?'],
     userPh: ['أدخل اسم المستخدم', 'Enter the username'], passPh: ['أدخل كلمة المرور', 'Enter the password'],
     forgotMsg: ['يُرجى التواصل مع مالك الأداة لإعادة تعيين كلمة المرور.', 'Please contact the tool owner to reset the password.'],
@@ -586,7 +636,7 @@ var AuthGate = (function () {
       (PREVIEW ? '' : '<button type="button" class="ag-item ag-out" id="ag-out"><svg viewBox="0 0 24 24"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/></svg><span>' + L(['Sign out', 'تسجيل الخروج']) + '<em>' + (LANG === 'en' ? 'تسجيل الخروج' : 'Sign out') + '</em></span></button>');
     var top = document.createElement('div'); top.id = 'ag-top'; top.className = 'ag-top';
     top.innerHTML = '<div class="ag-crumb"><button type="button" class="ag-burger" id="ag-burger" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0a0a0a" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
-      '<span class="ag-hi">' + (LANG === 'en' ? 'Welcome, ' : 'مرحبًا، ') + '<b dir="auto">' + esc(nm) + '</b></span><span class="ag-role">' + esc(L(ROLE[user.isOwner ? 'OWNER' : user.sysRole] || ['', ''])) + '</span></div>';
+      '<span class="ag-hi"><b dir="auto">' + esc(nm) + '</b></span><span class="ag-role">' + esc(L(ROLE[user.isOwner ? 'OWNER' : user.sysRole] || ['', ''])) + '</span></div>';
     var scrim = document.createElement('div'); scrim.id = 'ag-scrim'; scrim.className = 'ag-scrim';
     document.body.insertBefore(top, document.body.firstChild);
     if (PREVIEW) {
@@ -599,7 +649,7 @@ var AuthGate = (function () {
     if (!PREVIEW) $('ag-out').onclick = logout;
     $('ag-burger').onclick = function () { document.body.classList.toggle('ag-menu'); };
     scrim.onclick = function () { document.body.classList.remove('ag-menu'); };
-    $('ag-lang2').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} bar(); };
+    $('ag-lang2').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} location.reload(); };
     side.querySelectorAll('.ag-nav').forEach(function (x) { x.onclick = function () { document.body.classList.remove('ag-menu'); if (x.dataset.p !== cfg.page) open(x.dataset.p); }; });
     renderSub();
   }
@@ -640,7 +690,7 @@ var AuthGate = (function () {
     var t = SUB.btns[SUB.cur].textContent.split(' · '), en = (t[0] || '').trim(), ar = (t[1] || t[0] || '').trim();
     var bi = bn.querySelector('.bi'), b = bn.querySelector(':scope > b');
     if (bi && bi.querySelector('.en')) { bi.querySelector('.en').textContent = en; bi.querySelector('.ar').textContent = ar; }
-    else if (b) b.textContent = ar + ' · ' + en;
+    else if (b) b.textContent = t.length > 1 ? ar + ' · ' + en : ar;
     [].forEach.call(bn.children, function (c) { if (c !== bi && c !== b && c.tagName === 'SPAN') c.style.display = SUB.cur === 0 ? '' : 'none'; });
   }
   try { new MutationObserver(function () { mirrorTabs(); }).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
@@ -690,7 +740,7 @@ var AuthGate = (function () {
     $('ag').style.setProperty('--ag-accent', '#0a0a0a'); $('ag').style.setProperty('--ag-bg', '#f4f4f5');   // monochrome theme on every page
     if (cfg.barWidth) document.documentElement.style.setProperty('--ag-barw', cfg.barWidth);
     $('ag-form').addEventListener('submit', onSubmit);
-    $('ag-lang').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} show(view); };
+    $('ag-lang').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} location.reload(); };
     var stored = null; try { stored = localStorage.getItem(KEY) || sessionStorage.getItem(KEY); } catch (e) {}
     try { var pv = JSON.parse(sessionStorage.getItem(PKEY) || 'null'); if (pv && pv.token) { PREVIEW = pv.token; stored = pv.token; } } catch (e) {}
     // back / forward between pages of the app
