@@ -848,7 +848,7 @@ var OrgUI = (function () {
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
     FORM_LINK_REQUIRED: ['Add the form link first', 'يلزم إدخال رابط النموذج أولاً'],
-    INVALID_LINK: ['The form link must be the Apps Script link of the quality form', 'رابط النموذج غير صحيح — يلزم رابط النموذج المنشور من ورقة الجودة'],
+    INVALID_LINK: ['The form link must be the Apps Script link of the quality form', 'رابط النموذج غير صحيح — يُقبل رابط النموذج المنشور من ورقة الجودة أو رابطه المختصر (bit.ly)'],
     CAPA_REQUIRED: ['A corrective action is required for every partial / non-compliant item', 'يلزم إجراء تصحيحي لكل بند جزئي أو غير ممتثل'],
     QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet — link it from the «Quality sheet» tab', 'لم تُربط ورقة الجودة بعد — تُربط من تبويب «ورقة الجودة»'],
     QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة ورقة الجودة (محرر) مع حساب النظام'],

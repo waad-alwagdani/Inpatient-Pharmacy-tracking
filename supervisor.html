@@ -812,7 +812,7 @@ var OrgUI = (function () {
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
     FORM_LINK_REQUIRED: ['Add the form link first', 'يلزم إدخال رابط النموذج أولاً'],
-    INVALID_LINK: ['The form link must be the Apps Script link of the quality form', 'رابط النموذج غير صحيح — يلزم رابط النموذج المنشور من ورقة الجودة'],
+    INVALID_LINK: ['The form link must be the Apps Script link of the quality form', 'رابط النموذج غير صحيح — يُقبل رابط النموذج المنشور من ورقة الجودة أو رابطه المختصر (bit.ly)'],
     CAPA_REQUIRED: ['A corrective action is required for every partial / non-compliant item', 'يلزم إجراء تصحيحي لكل بند جزئي أو غير ممتثل'],
     QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet — link it from the «Quality sheet» tab', 'لم تُربط ورقة الجودة بعد — تُربط من تبويب «ورقة الجودة»'],
     QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة ورقة الجودة (محرر) مع حساب النظام'],
@@ -1622,7 +1622,7 @@ var QualityUI=(function(){
       AuthGate.run('merDistGet').then(function(d){X=d;if(!X.rows.length)X.rows=[{dept:'',emails:'',last:''}];paint();},function(e){host.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});
       function paint(){
         var h='<div style="'+box+'"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>توزيع نموذج البلاغات على الأقسام · Send the form to departments</b><button type="button" id="d-back" style="'+inp+';cursor:pointer">رجوع إلى البلاغات · Back</button></div>'+
-          '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:12px">رابط النموذج · Form link<input id="d-url" dir="ltr" value="'+E(X.formUrl)+'" placeholder="https://script.google.com/macros/s/…/exec" style="'+inp+';width:100%"></label>'+
+          '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:12px">رابط النموذج · Form link<input id="d-url" dir="ltr" value="'+E(X.formUrl)+'" placeholder="https://bit.ly/…  أو  https://script.google.com/macros/s/…/exec" style="'+inp+';width:100%"></label>'+
           '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button type="button" id="d-copy" style="'+inp+';cursor:pointer;font-weight:600">نسخ الرابط · Copy link</button><button type="button" id="d-open" style="'+inp+';cursor:pointer;font-weight:600">فتح النموذج · Open form</button><button type="button" id="d-qr" style="'+inp+';cursor:pointer;font-weight:600">رمز QR للطباعة · Print QR</button><span id="d-cm" style="font-size:12.5px;font-weight:600;color:#276b3e"></span></div>'+
           '<div style="overflow:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f4f4f5"><th style="padding:8px;width:34px"><input type="checkbox" id="d-all"></th><th style="padding:8px;text-align:start">القسم · Department</th><th style="padding:8px;text-align:start">البريد (يُفصل بفاصلة) · Emails</th><th style="padding:8px;text-align:start;white-space:nowrap">آخر إرسال · Last sent</th><th></th></tr>'+
           X.rows.map(function(r,i){return '<tr style="border-top:1px solid #f1f1f1"><td style="padding:6px 8px"><input type="checkbox" data-c="'+i+'"></td><td style="padding:6px 8px"><input data-k="dept" data-i="'+i+'" value="'+E(r.dept)+'" style="'+inp+';width:100%"></td><td style="padding:6px 8px"><input data-k="emails" data-i="'+i+'" dir="ltr" value="'+E(r.emails)+'" style="'+inp+';width:100%"></td><td style="padding:6px 8px;white-space:nowrap;color:#71717a">'+E(r.last||'—')+'</td><td style="padding:6px 8px"><button type="button" data-del="'+i+'" style="'+inp+';height:32px;cursor:pointer;color:#a3231b">حذف · Remove</button></td></tr>';}).join('')+'</table></div>'+
@@ -1632,7 +1632,7 @@ var QualityUI=(function(){
         host.innerHTML=h;var m=host.querySelector('#d-m');
         host.querySelector('#d-back').onclick=back;
         function u(){return (host.querySelector('#d-url').value||'').trim();}
-        function need(){if(!/^https:\/\/script\.google\.com\/macros\/s\//.test(u())){var c=host.querySelector('#d-cm');c.style.color='#a3231b';c.textContent='يلزم إدخال رابط النموذج أولاً · Add the form link first';return false;}return true;}
+        function need(){if(!/^https:\/\/(script\.google\.com\/macros\/s\/|bit\.ly\/|tinyurl\.com\/)/.test(u())){var c=host.querySelector('#d-cm');c.style.color='#a3231b';c.textContent='يلزم إدخال رابط النموذج أولاً · Add the form link first';return false;}return true;}
         host.querySelector('#d-copy').onclick=function(){if(!need())return;var c=host.querySelector('#d-cm'),t=u();
           function ok(){c.style.color='#276b3e';c.textContent='✓ تم نسخ الرابط · Link copied';}
           try{navigator.clipboard.writeText(t).then(ok,function(){var x=document.createElement('textarea');x.value=t;document.body.appendChild(x);x.select();document.execCommand('copy');x.remove();ok();});}catch(e){}};
