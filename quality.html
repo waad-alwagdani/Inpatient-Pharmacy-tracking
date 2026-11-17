@@ -1447,7 +1447,7 @@ var QualityUI=(function(){
     var inp='height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit;width:auto;background:#fff';
     function rec(r){var o={};D.head.forEach(function(h,i){o[h]=r[i]||'';});o.status=o['Review Status']||'New';return o;}
     function go(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';
-      AuthGate.run('merReports',F,T).then(function(d){D=d;F=d.from;T=d.to;D.list=d.rows.map(rec);draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+      AuthGate.run('merReports',F,T).then(function(d){D=d;F=d.from;T=d.to;D.list=d.rows.map(rec);draw();},function(e){if(/QUALITY_SHEET_(NOT_SET|NO_ACCESS)/.test(String(e&&e.message)))return qualitySheet(el);el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
     function bars(title,key,list){var c={};list.forEach(function(r){var k=r[key]||'—';c[k]=(c[k]||0)+1;});var k=Object.keys(c).sort(function(a,b){return c[b]-c[a];}),mx=Math.max.apply(null,k.map(function(x){return c[x];}).concat([1]));
       return '<div style="'+box+';flex:1;min-width:260px"><b style="font-size:13.5px">'+title+'</b>'+(k.length?k.map(function(x){return '<div style="margin-top:8px;direction:ltr"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>'+E(x)+'</span><b>'+c[x]+'</b></div><div style="height:8px;background:#f2f1ed;border-radius:99px;margin-top:3px"><div style="height:8px;border-radius:99px;background:#1c1c1c;width:'+Math.round(c[x]/mx*100)+'%"></div></div></div>';}).join(''):'<div style="color:#71717a;font-size:13px;margin-top:8px">—</div>')+'</div>';}
     function pill(st){var m=MST[st]||MST.New;return '<span style="background:'+m[2]+';color:'+m[1]+';border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;white-space:nowrap">'+m[0]+' · '+E(st)+'</span>';}
@@ -1511,7 +1511,7 @@ var QualityUI=(function(){
     var box='background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:14px;padding:14px;margin-bottom:12px';
     var inp='height:38px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font-family:inherit;background:#fff';
     function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
-    function go(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';AuthGate.run('inspList').then(function(d){D=d;draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+    function go(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';AuthGate.run('inspList').then(function(d){D=d;draw();},function(e){if(/QUALITY_SHEET_(NOT_SET|NO_ACCESS)/.test(String(e&&e.message)))return qualitySheet(el);el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
     function col(p){return p>=90?'#15803d':p>=75?'#a16207':'#b91c1c';}
     function draw(){
       var avg=D.rows.length?Math.round(D.rows.reduce(function(a,r){return a+r.pct;},0)/D.rows.length):0;
@@ -1546,7 +1546,7 @@ var QualityUI=(function(){
     function coreQ(){return [].concat.apply([],C.core.map(function(d){return d.items.map(function(it){return {d:d.domain,it:it};});}));}
     function fresh(unit){return {month:ym(),date:today(),unit:unit||Object.keys(C.units)[0],core:coreQ().map(function(){return '';}),unitAns:C.units[unit||Object.keys(C.units)[0]].items.map(function(){return '';}),actions:{}};}
     function load(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';
-      Promise.all([AuthGate.run('govConfig'),AuthGate.run('govList')]).then(function(x){C=x[0];R=x[1].rows;if(!A)A=fresh();if(!MONTH)MONTH=ym();draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+      Promise.all([AuthGate.run('govConfig'),AuthGate.run('govList')]).then(function(x){C=x[0];R=x[1].rows;if(!A)A=fresh();if(!MONTH)MONTH=ym();draw();},function(e){if(/QUALITY_SHEET_(NOT_SET|NO_ACCESS)/.test(String(e&&e.message)))return qualitySheet(el);el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
     function head(){return '<div style="'+box+';display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label style="font-size:13px;font-weight:600;color:#71717a">العرض · View <select id="g-v" style="'+inp+';min-width:240px">'+
       [['form','نموذج التدقيق · Audit form'],['cmp','مقارنة الأقسام وتحليل الفجوات · Comparison & gaps'],['rec','سجل التدقيقات · Records ('+R.length+')']].map(function(o){return '<option value="'+o[0]+'"'+(V===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></label></div>';}
     function draw(){var h=head()+(V==='form'?form():V==='cmp'?cmp():recs());el.innerHTML=h;el.querySelector('#g-v').onchange=function(){V=this.value;draw();};(V==='form'?bindForm:V==='cmp'?bindCmp:bindRecs)();}
@@ -1618,7 +1618,7 @@ var QualityUI=(function(){
     var box='background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px;margin-bottom:12px';
     var btn='height:38px;border:1px solid #d4d4d8;background:#fff;border-radius:8px;padding:0 14px;cursor:pointer;font-family:inherit;font-weight:600';
     function load(){el.innerHTML='<div style="'+box+';color:#71717a">Loading · جاري التحميل</div>';
-      AuthGate.run('qualityGet').then(function(s){S=s;draw();},function(e){el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
+      AuthGate.run('qualityGet').then(function(s){S=s;draw();},function(e){if(/QUALITY_SHEET_(NOT_SET|NO_ACCESS)/.test(String(e&&e.message)))return qualitySheet(el);el.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});}
     function draw(){
       var h='<div style="'+box+'"><b style="font-size:15px">شيت قسم الجودة · Quality department sheet</b>'+
         '<div style="color:#71717a;font-size:13px;margin:4px 0 12px">شيت مستقل لقسم الجودة. ترسل المنصة تقاريرها إليه في تبويبات تبدأ بـ «PT ·»، ويمكن عرض أي تبويب منه هنا.</div>';
