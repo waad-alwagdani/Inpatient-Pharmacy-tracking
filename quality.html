@@ -1732,12 +1732,13 @@ var QualityUI=(function(){
 <script>
   /* Quality page — Pharmacy Tracker by WaadAlwagdani */
   AuthGate.start({accent:'#0a0a0a',bg:'#f4f4f5',barWidth:'980px',page:'quality',onReady:function(u){
-    OrgUI.tabs(document.getElementById('main'),[
-      {en:'Medication errors',ar:'الأخطاء الدوائية',render:QualityUI.medErrors},
-      {en:'Governance audit',ar:'التدقيق الشهري للحوكمة',render:QualityUI.govAudit},
-      {en:'Inspections',ar:'جولات التفتيش',render:QualityUI.inspections},
+    var own=u.sysRole==='OWNER'||u.isOwner,st=u.stations||[],tabs=[];
+    if(own||st.indexOf('qmer')>-1) tabs.push({en:'Medication errors',ar:'الأخطاء الدوائية',render:QualityUI.medErrors});
+    if(own||st.indexOf('qgov')>-1) tabs.push({en:'Governance audit',ar:'التدقيق الشهري للحوكمة',render:QualityUI.govAudit});
+    if(own||st.indexOf('qinsp')>-1) tabs.push({en:'Inspections',ar:'جولات التفتيش',render:QualityUI.inspections});
+    OrgUI.tabs(document.getElementById('main'),tabs.concat([
       {en:'Audit log',ar:'سجل التدقيق',render:QualityUI.auditLog},
-      {en:'Quality sheet',ar:'شيت الجودة',render:QualityUI.qualitySheet}]);
+      {en:'Quality sheet',ar:'شيت الجودة',render:QualityUI.qualitySheet}]));
   }});
 </script>
 </body>
