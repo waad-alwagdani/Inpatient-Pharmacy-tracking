@@ -637,7 +637,7 @@ var AuthGate = (function () {
     var bar = document.querySelector('.ou-tabs, .ptabs, .tabs[role=tablist]');
     if (!bar || bar === (SUB && SUB.bar) || bar.hasAttribute('data-noside')) return;
     var btns = [].slice.call(bar.querySelectorAll('button'));
-    if (btns.length < 2) return;
+    if (btns.length < 1) return;
     bar.style.display = 'none';
     var cur = 0; btns.forEach(function (b, i) { if (tabBtnOn(b)) cur = i; });
     SUB = { bar: bar, btns: btns, cur: cur };
@@ -811,6 +811,8 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    FORM_LINK_REQUIRED: ['Add the form link first', 'يلزم إدخال رابط النموذج أولاً'],
+    INVALID_LINK: ['The form link must be the Apps Script link of the quality form', 'رابط النموذج غير صحيح — يلزم رابط النموذج المنشور من ورقة الجودة'],
     CAPA_REQUIRED: ['A corrective action is required for every partial / non-compliant item', 'يلزم إجراء تصحيحي لكل بند جزئي أو غير ممتثل'],
     QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet — link it from the «Quality sheet» tab', 'لم تُربط ورقة الجودة بعد — تُربط من تبويب «ورقة الجودة»'],
     QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة ورقة الجودة (محرر) مع حساب النظام'],
@@ -1587,6 +1589,7 @@ var QualityUI=(function(){
       var L=D.list.filter(function(r){return !FS||r.status===FS;}),near=D.list.filter(function(r){return /Near miss/.test(r['Action Taken']);}).length;
       var cnt=function(s){return D.list.filter(function(r){return r.status===s;}).length;};
       var h='<div style="'+box+';display:flex;gap:10px;flex-wrap:wrap;align-items:center">'+
+        '<button type="button" id="me-dist" style="'+inp+';cursor:pointer;font-weight:600">توزيع النموذج على الأقسام · Send form to departments</button>'+
         '<label style="font-size:13px;font-weight:600;color:#71717a">من · From <input type="date" id="me-f" value="'+E(F)+'" style="'+inp+'"></label><label style="font-size:13px;font-weight:600;color:#71717a">إلى · To <input type="date" id="me-t" value="'+E(T)+'" style="'+inp+'"></label>'+
         '<label style="font-size:13px;font-weight:600;color:#71717a">الحالة · Status <select id="me-s" style="'+inp+';min-width:160px"><option value="">الكل · All</option>'+Object.keys(MST).map(function(k){return '<option value="'+k+'"'+(FS===k?' selected':'')+'>'+MST[k][0]+' · '+k+'</option>';}).join('')+'</select></label>'+
         '<span style="margin-inline-start:auto;display:flex;gap:8px"><button type="button" id="me-pr" style="'+inp+';background:#1c1c1c;color:#fff;border-color:#1c1c1c;cursor:pointer;font-weight:600">🖨 تقرير الفترة · Period report</button><button type="button" id="me-csv" style="'+inp+';cursor:pointer;font-weight:600">CSV</button></span></div>';
@@ -1603,7 +1606,36 @@ var QualityUI=(function(){
       el.querySelector('#me-csv').onclick=function(){var q=function(v){v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
         var csv='﻿'+[D.head].concat(D.rows).map(function(r){return r.map(q).join(',');}).join('\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='medication-errors_'+F+'_'+T+'.csv';document.body.appendChild(a);a.click();a.remove();};
       el.querySelector('#me-pr').onclick=printReport;
+      el.querySelector('#me-dist').onclick=function(){dist(el,go);};
       var fm=el.querySelector('#rv');if(fm)bindReview(fm);
+    }
+    function dist(host,back){
+      var X=null;host.innerHTML='<div style="'+box+';color:#71717a">…</div>';
+      AuthGate.run('merDistGet').then(function(d){X=d;if(!X.rows.length)X.rows=[{dept:'',emails:'',last:''}];paint();},function(e){host.innerHTML='<div style="'+box+';color:#a3231b">'+OrgUI.err(e)+'</div>';});
+      function paint(){
+        var h='<div style="'+box+'"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>توزيع نموذج البلاغات على الأقسام · Send the form to departments</b><button type="button" id="d-back" style="'+inp+';cursor:pointer">رجوع إلى البلاغات · Back</button></div>'+
+          '<label style="display:block;font-size:12.5px;font-weight:600;color:#71717a;margin-top:12px">رابط النموذج · Form link<input id="d-url" dir="ltr" value="'+E(X.formUrl)+'" placeholder="https://script.google.com/macros/s/…/exec" style="'+inp+';width:100%"></label>'+
+          '<div style="overflow:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f4f4f5"><th style="padding:8px;width:34px"><input type="checkbox" id="d-all"></th><th style="padding:8px;text-align:start">القسم · Department</th><th style="padding:8px;text-align:start">البريد (يُفصل بفاصلة) · Emails</th><th style="padding:8px;text-align:start;white-space:nowrap">آخر إرسال · Last sent</th><th></th></tr>'+
+          X.rows.map(function(r,i){return '<tr style="border-top:1px solid #f1f1f1"><td style="padding:6px 8px"><input type="checkbox" data-c="'+i+'"></td><td style="padding:6px 8px"><input data-k="dept" data-i="'+i+'" value="'+E(r.dept)+'" style="'+inp+';width:100%"></td><td style="padding:6px 8px"><input data-k="emails" data-i="'+i+'" dir="ltr" value="'+E(r.emails)+'" style="'+inp+';width:100%"></td><td style="padding:6px 8px;white-space:nowrap;color:#71717a">'+E(r.last||'—')+'</td><td style="padding:6px 8px"><button type="button" data-del="'+i+'" style="'+inp+';height:32px;cursor:pointer;color:#a3231b">حذف · Remove</button></td></tr>';}).join('')+'</table></div>'+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"><button type="button" id="d-add" style="'+inp+';cursor:pointer;font-weight:600">+ إضافة قسم · Add department</button><button type="button" id="d-save" style="'+inp+';cursor:pointer;font-weight:600">حفظ القائمة · Save list</button>'+
+          '<button type="button" id="d-send" style="'+inp+';background:#1c1c1c;color:#fff;border-color:#1c1c1c;cursor:pointer;font-weight:600">إرسال النموذج للأقسام المحددة · Send to selected</button><span id="d-m" style="font-size:12.5px;font-weight:600"></span></div></div>';
+        h+='<div style="'+box+'"><b>سجل الإرسال · Sending log</b>'+(X.log.length?'<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px">'+X.log.map(function(l){return '<tr style="border-top:1px solid #f1f1f1"><td style="padding:6px 8px;white-space:nowrap;direction:ltr;text-align:start">'+E(l.at)+'</td><td style="padding:6px 8px">'+E(l.dept)+'</td><td style="padding:6px 8px;direction:ltr;text-align:start">'+E(l.to)+'</td><td style="padding:6px 8px">'+E(l.by)+'</td><td style="padding:6px 8px;font-weight:700;color:'+(l.ok?'#276b3e':'#a3231b')+'">'+(l.ok?'أُرسل · Sent':'لم يُرسل · Failed')+'</td></tr>';}).join('')+'</table>':'<div style="color:#71717a;font-size:13px;margin-top:6px">لا يوجد إرسال بعد · Nothing sent yet</div>')+'</div>';
+        host.innerHTML=h;var m=host.querySelector('#d-m');
+        host.querySelector('#d-back').onclick=back;
+        host.querySelectorAll('[data-k]').forEach(function(i){i.oninput=function(){X.rows[+i.dataset.i][i.dataset.k]=i.value;};});
+        host.querySelector('#d-url').oninput=function(){X.formUrl=this.value.trim();};
+        host.querySelector('#d-all').onchange=function(){var c=this.checked;host.querySelectorAll('[data-c]').forEach(function(x){x.checked=c;});};
+        host.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){X.rows.splice(+b.dataset.del,1);if(!X.rows.length)X.rows.push({dept:'',emails:'',last:''});paint();};});
+        host.querySelector('#d-add').onclick=function(){X.rows.push({dept:'',emails:'',last:''});paint();};
+        function save(){return AuthGate.run('merDistSave',X.formUrl,X.rows);}
+        host.querySelector('#d-save').onclick=function(){m.style.color='#71717a';m.textContent='…';save().then(function(){m.style.color='#276b3e';m.textContent='✓ تم الحفظ · Saved';},function(e){m.style.color='#a3231b';m.innerHTML=OrgUI.err(e);});};
+        host.querySelector('#d-send').onclick=function(){var sel=[].slice.call(host.querySelectorAll('[data-c]:checked')).map(function(x){return (X.rows[+x.dataset.c].dept||'').trim();}).filter(Boolean);
+          if(!sel.length){m.style.color='#a3231b';m.textContent='يلزم تحديد قسم واحد على الأقل · Select at least one department';return;}
+          var b=this;b.disabled=true;m.style.color='#71717a';m.textContent='جاري الإرسال… · Sending…';
+          save().then(function(){return AuthGate.run('merDistSend',sel);}).then(function(r){b.disabled=false;
+            AuthGate.run('merDistGet').then(function(d){X=d;paint();var mm=host.querySelector('#d-m');mm.style.color=r.failed?'#a3231b':'#276b3e';mm.textContent='أُرسل إلى '+r.sent+' بريد'+(r.failed?' · لم يُرسل '+r.failed:'')+' · Sent '+r.sent+(r.failed?', failed '+r.failed:'');});
+          },function(e){b.disabled=false;m.style.color='#a3231b';m.innerHTML=OrgUI.err(e);});};
+      }
     }
     function fld(l,v){return '<div style="padding:8px 0;border-top:1px solid #f1f1f1;display:grid;grid-template-columns:200px 1fr;gap:10px"><span style="color:#71717a;font-size:12.5px;font-weight:600">'+l+'</span><span style="direction:ltr;text-align:left;font-weight:600">'+E(v||'—')+'</span></div>';}
     function detail(r){

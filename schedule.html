@@ -637,7 +637,7 @@ var AuthGate = (function () {
     var bar = document.querySelector('.ou-tabs, .ptabs, .tabs[role=tablist]');
     if (!bar || bar === (SUB && SUB.bar) || bar.hasAttribute('data-noside')) return;
     var btns = [].slice.call(bar.querySelectorAll('button'));
-    if (btns.length < 2) return;
+    if (btns.length < 1) return;
     bar.style.display = 'none';
     var cur = 0; btns.forEach(function (b, i) { if (tabBtnOn(b)) cur = i; });
     SUB = { bar: bar, btns: btns, cur: cur };
@@ -811,6 +811,8 @@ var OrgUI = (function () {
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
+    FORM_LINK_REQUIRED: ['Add the form link first', 'يلزم إدخال رابط النموذج أولاً'],
+    INVALID_LINK: ['The form link must be the Apps Script link of the quality form', 'رابط النموذج غير صحيح — يلزم رابط النموذج المنشور من ورقة الجودة'],
     CAPA_REQUIRED: ['A corrective action is required for every partial / non-compliant item', 'يلزم إجراء تصحيحي لكل بند جزئي أو غير ممتثل'],
     QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet — link it from the «Quality sheet» tab', 'لم تُربط ورقة الجودة بعد — تُربط من تبويب «ورقة الجودة»'],
     QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة ورقة الجودة (محرر) مع حساب النظام'],
