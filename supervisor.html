@@ -751,7 +751,7 @@ var OrgUI = (function () {
   function addD(s, n) { var p = s.split('-'); return iso(new Date(+p[0], +p[1] - 1, +p[2] + n)); }
   var ERR = {
     CAPA_REQUIRED: ['A corrective action is required for every partial / non-compliant item', 'يلزم إجراء تصحيحي لكل بند جزئي أو غير ممتثل'],
-    QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet', 'لم يُربط شيت الجودة بعد'],
+    QUALITY_SHEET_NOT_SET: ['Quality sheet is not linked yet — link it from the «Quality sheet» tab', 'لم يُربط شيت الجودة بعد — يُربط من تبويب «شيت الجودة»'],
     QUALITY_SHEET_NO_ACCESS: ['No access — share the quality sheet (Editor) with the platform account', 'لا صلاحية — يلزم مشاركة شيت الجودة (محرر) مع حساب المنصة'],
     READ_ONLY: ['Quality accounts are view-only — nothing was changed', 'حساب الجودة للاطلاع فقط — لم يُحفظ أي تعديل'],
     ADC_NOT_ASSIGNED: ['This cabinet is not assigned to you', 'هذه الكابينة غير مُسندة إليك'],
