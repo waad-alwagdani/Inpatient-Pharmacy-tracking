@@ -460,7 +460,7 @@ var AuthGate = (function () {
   // Fast front end (GitHub Pages): pages are static files, so moving between them needs no server round trip.
   // The identity handed over is for display only; every data call is still validated by the server.
   var STATIC = { owner: 'owner.html', supervisor: 'supervisor.html', pack: 'pack.html', inventory: 'inventory.html', invread: 'inventory.html?mode=invread',
-    dash: 'dash.html', labels: 'labels.html', schedule: 'schedule.html', adc: 'adc.html', ward: 'ward.html', wardreq: 'myrequests.html' };
+    dash: 'dash.html', labels: 'labels.html', schedule: 'schedule.html', adc: 'adc.html', ward: 'ward.html', wardreq: 'myrequests.html', quality: 'quality.html' };
   function fastGo(page) {
     if (!window.PT_SITE || PREVIEW || !STATIC[page] || !token || !user) return false;
     if (!user.isOwner && (user.pages || []).indexOf(page) === -1) return false;
@@ -521,12 +521,13 @@ var AuthGate = (function () {
     labels: '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
     schedule: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     adc: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M4 8h16M4 14h16M10 5h4M10 11h4M10 17h4"/>',
+    quality: '<path d="M12 2l8 4v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/>',
     wardreq: '<path d="M9 3h6v4H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M9 14l2 2 4-4"/>',
     ward: '<path d="M9 3h6v4H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M12 11v6M9 14h6"/>'
   };
   var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
-    inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], wardreq: ['My requests', 'طلباتي'], schedule: ['My tasks', 'مهامي'] };
-  var GROUPS = [['Management', 'الإدارة', ['owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
+    inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], wardreq: ['My requests', 'طلباتي'], quality: ['Quality', 'الجودة'], schedule: ['My tasks', 'مهامي'] };
+  var GROUPS = [['Management', 'الإدارة', ['quality', 'owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
   var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'], QUALITY: ['Quality', 'الجودة'] };
   function L(p) { return LANG === 'en' ? p[0] : p[1]; }
   function bar() {
@@ -1504,64 +1505,9 @@ var OosUI = (function () {
 })();
 </script>
 
-<div class="wrap">
-  <div class="banner"><span class="bi"><span class="en">Supervision</span><span class="ar">الإشراف</span></span></div>
-  <div id="main"></div>
-  <footer>Pharmacy Tracker by WaadAlwagdani</footer>
-</div>
+<!-- Quality department screens — Pharmacy Tracker by WaadAlwagdani (used by the Quality page and, for the sheet link, by Supervision) -->
 <script>
-
-  // Automatic expiry report — Pharmacy Tracker by WaadAlwagdani
-  function expiry(el){
-    var E=OrgUI.esc;
-    el.innerHTML='<div style="color:#71717a;padding:20px">Loading · جاري التحميل</div>';
-    function draw(d,msg){
-      var opts='';for(var i=1;i<=28;i++)opts+='<option value="'+i+'"'+(d.day===i?' selected':'')+'>'+i+'</option>';
-      var cnt=function(k){return d.rows.filter(function(r){return r.band===k;}).length;};
-      var by={};d.bands.forEach(function(b){by[b.k]=b;});
-      el.innerHTML='<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:10px;padding:14px;margin-bottom:12px">'+
-        '<div style="font-weight:700;margin-bottom:8px">Automatic report day · يوم التجهيز التلقائي</div>'+
-        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:13px">Day of month · يوم الشهر</span>'+
-        '<select id="xd" style="height:36px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font:inherit"><option value="">—</option>'+opts+'</select>'+
-        '<button id="xs" type="button" style="height:36px;padding:0 14px;border:0;border-radius:8px;background:#0a0a0a;color:#fff;font:600 13px inherit;font-family:inherit;cursor:pointer">Save · حفظ</button>'+
-        '<button id="xr" type="button" style="height:36px;padding:0 14px;border:1px solid #0a0a0a;border-radius:8px;background:var(--pt-card,#fff);color:#0a0a0a;font:600 13px inherit;font-family:inherit;cursor:pointer">Prepare now · تجهيز الآن</button></div>'+
-        '<div style="font-size:12px;color:#71717a;margin-top:8px">'+(d.day?'يُجهَّز التقرير تلقائيًا يوم '+d.day+' من كل شهر في تبويب «تقرير الانتهاء» في الجدول.':'لم يُحدَّد يوم بعد.')+(d.last?' · آخر تجهيز: <span dir="ltr">'+E(d.last)+'</span>':'')+'</div>'+
-        '<div id="xm" role="status" style="font-size:13px;margin-top:6px">'+(msg||'')+'</div></div>'+
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+d.bands.map(function(b){return '<div style="flex:1;min-width:130px;background:'+b.bg+';color:'+b.fg+';border-radius:8px;padding:10px 12px"><div style="font-size:22px;font-weight:700">'+cnt(b.k)+'</div><div style="font-size:12px">'+E(b.en)+' · '+E(b.ar)+'</div></div>';}).join('')+'</div>'+
-        '<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:10px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;direction:ltr">'+
-        '<tr style="background:#f4f4f5">'+['Item · الصنف','Strength','Lot · التشغيلة','Expiry · الانتهاء','Qty · الكمية','Days · الأيام'].map(function(h){return '<th style="text-align:left;padding:8px">'+h+'</th>';}).join('')+'</tr>'+
-        (d.rows.length?d.rows.map(function(r){var b=by[r.band];return '<tr style="background:'+b.bg+';color:'+b.fg+'"><td style="padding:7px 8px;font-weight:600">'+E(r.name)+'</td><td style="padding:7px 8px">'+E(r.strength)+'</td><td style="padding:7px 8px">'+E(r.lot)+'</td><td style="padding:7px 8px">'+E(r.exp)+'</td><td style="padding:7px 8px">'+r.qty+'</td><td style="padding:7px 8px">'+r.days+'</td></tr>';}).join('')
-          :'<tr><td colspan="6" style="padding:16px;text-align:center;color:#71717a">لا توجد تشغيلات في المخزون</td></tr>')+'</table></div>';
-      el.querySelector('#xs').onclick=function(){var v=el.querySelector('#xd').value;if(!v){el.querySelector('#xm').textContent='يُرجى اختيار اليوم';return;}
-        AuthGate.run('exprSave',v).then(function(){d.day=+v;draw(d,'تم الحفظ ✓');},function(e){el.querySelector('#xm').textContent=OrgUI.err(e);});};
-      el.querySelector('#xr').onclick=function(){el.querySelector('#xm').textContent='جاري التجهيز…';
-        AuthGate.run('exprRunNow').then(function(r){d.last=r.last;d.rows=r.rows;draw(d,'تم تجهيز التقرير في الجدول ✓');},function(e){el.querySelector('#xm').textContent=OrgUI.err(e);});};
-    }
-    AuthGate.run('exprGet').then(function(d){draw(d);},function(e){el.innerHTML='<div style="color:#a3231b;padding:20px">'+OrgUI.esc(OrgUI.err(e))+'</div>';});
-  }
-
-  // Re-packaging stock — same figures the re-packer sees (Pharmacy Tracker by WaadAlwagdani)
-  function pstock(el){
-    var E=OrgUI.esc,Q='',F='all',D=null,C={red:['#dc2626','#fef2f2','Step in now · يلزم التغليف الآن'],amber:['#ca8a04','#fefce8','Soon · قريبًا'],green:['#16a34a','#f0fdf4','Enough · كافٍ']};
-    function load(){ if(!D) el.innerHTML='<div style="color:#71717a;padding:20px">Loading · جاري التحميل</div>';
-      AuthGate.run('packStock').then(function(d){D=d;draw();},function(e){el.innerHTML='<div style="color:#a3231b;padding:20px">'+E(OrgUI.err(e))+'</div>';}); }
-    function draw(){
-      var n={red:0,amber:0,green:0};D.items.forEach(function(x){n[x.st]++;});
-      var q=Q.toLowerCase(),rows=D.items.filter(function(x){return(F==='all'||x.st===F)&&(!q||(x.name+' '+x.strength+' '+x.no).toLowerCase().indexOf(q)>-1);});
-      el.innerHTML='<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px">'+
-        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">'+['red','amber','green'].map(function(k){return '<button type="button" class="sf" data-f="'+k+'" style="flex:1;min-width:150px;height:auto!important;min-height:72px;line-height:1.3;display:block;text-align:start;border:2px solid '+(F===k?C[k][0]:'transparent')+';background:'+C[k][1]+';border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit"><div style="font-size:24px;font-weight:700;color:'+C[k][0]+'">'+n[k]+'</div><div style="font-size:12px;font-weight:600">'+C[k][2]+'</div></button>';}).join('')+'</div>'+
-        '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap"><input type="search" class="sq" value="'+E(Q)+'" placeholder="بحث بالصنف · Search item" style="flex:1;min-width:220px;height:38px;border:1px solid #d4d4d8;border-radius:8px;padding:0 12px;font:inherit">'+
-        '<button type="button" class="sr" style="height:38px;border:0;background:#0a0a0a;color:#fff;border-radius:8px;padding:0 14px;cursor:pointer;font-family:inherit;font-weight:600">Refresh · تحديث</button></div>'+
-        '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;direction:ltr"><tr style="background:#f4f4f5">'+
-        ['Item · الصنف','Packed · المغلّف','Dispensed · المصروف','Left · المتبقي','Today · اليوم','Avg/day · المعدل','Days left · يكفي','Last packed · آخر تغليف'].map(function(h,i){return '<th style="padding:8px;text-align:'+(i?'center':'left')+';white-space:nowrap">'+h+'</th>';}).join('')+'</tr>'+
-        (rows.length?rows.map(function(x){var c=C[x.st];return '<tr style="border-top:1px solid #e4e4e7"><td style="padding:8px;border-left:4px solid '+c[0]+'"><b>'+E(x.name)+'</b> <span style="color:#71717a">'+E(x.strength)+'</span></td><td style="text-align:center">'+x.packed+'</td><td style="text-align:center">'+x.wd+'</td><td style="text-align:center;font-weight:700;color:'+c[0]+'">'+x.bal+'</td><td style="text-align:center">'+x.wdToday+'</td><td style="text-align:center">'+x.avg+'</td><td style="text-align:center;font-weight:600">'+(x.cover===null?'—':x.cover)+'</td><td style="text-align:center;color:#71717a">'+(x.lastPack||'—')+'</td></tr>';}).join(''):'<tr><td colspan="8" style="padding:16px;text-align:center;color:#71717a">لا توجد أصناف مطابقة</td></tr>')+
-        '</table></div><div style="font-size:12px;color:#71717a;margin-top:8px">آخر تحديث: <span dir="ltr">'+E(D.at)+'</span></div></div>';
-      el.querySelectorAll('.sf').forEach(function(b){b.onclick=function(){F=F===b.dataset.f?'all':b.dataset.f;draw();};});
-      el.querySelector('.sr').onclick=load;
-      var i=el.querySelector('.sq');i.oninput=function(){Q=this.value;var pos=this.selectionStart;draw();var j=el.querySelector('.sq');j.focus();try{j.setSelectionRange(pos,pos);}catch(e){}};
-    }
-    load();
-  }
+var QualityUI=(function(){
   /* medication error reports — readable cards, review workflow, printable period report (quality + owner) */
   var NCC={A:'A — ظروف قد تسبب خطأ · Circumstances',B:'B — خطأ لم يصل للمريض · Did not reach patient',C:'C — وصل للمريض بلا ضرر · Reached, no harm',D:'D — تطلب مراقبة · Monitoring required',E:'E — ضرر مؤقت تطلب تدخلاً · Temporary harm, intervention',F:'F — ضرر مؤقت مع تنويم · Temporary harm, hospitalisation',G:'G — ضرر دائم · Permanent harm',H:'H — تدخل لإنقاذ الحياة · Life-sustaining intervention',I:'I — وفاة · Death'};
   var CAUSES=['Communication','Knowledge / training','Workload / staffing','Look-alike / sound-alike','Labeling / packaging','Policy / procedure','Equipment / system','Environment / distraction','Patient factor','Other'];
@@ -1784,17 +1730,75 @@ var OosUI = (function () {
       el.querySelector('#at').innerHTML=rows.filter(function(r){return !q||r.join(' ').toLowerCase().indexOf(q)>-1}).slice(0,500).map(function(r){
         return '<tr style="border-top:1px solid #f1f1f1"><td style="padding:6px 8px;white-space:nowrap">'+E(new Date(r[0]).toLocaleString('en-GB',{dateStyle:'short',timeStyle:'short'}))+'</td><td style="padding:6px 8px">'+E(r[1])+'</td><td style="padding:6px 8px">'+E(r[2])+'</td><td style="padding:6px 8px">'+E(r[3])+'</td><td style="padding:6px 8px">'+E(r[4])+'</td><td style="padding:6px 8px;color:'+(r[9]==='denied'?'#a3231b':'#276b3e')+'">'+E(r[9]||'ok')+'</td></tr>';}).join('');}
   }
+  return {medErrors:medErrors,inspections:inspections,govAudit:govAudit,qualitySheet:qualitySheet,auditLog:auditLog};
+})();
+</script>
+
+<div class="wrap">
+  <div class="banner"><span class="bi"><span class="en">Supervision</span><span class="ar">الإشراف</span></span></div>
+  <div id="main"></div>
+  <footer>Pharmacy Tracker by WaadAlwagdani</footer>
+</div>
+<script>
+
+  // Automatic expiry report — Pharmacy Tracker by WaadAlwagdani
+  function expiry(el){
+    var E=OrgUI.esc;
+    el.innerHTML='<div style="color:#71717a;padding:20px">Loading · جاري التحميل</div>';
+    function draw(d,msg){
+      var opts='';for(var i=1;i<=28;i++)opts+='<option value="'+i+'"'+(d.day===i?' selected':'')+'>'+i+'</option>';
+      var cnt=function(k){return d.rows.filter(function(r){return r.band===k;}).length;};
+      var by={};d.bands.forEach(function(b){by[b.k]=b;});
+      el.innerHTML='<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:10px;padding:14px;margin-bottom:12px">'+
+        '<div style="font-weight:700;margin-bottom:8px">Automatic report day · يوم التجهيز التلقائي</div>'+
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:13px">Day of month · يوم الشهر</span>'+
+        '<select id="xd" style="height:36px;border:1px solid #e4e4e7;border-radius:8px;padding:0 10px;font:inherit"><option value="">—</option>'+opts+'</select>'+
+        '<button id="xs" type="button" style="height:36px;padding:0 14px;border:0;border-radius:8px;background:#0a0a0a;color:#fff;font:600 13px inherit;font-family:inherit;cursor:pointer">Save · حفظ</button>'+
+        '<button id="xr" type="button" style="height:36px;padding:0 14px;border:1px solid #0a0a0a;border-radius:8px;background:var(--pt-card,#fff);color:#0a0a0a;font:600 13px inherit;font-family:inherit;cursor:pointer">Prepare now · تجهيز الآن</button></div>'+
+        '<div style="font-size:12px;color:#71717a;margin-top:8px">'+(d.day?'يُجهَّز التقرير تلقائيًا يوم '+d.day+' من كل شهر في تبويب «تقرير الانتهاء» في الجدول.':'لم يُحدَّد يوم بعد.')+(d.last?' · آخر تجهيز: <span dir="ltr">'+E(d.last)+'</span>':'')+'</div>'+
+        '<div id="xm" role="status" style="font-size:13px;margin-top:6px">'+(msg||'')+'</div></div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+d.bands.map(function(b){return '<div style="flex:1;min-width:130px;background:'+b.bg+';color:'+b.fg+';border-radius:8px;padding:10px 12px"><div style="font-size:22px;font-weight:700">'+cnt(b.k)+'</div><div style="font-size:12px">'+E(b.en)+' · '+E(b.ar)+'</div></div>';}).join('')+'</div>'+
+        '<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:10px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;direction:ltr">'+
+        '<tr style="background:#f4f4f5">'+['Item · الصنف','Strength','Lot · التشغيلة','Expiry · الانتهاء','Qty · الكمية','Days · الأيام'].map(function(h){return '<th style="text-align:left;padding:8px">'+h+'</th>';}).join('')+'</tr>'+
+        (d.rows.length?d.rows.map(function(r){var b=by[r.band];return '<tr style="background:'+b.bg+';color:'+b.fg+'"><td style="padding:7px 8px;font-weight:600">'+E(r.name)+'</td><td style="padding:7px 8px">'+E(r.strength)+'</td><td style="padding:7px 8px">'+E(r.lot)+'</td><td style="padding:7px 8px">'+E(r.exp)+'</td><td style="padding:7px 8px">'+r.qty+'</td><td style="padding:7px 8px">'+r.days+'</td></tr>';}).join('')
+          :'<tr><td colspan="6" style="padding:16px;text-align:center;color:#71717a">لا توجد تشغيلات في المخزون</td></tr>')+'</table></div>';
+      el.querySelector('#xs').onclick=function(){var v=el.querySelector('#xd').value;if(!v){el.querySelector('#xm').textContent='يُرجى اختيار اليوم';return;}
+        AuthGate.run('exprSave',v).then(function(){d.day=+v;draw(d,'تم الحفظ ✓');},function(e){el.querySelector('#xm').textContent=OrgUI.err(e);});};
+      el.querySelector('#xr').onclick=function(){el.querySelector('#xm').textContent='جاري التجهيز…';
+        AuthGate.run('exprRunNow').then(function(r){d.last=r.last;d.rows=r.rows;draw(d,'تم تجهيز التقرير في الجدول ✓');},function(e){el.querySelector('#xm').textContent=OrgUI.err(e);});};
+    }
+    AuthGate.run('exprGet').then(function(d){draw(d);},function(e){el.innerHTML='<div style="color:#a3231b;padding:20px">'+OrgUI.esc(OrgUI.err(e))+'</div>';});
+  }
+
+  // Re-packaging stock — same figures the re-packer sees (Pharmacy Tracker by WaadAlwagdani)
+  function pstock(el){
+    var E=OrgUI.esc,Q='',F='all',D=null,C={red:['#dc2626','#fef2f2','Step in now · يلزم التغليف الآن'],amber:['#ca8a04','#fefce8','Soon · قريبًا'],green:['#16a34a','#f0fdf4','Enough · كافٍ']};
+    function load(){ if(!D) el.innerHTML='<div style="color:#71717a;padding:20px">Loading · جاري التحميل</div>';
+      AuthGate.run('packStock').then(function(d){D=d;draw();},function(e){el.innerHTML='<div style="color:#a3231b;padding:20px">'+E(OrgUI.err(e))+'</div>';}); }
+    function draw(){
+      var n={red:0,amber:0,green:0};D.items.forEach(function(x){n[x.st]++;});
+      var q=Q.toLowerCase(),rows=D.items.filter(function(x){return(F==='all'||x.st===F)&&(!q||(x.name+' '+x.strength+' '+x.no).toLowerCase().indexOf(q)>-1);});
+      el.innerHTML='<div style="background:var(--pt-card,#fff);border:1px solid #e4e4e7;border-radius:12px;padding:14px">'+
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">'+['red','amber','green'].map(function(k){return '<button type="button" class="sf" data-f="'+k+'" style="flex:1;min-width:150px;height:auto!important;min-height:72px;line-height:1.3;display:block;text-align:start;border:2px solid '+(F===k?C[k][0]:'transparent')+';background:'+C[k][1]+';border-radius:10px;padding:10px 12px;cursor:pointer;font-family:inherit"><div style="font-size:24px;font-weight:700;color:'+C[k][0]+'">'+n[k]+'</div><div style="font-size:12px;font-weight:600">'+C[k][2]+'</div></button>';}).join('')+'</div>'+
+        '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap"><input type="search" class="sq" value="'+E(Q)+'" placeholder="بحث بالصنف · Search item" style="flex:1;min-width:220px;height:38px;border:1px solid #d4d4d8;border-radius:8px;padding:0 12px;font:inherit">'+
+        '<button type="button" class="sr" style="height:38px;border:0;background:#0a0a0a;color:#fff;border-radius:8px;padding:0 14px;cursor:pointer;font-family:inherit;font-weight:600">Refresh · تحديث</button></div>'+
+        '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;direction:ltr"><tr style="background:#f4f4f5">'+
+        ['Item · الصنف','Packed · المغلّف','Dispensed · المصروف','Left · المتبقي','Today · اليوم','Avg/day · المعدل','Days left · يكفي','Last packed · آخر تغليف'].map(function(h,i){return '<th style="padding:8px;text-align:'+(i?'center':'left')+';white-space:nowrap">'+h+'</th>';}).join('')+'</tr>'+
+        (rows.length?rows.map(function(x){var c=C[x.st];return '<tr style="border-top:1px solid #e4e4e7"><td style="padding:8px;border-left:4px solid '+c[0]+'"><b>'+E(x.name)+'</b> <span style="color:#71717a">'+E(x.strength)+'</span></td><td style="text-align:center">'+x.packed+'</td><td style="text-align:center">'+x.wd+'</td><td style="text-align:center;font-weight:700;color:'+c[0]+'">'+x.bal+'</td><td style="text-align:center">'+x.wdToday+'</td><td style="text-align:center">'+x.avg+'</td><td style="text-align:center;font-weight:600">'+(x.cover===null?'—':x.cover)+'</td><td style="text-align:center;color:#71717a">'+(x.lastPack||'—')+'</td></tr>';}).join(''):'<tr><td colspan="8" style="padding:16px;text-align:center;color:#71717a">لا توجد أصناف مطابقة</td></tr>')+
+        '</table></div><div style="font-size:12px;color:#71717a;margin-top:8px">آخر تحديث: <span dir="ltr">'+E(D.at)+'</span></div></div>';
+      el.querySelectorAll('.sf').forEach(function(b){b.onclick=function(){F=F===b.dataset.f?'all':b.dataset.f;draw();};});
+      el.querySelector('.sr').onclick=load;
+      var i=el.querySelector('.sq');i.oninput=function(){Q=this.value;var pos=this.selectionStart;draw();var j=el.querySelector('.sq');j.focus();try{j.setSelectionRange(pos,pos);}catch(e){}};
+    }
+    load();
+  }
   AuthGate.start({accent:'#0a0a0a',bg:'#f4f4f5',barWidth:'980px',page:'supervisor',onReady:function(u){
     var tabs=[{en:'Monitoring',ar:'المتابعة',render:OrgUI.monitor},{en:'Task distribution',ar:'توزيع المهام',render:OrgUI.duty},
       {en:u.sysRole==='DEPT_SUPERVISOR'?'My team':'Supervision',ar:u.sysRole==='DEPT_SUPERVISOR'?'فريقي':'هيكل الإشراف',render:OrgUI.supervision}];
     if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR'||u.sysRole==='QUALITY') tabs.push({en:'Expiry report',ar:'تقرير الانتهاء',render:expiry});
     tabs.push({en:'Re-packaging stock',ar:'رصيد إعادة التغليف',render:pstock});
     tabs.push({en:'OOS alerts',ar:'بلاغات عدم التوفر',render:function(el){OosUI.panel(el,'supervisor');}});
-    if(u.sysRole==='QUALITY') tabs.push({en:'Audit log',ar:'سجل التدقيق',render:auditLog});
-    if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Medication errors',ar:'الأخطاء الدوائية',render:medErrors});
-    if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Inspections',ar:'جولات التفتيش',render:inspections});
-    if(u.sysRole==='OWNER'||u.sysRole==='QUALITY') tabs.push({en:'Governance audit',ar:'التدقيق الشهري للحوكمة',render:govAudit});
-    if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR'||u.sysRole==='QUALITY') tabs.push({en:'Quality sheet',ar:'شيت الجودة',render:qualitySheet});
+    if(u.sysRole==='OWNER'||u.sysRole==='PHARMACY_SUPERVISOR') tabs.push({en:'Quality sheet',ar:'شيت الجودة',render:QualityUI.qualitySheet});
     OrgUI.tabs(document.getElementById('main'),tabs);
   }});
 </script>
