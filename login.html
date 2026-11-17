@@ -31,6 +31,17 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   html[data-pl="en"] .bi .ar, html[data-pl="en"] .btnbi .ar, html[data-pl="en"] .cap .ar, html[data-pl="en"] .ar-only { display: none !important; }
   .bi, .btnbi { justify-content: flex-start !important; }
   .ag-item em, .ag-tabi em { display: none !important; }
+  /* phones: every field label sits above its field, fields take the full width (arrow never covers the text) */
+  @media (max-width: 768px) {
+    .form-group, .field-row, .input-wrapper,
+    label:has(> select), label:has(> input[type="date"]), label:has(> input[type="month"]), label:has(> input[type="text"]), label:has(> input[type="number"]), label:has(> input:not([type])) {
+      display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 6px !important; width: 100% !important; flex: 1 1 100% !important; min-width: 0 !important; }
+    select, input[type="date"], input[type="month"], input[type="text"], input[type="number"], input[type="search"], input:not([type]) {
+      width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; font-size: 15px !important; text-overflow: ellipsis; }
+    select { padding: 10px 14px 10px 36px !important; }
+    html[data-pl="en"] select { padding: 10px 36px 10px 14px !important; }
+  }
+  button { white-space: nowrap; flex-shrink: 0; }
 </style>
 <script>
 (function () {
