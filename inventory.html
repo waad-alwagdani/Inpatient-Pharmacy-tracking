@@ -635,6 +635,19 @@ var AuthGate = (function () {
   var GROUPS = [['Management', 'الإدارة', ['quality', 'owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
   var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'], QUALITY: ['Quality', 'الجودة'] };
   function L(p) { return LANG === 'en' ? p[0] : p[1]; }
+  /* External links (open in a new tab): the inpatient pharmacy sheet for the owner and pharmacy / department supervisors.
+     The link only opens the sheet; Google still asks for access unless the sheet is shared with that person. */
+  var EXT = [{ href: 'https://docs.google.com/spreadsheets/d/1mbmTuA1yuCa1CdqDWCKloNcGccYAI6pMVOB2K4m0ulw/edit?gid=1014210926#gid=1014210926',
+    label: ['Inpatient pharmacy sheet', 'شيت الصيدلية الداخلية'], roles: ['PHARMACY_SUPERVISOR', 'DEPT_SUPERVISOR'] }];
+  var IC_SHEET = '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>';
+  function extLinks() {
+    if (PREVIEW) return '';
+    var list = EXT.filter(function (x) { return user.isOwner || x.roles.indexOf(user.sysRole) > -1; });
+    if (!list.length) return '';
+    return '<div class="ag-sec"><span>' + L(['Sheets', 'الشيتات']) + '</span></div>' + list.map(function (x) {
+      return '<a class="ag-item" href="' + esc(x.href) + '" target="_blank" rel="noopener" style="text-decoration:none"><svg viewBox="0 0 24 24">' + IC_SHEET + '</svg><span>' + esc(L(x.label)) + '<em>' + esc(LANG === 'en' ? x.label[1] : x.label[0]) + '</em></span></a>';
+    }).join('');
+  }
   function bar() {
     var old = $('ag-bar'); if (old) old.remove();
     ['ag-side', 'ag-top', 'ag-pv', 'ag-scrim'].forEach(function (id) { var x = $(id); if (x) x.remove(); });
@@ -650,7 +663,7 @@ var AuthGate = (function () {
     var nm = user.displayName || user.username, ini = nm.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
     var side = document.createElement('aside'); side.id = 'ag-side'; side.className = 'ag-side'; side.setAttribute('dir', LANG === 'en' ? 'ltr' : 'rtl');
     side.innerHTML = '<div class="ag-brand"><i>PT</i><div><b>Pharmacy Tracker</b><small>by WaadAlwagdani</small></div>' + '<button type="button" class="ag-chip ag-lchip" id="ag-lang2" title="' + (LANG === 'en' ? 'العربية' : 'English') + '" aria-label="' + (LANG === 'en' ? 'التبديل إلى العربية' : 'Switch to English') + '">' + langIcon(40) + '</button>' + '</div>' +
-      '<nav class="ag-nav-list" aria-label="Pages">' + nav + '</nav>' +
+      '<nav class="ag-nav-list" aria-label="Pages">' + nav + extLinks() + '</nav>' +
       '<div class="ag-me"><div class="ag-av">' + esc(ini) + '</div><div><b dir="auto">' + esc(nm) + '</b><small>' + L(ROLE[user.sysRole] || ['', '']) + '</small></div></div>' +
       (PREVIEW ? '' : '<button type="button" class="ag-item ag-out" id="ag-out"><svg viewBox="0 0 24 24"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/></svg><span>' + L(['Sign out', 'تسجيل الخروج']) + '<em>' + (LANG === 'en' ? 'تسجيل الخروج' : 'Sign out') + '</em></span></button>');
     var top = document.createElement('div'); top.id = 'ag-top'; top.className = 'ag-top';
