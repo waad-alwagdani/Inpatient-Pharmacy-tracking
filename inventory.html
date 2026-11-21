@@ -58,7 +58,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .det{margin-top:10px;background:#f6f9fa;border-radius:8px;padding:10px;font-size:13.5px}
   .det table{width:100%;border-collapse:collapse} .det td,.det th{padding:6px 4px;text-align:start;border-bottom:1px solid var(--line)} .det th{font-size:12px;color:var(--muted)}
   .minrow{display:flex;gap:8px;align-items:center;margin-top:10px} .minrow input{height:36px;max-width:110px}
-  .row{display:grid;grid-template-columns:1fr 1fr 84px 38px;grid-template-areas:'name name name name' 'lot exp qty x';gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .row{display:grid;grid-template-columns:1fr 1fr 38px;grid-template-areas:'name name name' 'exp qty x';gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
   .row .field{grid-area:name} .row .lot{grid-area:lot} .row .exp{grid-area:exp} .row .q{grid-area:qty} .row .x{grid-area:x}
   .x{height:44px;border:1px solid var(--line);background:var(--pt-card,#fff);border-radius:8px;font-size:20px;color:var(--muted);cursor:pointer}
   .chosen{font-size:12px;color:var(--acc);font-weight:700;margin-top:4px;min-height:15px}
@@ -971,21 +971,21 @@ var OosUI = (function () {
   function addR(){
     var r={it:null};RROWS.push(r);var el=document.createElement('div');el.className='row';
     el.innerHTML='<div class="field"><input type="text" placeholder="اسم الصنف" autocomplete="off" style="direction:ltr;text-align:left" aria-label="الصنف"><div class="sugg" hidden></div><div class="chosen ltr"></div></div>'+
-      '<input type="text" class="lot" placeholder="رقم التشغيلة" maxlength="30" autocapitalize="characters" style="direction:ltr" aria-label="رقم التشغيلة">'+
-      '<input type="month" class="exp" aria-label="تاريخ الانتهاء"><input type="number" class="q" min="1" step="1" placeholder="الكمية" inputmode="numeric" aria-label="الكمية">'+
+      '<input type="hidden" class="lot" value="">'+
+      '<input type="month" class="exp" aria-label="تاريخ الانتهاء" title="تاريخ الانتهاء"><input type="number" class="q" min="1" step="1" placeholder="الكمية المستلمة" inputmode="numeric" aria-label="الكمية المستلمة">'+
       '<button class="x" type="button" aria-label="حذف">×</button>';
     $('rrows').appendChild(el);r.el=el;
     var di=el.querySelector('input'),ch=el.querySelector('.chosen');
-    auto(di,el.querySelector('.sugg'),function(d){r.it=d;di.value=d.name;ch.textContent='✓ '+nm(d)+' · #'+d.no;el.querySelector('.lot').focus();});
+    auto(di,el.querySelector('.sugg'),function(d){r.it=d;di.value=d.name;ch.textContent='✓ '+nm(d)+' · #'+d.no;el.querySelector('.exp').focus();});
     di.addEventListener('input',function(){r.it=null;ch.textContent='';});
     el.querySelector('.x').onclick=function(){if(RROWS.length===1)return;RROWS=RROWS.filter(function(x){return x!==r;});el.remove();};
   }
   function sendR(){
     var rows=[],bad=false;
     RROWS.forEach(function(r){var lot=r.el.querySelector('.lot').value.trim(),exp=r.el.querySelector('.exp').value,q=parseInt(r.el.querySelector('.q').value,10);
-      if(!r.it&&!lot&&!exp&&!q)return;if(!r.it||!lot||!/^\d{4}-\d{2}$/.test(exp)||!(q>0)){bad=true;return;}
+      if(!r.it&&!lot&&!exp&&!q)return;if(!r.it||!/^\d{4}-\d{2}$/.test(exp)||!(q>0)){bad=true;return;}
       rows.push({drugNo:r.it.no,lot:lot,exp:exp,qty:q});});
-    if(bad)return msg('rmsg','يلزم اختيار كل صنف من القائمة وإدخال التشغيلة والانتهاء والكمية',false);
+    if(bad)return msg('rmsg','يلزم اختيار كل صنف من القائمة وإدخال الكمية المستلمة وتاريخ الانتهاء',false);
     if(!rows.length)return msg('rmsg','يلزم إضافة صنف واحد على الأقل',false);
     var b=$('rgo');b.disabled=true;
     AuthGate.run('invReceive',rows,$('rnote').value).then(function(res){return load().then(function(){renderRcv();msg('rmsg','تم استلام '+res.count+' صنف · '+res.units+' وحدة',true);});})
