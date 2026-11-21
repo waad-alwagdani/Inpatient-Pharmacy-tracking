@@ -1652,38 +1652,40 @@ var OrgUI = (function () {
   }
 
   /* ---------- 3) Count & monthly zeroing ---------- */
+  /* Monthly count: item · physical quantity (any number) · expiry. Approving closes the month and the physical
+     count becomes the opening balance of the next month; refills during the month are added on top of it. */
   function count(el) {
     var dr = D.draft || {}, Q = '';
     function draw() {
-      var done = D.items.filter(function (x) { return dr[x.code]; }).length, net = 0, vsar = 0;
-      D.items.forEach(function (x) { if (dr[x.code]) { var v = dr[x.code].physical - x.soh; net += v; if (x.cost) vsar += v * x.cost; } });
+      var done = D.items.filter(function (x) { return dr[x.code] && dr[x.code].physical !== ''; }).length;
       var rows = D.items.filter(function (x) { return !Q || (x.name + ' ' + x.code).toLowerCase().indexOf(Q) > -1; });
-      el.innerHTML = '<div class="k"><div><b>' + done + ' / ' + D.items.length + '</b><span>تم عدّها · Counted</span></div><div><b style="color:' + (net < 0 ? '#b91c1c' : '#15803d') + '">' + net + '</b><span>صافي الفارق · Net variance</span></div>' + (D.priced ? '<div><b style="color:' + (vsar < 0 ? '#b91c1c' : '#15803d') + '">' + sar(vsar) + '</b><span>تكلفة الفارق (المسعّر) · SAR</span></div>' : '') + '<div><b>' + E(D.period) + '</b><span>الشهر · Month</span></div></div>' +
+      el.innerHTML = '<div class="k"><div><b>' + done + ' / ' + D.items.length + '</b><span>تم عدّها · Counted</span></div><div><b>' + E(D.period) + '</b><span>الشهر · Month</span></div></div>' +
         '<div class="card"><div class="row" style="justify-content:space-between"><input type="search" id="c-q" placeholder="بحث أو مسح · Search / scan" value="' + E(Q) + '" style="min-width:260px">' +
-        '<div class="row"><button class="btn sec" id="c-save">حفظ المسودة · Save draft</button><button class="btn" id="c-ok"' + (done === D.items.length ? '' : ' disabled') + '>اعتماد الجرد والتصفير · Approve & zero</button></div></div>' +
-        '<div class="tw" style="margin-top:10px"><table><tr><th class="l">الصنف · Item</th><th>الافتتاحي · Opening</th><th>المُدخل · Received</th><th>المسحوب · Out</th><th>الدفتري · System</th><th>الفعلي · Physical</th><th>الفارق · Variance</th>' + (D.priced ? '<th>SAR</th>' : '') + '<th class="l">السبب الجذري · Root cause</th></tr>' +
-        rows.map(function (x) { var d = dr[x.code], v = d ? d.physical - x.soh : null;
-          return '<tr><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span></td><td>' + x.opening + '</td><td>' + x.rec + '</td><td>' + x.out + '</td><td><b>' + x.soh + '</b></td>' +
-            '<td><input type="number" min="0" data-p="' + E(x.code) + '" value="' + (d ? d.physical : '') + '" style="width:84px"></td>' +
-            '<td style="font-weight:700;color:' + (v === null ? '#999' : v < 0 ? '#b91c1c' : v > 0 ? '#a16207' : '#15803d') + '">' + (v === null ? '—' : v) + '</td>' + (D.priced ? '<td>' + (v === null ? '' : money(v, x.cost)) + '</td>' : '') +
-            '<td class="l"><input type="text" data-r="' + E(x.code) + '" value="' + E(d && d.cause || '') + '" placeholder="' + (v !== null && v < 0 ? 'مطلوب للعجز · required' : '') + '" style="width:220px;' + (v !== null && v < 0 && !(d && d.cause) ? 'border-color:#b91c1c' : '') + '"></td></tr>'; }).join('') +
+        '<div class="row"><button class="btn sec" id="c-save">حفظ المسودة · Save draft</button><button class="btn" id="c-ok"' + (done === D.items.length ? '' : ' disabled') + '>اعتماد الجرد وبدء الشهر الجديد · Approve & start new month</button></div></div>' +
+        '<div class="muted" style="margin:6px 0 0">يبدأ الشهر الجديد بالعدد الفعلي فقط، وتُضاف عليه التعبئات خلال الشهر. · The new month starts from the physical count only.</div>' +
+        '<div class="tw" style="margin-top:10px"><table><tr><th class="l">الدواء · Drug</th><th>الكمية المتوفرة (العدد الفعلي) · Physical qty</th><th>تاريخ الانتهاء · Expiry</th></tr>' +
+        rows.map(function (x) { var d = dr[x.code];
+          return '<tr><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span></td>' +
+            '<td><input type="number" min="0" step="1" inputmode="numeric" data-p="' + E(x.code) + '" value="' + (d ? d.physical : '') + '" style="width:120px"></td>' +
+            '<td><input type="month" data-x="' + E(x.code) + '" value="' + E(d && d.expiry || '') + '" style="width:160px"></td></tr>'; }).join('') +
         '</table></div><div class="msg" id="c-m"></div></div>';
       var cq = el.querySelector('#c-q');
       cq.onkeydown = function (e) { if (e.key === 'Enter') { var it = find(cq.value); if (it) { Q = ''; draw(); var i = el.querySelector('input[data-p="' + it.code + '"]'); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } } } };
       cq.oninput = function () { Q = cq.value.trim().toLowerCase(); var p = cq.selectionStart; draw(); var n = el.querySelector('#c-q'); n.focus(); try { n.setSelectionRange(p, p); } catch (e) {} };
-      el.querySelectorAll('input[data-p]').forEach(function (i) { i.onchange = function () { var c = i.dataset.p; if (i.value === '') delete dr[c]; else dr[c] = { physical: Number(i.value), cause: (dr[c] && dr[c].cause) || '' }; draw(); }; });
-      el.querySelectorAll('input[data-r]').forEach(function (i) { i.onchange = function () { var c = i.dataset.r; if (dr[c]) dr[c].cause = i.value; }; });
+      el.querySelectorAll('input[data-p]').forEach(function (i) { i.onchange = function () { var c = i.dataset.p; if (i.value === '') delete dr[c]; else dr[c] = { physical: Math.max(0, Math.floor(Number(i.value) || 0)), expiry: (dr[c] && dr[c].expiry) || '' }; draw(); }; });
+      el.querySelectorAll('input[data-x]').forEach(function (i) { i.onchange = function () { var c = i.dataset.x; if (!dr[c]) dr[c] = { physical: '', expiry: '' }; dr[c].expiry = i.value; if (dr[c].physical === '') { /* expiry kept until a quantity is entered */ } }; });
+      function clean() { var o = {}; Object.keys(dr).forEach(function (c) { if (dr[c].physical !== '' && dr[c].physical !== undefined) o[c] = dr[c]; }); return o; }
       el.querySelector('#c-save').onclick = function () { var m = el.querySelector('#c-m'); m.textContent = '…';
-        AuthGate.run('adcCountSave', dr).then(function (r) { m.className = 'msg ok'; m.textContent = '✓ حُفظت المسودة (' + r.saved + ' صنف)'; }, function (e) { m.className = 'msg err'; m.textContent = OrgUI.err(e); }); };
+        AuthGate.run('adcCountSave', clean()).then(function (r) { m.className = 'msg ok'; m.textContent = '✓ حُفظت المسودة (' + r.saved + ' صنف)'; }, function (e) { m.className = 'msg err'; m.textContent = OrgUI.err(e); }); };
       el.querySelector('#c-ok').onclick = function () {
         var m = el.querySelector('#c-m');
         if (!confirmZero()) return;
         m.textContent = '…';
-        AuthGate.run('adcCountSave', dr).then(function () { return AuthGate.run('adcCountApprove'); }).then(function (r) {
+        AuthGate.run('adcCountSave', clean()).then(function () { return AuthGate.run('adcCountApprove'); }).then(function (r) {
           return load().then(function () { dr = {}; draw(); var mm = el.querySelector('#c-m'); mm.className = 'msg ok';
-            mm.textContent = '✓ أُغلق شهر ' + r.closed + ' — صافي الفارق ' + r.netVariance + (r.varianceSAR !== null ? ' (' + sar(r.varianceSAR) + ' SAR)' : '') + '. الفترة المفتوحة الآن ' + r.next; }); },
+            mm.textContent = '✓ أُغلق شهر ' + r.closed + ' وحُفظ في صفحة ' + (r.sheet || r.closed) + '. الشهر المفتوح الآن ' + r.next + ' ويبدأ بالعدد الفعلي.'; }); },
           function (e) { m.className = 'msg err'; var c = String(e && e.message || e);
-            m.textContent = /ROOT_CAUSE/.test(c) ? 'يلزم إدخال السبب الجذري لكل عجز (' + c.split(':')[1] + ' صنف)' : /INCOMPLETE/.test(c) ? (D.scoped ? '✓ حُفظ عدّ كابيناتك — الاعتماد والتصفير بعد اكتمال عدّ بقية الكابينات (' + c.split(':')[1] + ' صنف متبقٍ)' : 'لم يكتمل عدّ ' + c.split(':')[1] + ' صنف') : OrgUI.err(e); });
+            m.textContent = /INCOMPLETE/.test(c) ? (D.scoped ? '✓ حُفظ عدّ كابيناتك — الاعتماد بعد اكتمال عدّ بقية الكابينات (' + c.split(':')[1] + ' صنف متبقٍ)' : 'لم يكتمل عدّ ' + c.split(':')[1] + ' صنف') : OrgUI.err(e); });
       };
     }
     function confirmZero() { var b = el.querySelector('#c-ok'); if (b.dataset.sure) return true; b.dataset.sure = '1'; b.textContent = 'اضغط مرة أخرى للتأكيد · Click again to confirm'; return false; }
