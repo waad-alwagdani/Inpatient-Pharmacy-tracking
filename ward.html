@@ -923,7 +923,22 @@ var OrgUI = (function () {
   /* ---------------- Task distribution (monthly) ---------------- */
   var LIB = { docx: 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js', pptx: 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', xlsx: 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js' };
   var LIBP = {};
-  function loadLib(k) { return LIBP[k] || (LIBP[k] = new Promise(function (ok, no) { if (k === 'docx' && window.docx || k === 'pptx' && window.PptxGenJS || k === 'xlsx' && window.ExcelJS) return ok(); var s = document.createElement('script'); s.src = LIB[k]; s.onload = ok; s.onerror = function () { delete LIBP[k]; no(new Error('LIB_FAILED')); }; document.head.appendChild(s); })); }
+  // export libraries: a copy hosted on this site first (hospital networks may block the CDN), then the CDN; never waits forever
+  var LIBLOCAL = { pptx: 'lib/pptxgen.bundle.js' };
+  function loadLib(k) { return LIBP[k] || (LIBP[k] = new Promise(function (ok, no) {
+    var have = function () { return k === 'docx' && window.docx || k === 'pptx' && window.PptxGenJS || k === 'xlsx' && window.ExcelJS; };
+    if (have()) return ok();
+    var srcs = [LIBLOCAL[k], LIB[k]].filter(Boolean), done = false;
+    var fail = function () { if (done) return; done = true; delete LIBP[k]; no(new Error('LIB_FAILED')); };
+    var t = setTimeout(fail, 25000);
+    (function next(i) {
+      if (i >= srcs.length) { clearTimeout(t); return fail(); }
+      var s = document.createElement('script'); s.src = srcs[i];
+      s.onload = function () { if (have()) { if (!done) { done = true; clearTimeout(t); ok(); } } else next(i + 1); };
+      s.onerror = function () { next(i + 1); };
+      document.head.appendChild(s);
+    })(0);
+  })); }
   function save(name, blob) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
   function duty(el) {
     var D = null, edits = {}, nedits = {}, view = 'week', cur = null, hide = {};
@@ -1264,7 +1279,10 @@ var OrgUI = (function () {
     /* ---- Pharmacy screen deck: A3 slides for the display video — tasks + unavailable drugs, period chosen by the supervisor ---- */
     function screenInit(P0) {
       var t = new Date(), iso = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }, today = iso(t);
-      ['.sc-tf', '.sc-tt', '.sc-of', '.sc-ot'].forEach(function (q) { var i = P0.querySelector(q); if (!i.value) i.value = today; });
+      // default: this working week (Sunday → Thursday) for the tasks, and the month so far for unavailable drugs
+      var sun = new Date(t.getFullYear(), t.getMonth(), t.getDate() - t.getDay()), thu = new Date(sun.getFullYear(), sun.getMonth(), sun.getDate() + 4);
+      var def = { '.sc-tf': iso(sun), '.sc-tt': iso(thu), '.sc-of': iso(new Date(t.getFullYear(), t.getMonth(), 1)), '.sc-ot': today };
+      ['.sc-tf', '.sc-tt', '.sc-of', '.sc-ot'].forEach(function (q) { var i = P0.querySelector(q); if (!i.value) i.value = def[q]; });
       P0.querySelector('.sc-go').onclick = function () {
         var g = function (q) { return P0.querySelector(q).value; }, M0 = P0.querySelector('.sc-msg'), b = this;
         var tf = g('.sc-tf'), tt = g('.sc-tt'), of = g('.sc-of'), ot = g('.sc-ot');
@@ -1273,9 +1291,12 @@ var OrgUI = (function () {
         var months = [], d0 = new Date(tf + 'T00:00:00'), d1 = new Date(tt + 'T00:00:00');
         for (var y = d0.getFullYear(), m = d0.getMonth(); y < d1.getFullYear() || (y === d1.getFullYear() && m <= d1.getMonth()); m++) { if (m > 11) { m = 0; y++; } months.push(y + '-' + String(m + 1).padStart(2, '0')); if (months.length > 3) break; }
         Promise.all([loadLib('pptx'), AuthGate.run('oosReport', of, ot)].concat(months.map(function (ym) { return ym === D.month && !dirty() ? Promise.resolve(D) : AuthGate.run('dutyGet', ym); })))
-          .then(function (r) { return screenDeck(r.slice(2), r[1], tf, tt, of, ot); })
+          .then(function (r) {
+            var any = r.slice(2).some(function (dd) { return Object.keys(dd.cells || {}).some(function (k) { var d = k.split('|')[0]; return d >= tf && d <= tt; }); });
+            if (!any && !window.confirm('لا توجد مهام مُسندة بين ' + tf + ' و ' + tt + ' — سيظهر جدول المهام فارغًا. متابعة؟\nNo assignments in this period — continue?')) throw new Error('CANCELLED');
+            return screenDeck(r.slice(2), r[1], tf, tt, of, ot); })
           .then(function () { b.disabled = false; M0.textContent = B('Deck downloaded — export it to video from PowerPoint', 'نزل العرض — يُحوَّل إلى فيديو من PowerPoint').replace(/<[^>]+>/g, ' '); },
-            function (e) { b.disabled = false; M0.innerHTML = err(e); });
+            function (e) { b.disabled = false; M0.innerHTML = /CANCELLED/.test(String(e && e.message)) ? 'أُلغي · Cancelled — غيّري فترة المهام' : err(e); });
       };
     }
     function screenDeck(dataList, oos, tf, tt, of, ot) {
