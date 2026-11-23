@@ -638,13 +638,13 @@ var AuthGate = (function () {
   /* External links (open in a new tab): the inpatient pharmacy sheet for the owner and pharmacy / department supervisors.
      The link only opens the sheet; Google still asks for access unless the sheet is shared with that person. */
   var EXT = [{ href: 'https://docs.google.com/spreadsheets/d/1mbmTuA1yuCa1CdqDWCKloNcGccYAI6pMVOB2K4m0ulw/edit?gid=1014210926#gid=1014210926',
-    label: ['Inpatient pharmacy sheet', 'شيت الصيدلية الداخلية'], roles: ['PHARMACY_SUPERVISOR', 'DEPT_SUPERVISOR'] }];
+    label: ['Inpatient pharmacy sheet', 'جدول بيانات الصيدلية الداخلية'], roles: ['PHARMACY_SUPERVISOR', 'DEPT_SUPERVISOR'] }];
   var IC_SHEET = '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>';
   function extLinks() {
     if (PREVIEW) return '';
     var list = EXT.filter(function (x) { return user.isOwner || x.roles.indexOf(user.sysRole) > -1; });
     if (!list.length) return '';
-    return '<div class="ag-sec"><span>' + L(['Sheets', 'الشيتات']) + '</span></div>' + list.map(function (x) {
+    return '<div class="ag-sec"><span>' + L(['Spreadsheets', 'جداول البيانات']) + '</span></div>' + list.map(function (x) {
       return '<a class="ag-item" href="' + esc(x.href) + '" target="_blank" rel="noopener" style="text-decoration:none"><svg viewBox="0 0 24 24">' + IC_SHEET + '</svg><span>' + esc(L(x.label)) + '<em>' + esc(LANG === 'en' ? x.label[1] : x.label[0]) + '</em></span></a>';
     }).join('');
   }
@@ -892,6 +892,7 @@ var OosUI = (function () {
     <button type="button" data-tab="cnt" role="tab">Count · جرد</button>
     <button type="button" data-tab="exp" role="tab">Expiry · الانتهاء</button>
     <button type="button" data-tab="oos" role="tab">OOS alerts · بلاغات عدم التوفر</button>
+    <button type="button" data-tab="frm" role="tab">دليل الأدوية · Formulary</button>
   </div>
   <div id="app"><div class="empty">جاري التحميل…</div></div>
   <footer>Pharmacy Tracker by WaadAlwagdani</footer>
@@ -1048,7 +1049,48 @@ var OosUI = (function () {
         .catch(function(e){b.disabled=false;msg('emsg',errText(e),false);});};});
   }
 
-  function render(){({bal:renderBal,rcv:renderRcv,cnt:renderCnt,exp:renderExp,oos:function(){OosUI.panel($('app'),'inventory');}})[TAB]();}
+  /* ---- Formulary: search, availability (available / limited / not available), nearest expiries, add a new item ---- */
+  var F=null,FQ='',FS='';
+  function renderFrm(){
+    if(!F){$('app').innerHTML='<div class="card"><div class="st">جاري التحميل…</div></div>';
+      AuthGate.run('formGet').then(function(d){F=d;renderFrm();},function(e){$('app').innerHTML='<div class="msg err" style="display:block">'+esc(errText(e))+'</div>';});return;}
+    var COL={'متوفر':['#166534','#DCFCE7'],'كمية محدودة':['#92400E','#FEF3C7'],'غير متوفر':['#991B1B','#FECACA']};
+    var cnt=function(s){return F.rows.filter(function(r){return r.status===s;}).length;};
+    var list=F.rows.filter(function(r){return (!FS||r.status===FS)&&(!FQ||(r.no+' '+r.name+' '+r.strength).toLowerCase().indexOf(FQ)>-1);});
+    var expTag=function(r){return r.exp.map(function(x,i){var c=i===0&&r.days!==null?(r.days<92?'#FECACA;color:#991B1B':r.days<183?'#FEF08A;color:#713F12':'#f4f4f5;color:#3f3f46'):'#f4f4f5;color:#3f3f46';
+      return '<span style="display:inline-block;border-radius:6px;padding:1px 7px;margin:2px 3px 0 0;font-size:12px;background:'+c+'">'+esc(x)+'</span>';}).join('')||'<span style="color:#a1a1aa;font-size:12px">—</span>';};
+    $('app').innerHTML='<div class="card"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
+        [['','الكل',F.rows.length]].concat(F.statuses.map(function(s){return [s,s,cnt(s)];})).map(function(o){return '<button type="button" class="btn2" data-fs="'+esc(o[0])+'" style="'+(FS===o[0]?'background:#0a0a0a;color:#fff;border-color:#0a0a0a':'')+'">'+esc(o[1])+' ('+o[2]+')</button>';}).join('')+
+        '<button type="button" class="btn2" id="fadd" style="margin-inline-start:auto">+ إضافة صنف</button></div>'+
+        '<div id="faddp" hidden></div>'+
+        '<input type="search" id="fq" placeholder="البحث باسم الصنف أو رقمه التسلسلي" value="'+esc(FQ)+'" style="width:100%;margin-bottom:8px">'+
+        '<div class="msg" id="fmsg" role="status"></div>'+
+        list.slice(0,300).map(function(r){var c=COL[r.status]||['#3f3f46','#f4f4f5'];
+          return '<div style="border-top:1px solid var(--line);padding:9px 0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'+
+            '<div style="min-width:0"><b class="ltr" style="display:block;text-align:left">'+esc(r.name)+' <span style="font-weight:500;color:#71717a">'+esc(r.strength)+'</span></b>'+
+            '<div style="font-size:12px;color:#71717a">#'+esc(r.no)+(r.form?' · '+esc(r.form):'')+(r.lot?' · تشغيلة '+esc(r.lot):'')+'</div><div>'+expTag(r)+'</div></div>'+
+            '<select data-no="'+esc(r.no)+'" style="flex:none;font-weight:700;color:'+c[0]+';background:'+c[1]+';border-color:'+c[1]+'">'+F.statuses.map(function(s){return '<option'+(s===r.status?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select></div></div>';}).join('')+
+        (list.length>300?'<div class="st">يُعرض أول 300 — استخدمي البحث</div>':'')+(list.length?'':'<div class="empty">لا توجد أصناف</div>')+'</div>';
+    document.querySelectorAll('[data-fs]').forEach(function(b){b.onclick=function(){FS=b.dataset.fs;renderFrm();};});
+    var q=$('fq');q.oninput=function(){var p=q.selectionStart;FQ=q.value.trim().toLowerCase();renderFrm();var n=$('fq');n.focus();try{n.setSelectionRange(p,p);}catch(e){}};
+    document.querySelectorAll('select[data-no]').forEach(function(s){s.onchange=function(){var no=s.dataset.no,v=s.value;s.disabled=true;
+      AuthGate.run('formSetStatus',no,v).then(function(){F.rows.forEach(function(r){if(r.no===no)r.status=v;});renderFrm();msg('fmsg','حُدّثت حالة الصنف #'+no+' ← '+v+(v==='غير متوفر'?'':' · أُغلقت البلاغات المفتوحة للصنف'),true);},
+        function(e){s.disabled=false;msg('fmsg',errText(e),false);});};});
+    $('fadd').onclick=function(){var p=$('faddp');p.hidden=!p.hidden;if(p.hidden)return;
+      p.innerHTML='<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;display:grid;gap:8px">'+
+        '<b>إضافة صنف — يُضاف في نهاية القائمة برقم تسلسلي جديد</b>'+
+        '<select id="fsh">'+F.sheets.map(function(s){return '<option>'+esc(s)+'</option>';}).join('')+'</select>'+
+        '<input type="text" id="fnm" placeholder="اسم الصنف الدوائي" style="direction:ltr;text-align:left">'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input type="text" id="fst" placeholder="التركيز (مثل 50 mg)" style="direction:ltr"><input type="text" id="ffm" placeholder="الشكل الدوائي (مثل Tablet)" style="direction:ltr"></div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><label style="font-size:12px">تاريخ الانتهاء ١<input type="month" class="fex"></label><label style="font-size:12px">تاريخ الانتهاء ٢<input type="month" class="fex"></label><label style="font-size:12px">تاريخ الانتهاء ٣<input type="month" class="fex"></label></div>'+
+        '<button class="btn" id="fgo" type="button">إضافة الصنف</button></div>';
+      $('fgo').onclick=function(){var b=this,it={sheet:$('fsh').value,name:$('fnm').value.trim(),strength:$('fst').value.trim(),form:$('ffm').value.trim(),
+          exp:[].map.call(document.querySelectorAll('.fex'),function(i){return i.value;}).filter(Boolean)};
+        if(it.name.length<2)return msg('fmsg','اسم الصنف مطلوب',false);
+        b.disabled=true;AuthGate.run('formAddItem',it).then(function(r){F=null;FQ=it.name.toLowerCase();renderFrm();setTimeout(function(){msg('fmsg','أُضيف الصنف بالرقم التسلسلي #'+r.no+' في '+r.sheet,true);},400);},
+          function(e){b.disabled=false;msg('fmsg',errText(e),false);});};};
+  }
+  function render(){({bal:renderBal,rcv:renderRcv,cnt:renderCnt,exp:renderExp,frm:renderFrm,oos:function(){OosUI.panel($('app'),'inventory');}})[TAB]();}
   document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){TAB=b.dataset.tab;
     document.querySelectorAll('.tabs button').forEach(function(x){x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b);});render();};});
   function load(){return AuthGate.run('invGetData').then(function(d){D=d;});}

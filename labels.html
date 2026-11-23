@@ -588,13 +588,13 @@ var AuthGate = (function () {
   /* External links (open in a new tab): the inpatient pharmacy sheet for the owner and pharmacy / department supervisors.
      The link only opens the sheet; Google still asks for access unless the sheet is shared with that person. */
   var EXT = [{ href: 'https://docs.google.com/spreadsheets/d/1mbmTuA1yuCa1CdqDWCKloNcGccYAI6pMVOB2K4m0ulw/edit?gid=1014210926#gid=1014210926',
-    label: ['Inpatient pharmacy sheet', 'شيت الصيدلية الداخلية'], roles: ['PHARMACY_SUPERVISOR', 'DEPT_SUPERVISOR'] }];
+    label: ['Inpatient pharmacy sheet', 'جدول بيانات الصيدلية الداخلية'], roles: ['PHARMACY_SUPERVISOR', 'DEPT_SUPERVISOR'] }];
   var IC_SHEET = '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>';
   function extLinks() {
     if (PREVIEW) return '';
     var list = EXT.filter(function (x) { return user.isOwner || x.roles.indexOf(user.sysRole) > -1; });
     if (!list.length) return '';
-    return '<div class="ag-sec"><span>' + L(['Sheets', 'الشيتات']) + '</span></div>' + list.map(function (x) {
+    return '<div class="ag-sec"><span>' + L(['Spreadsheets', 'جداول البيانات']) + '</span></div>' + list.map(function (x) {
       return '<a class="ag-item" href="' + esc(x.href) + '" target="_blank" rel="noopener" style="text-decoration:none"><svg viewBox="0 0 24 24">' + IC_SHEET + '</svg><span>' + esc(L(x.label)) + '<em>' + esc(LANG === 'en' ? x.label[1] : x.label[0]) + '</em></span></a>';
     }).join('');
   }
