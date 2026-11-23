@@ -1078,7 +1078,7 @@ var OosUI = (function () {
         list.slice(0,300).map(function(r){var c=COL[r.status]||['#3f3f46','#f4f4f5'];
           return '<div class="frow"><div class="fi"><b>'+esc(r.name)+' <span>'+esc(r.strength)+'</span></b>'+
             '<small>#'+esc(r.no)+(r.form?' · '+esc(r.form):'')+(r.lot?' · Lot '+esc(r.lot):'')+'</small><div>'+expTag(r)+'</div></div>'+
-            '<select data-no="'+esc(r.no)+'" style="color:'+c[0]+';background:'+c[1]+';border-color:'+c[1]+'">'+F.statuses.map(function(s){return '<option'+(s===r.status?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select></div></div>';}).join('')+
+            '<select data-no="'+esc(r.no)+'" style="color:'+c[0]+';background:'+c[1]+';border-color:'+c[1]+'">'+F.statuses.map(function(s){return '<option'+(s===r.status?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select></div>';}).join('')+
         (list.length>300?'<div class="st">يُعرض أول 300 — استخدمي البحث</div>':'')+(list.length?'':'<div class="empty">لا توجد أصناف</div>')+'</div>';
     document.querySelectorAll('[data-fs]').forEach(function(b){b.onclick=function(){FS=b.dataset.fs;renderFrm();};});
     var q=$('fq');q.oninput=function(){var p=q.selectionStart;FQ=q.value.trim().toLowerCase();renderFrm();var n=$('fq');n.focus();try{n.setSelectionRange(p,p);}catch(e){}};
