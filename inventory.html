@@ -1088,15 +1088,14 @@ var OosUI = (function () {
     $('fadd').onclick=function(){var p=$('faddp');p.hidden=!p.hidden;if(p.hidden)return;
       p.innerHTML='<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;display:grid;gap:8px">'+
         '<b>إضافة صنف — يُضاف في نهاية القائمة برقم تسلسلي جديد</b>'+
-        '<select id="fsh">'+F.sheets.map(function(s){return '<option>'+esc(s)+'</option>';}).join('')+'</select>'+
         '<input type="text" id="fnm" placeholder="اسم الصنف الدوائي" style="direction:ltr;text-align:left">'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input type="text" id="fst" placeholder="التركيز (مثل 50 mg)" style="direction:ltr"><input type="text" id="ffm" placeholder="الشكل الدوائي (مثل Tablet)" style="direction:ltr"></div>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><label style="font-size:12px">تاريخ الانتهاء ١<input type="month" class="fex"></label><label style="font-size:12px">تاريخ الانتهاء ٢<input type="month" class="fex"></label><label style="font-size:12px">تاريخ الانتهاء ٣<input type="month" class="fex"></label></div>'+
         '<button class="btn" id="fgo" type="button">إضافة الصنف</button></div>';
-      $('fgo').onclick=function(){var b=this,it={sheet:$('fsh').value,name:$('fnm').value.trim(),strength:$('fst').value.trim(),form:$('ffm').value.trim(),
+      $('fgo').onclick=function(){var b=this,it={sheet:'Pharmacy Items',name:$('fnm').value.trim(),strength:$('fst').value.trim(),form:$('ffm').value.trim(),
           exp:[].map.call(document.querySelectorAll('.fex'),function(i){return i.value;}).filter(Boolean)};
         if(it.name.length<2)return msg('fmsg','اسم الصنف مطلوب',false);
-        b.disabled=true;AuthGate.run('formAddItem',it).then(function(r){F=null;FQ=it.name.toLowerCase();renderFrm();setTimeout(function(){msg('fmsg','أُضيف الصنف بالرقم التسلسلي #'+r.no+' في '+r.sheet,true);},400);},
+        b.disabled=true;AuthGate.run('formAddItem',it).then(function(r){F=null;FQ=it.name.toLowerCase();renderFrm();setTimeout(function(){msg('fmsg','أُضيف الصنف بالرقم التسلسلي #'+r.no,true);},400);},
           function(e){b.disabled=false;msg('fmsg',errText(e),false);});};};
   }
   function render(){({bal:renderBal,rcv:renderRcv,cnt:renderCnt,exp:renderExp,frm:renderFrm,oos:function(){OosUI.panel($('app'),'inventory');}})[TAB]();}
