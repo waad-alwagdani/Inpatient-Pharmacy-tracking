@@ -1661,13 +1661,13 @@ var OrgUI = (function () {
   function refill(el) {
     /* daily refill: every item of the cabinet is listed; the employee enters the quantity actually put in the drawer.
        Items below Par Min come first with the suggested quantity (up to Par Max) already filled in. */
-    var CL = 'all', Q = '', ONLY = false, qty = {};
+    var CL = 'all', Q = '', ONLY = false, qty = {}, HIT = '';
     function draw() {
       var rows = D.items.filter(function (x) { return CL === 'all' || x.adc === CL; }), n = { STAT: 0, REORDER: 0, OK: 0 };
       rows.forEach(function (x) { n[x.status]++; if (qty[x.code] === undefined && x.status !== 'OK' && x.refill > 0) qty[x.code] = x.refill; });
       var due = rows.filter(function (x) { return x.status !== 'OK'; });
-      var list = rows.filter(function (x) { return (!ONLY || x.status !== 'OK') && (!Q || (x.name + ' ' + x.code).toLowerCase().indexOf(Q) > -1); })
-        .sort(function (a, b) { var r = { STAT: 0, REORDER: 1, OK: 2 }; return r[a.status] - r[b.status] || a.fill - b.fill; });
+      var list = rows.filter(function (x) { return (!ONLY || x.status !== 'OK') && (!Q || (x.name + ' ' + x.code + ' ' + (x.nupco || '')).toLowerCase().indexOf(Q) > -1); })
+        .sort(function (a, b) { var r = { STAT: 0, REORDER: 1, OK: 2 }; return (b.code === HIT) - (a.code === HIT) || r[a.status] - r[b.status] || a.fill - b.fill; });
       var picked = rows.filter(function (x) { return qty[x.code] > 0; }), units = picked.reduce(function (s, x) { return s + qty[x.code]; }, 0);
       el.innerHTML = '<div class="k"><div><b style="color:#b91c1c">' + n.STAT + '</b><span>🔴 تدخل عاجل · STAT</span></div><div><b style="color:#a16207">' + n.REORDER + '</b><span>🟡 تعبئة يومية · Reorder</span></div>' +
         '<div><b style="color:#15803d">' + n.OK + '</b><span>🟢 رصيد آمن · OK</span></div><div><b>' + units + '</b><span>وحدات التعبئة الحالية · Units to add</span></div></div>' +
@@ -1676,13 +1676,27 @@ var OrgUI = (function () {
         '<label style="display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" id="r-only"' + (ONLY ? ' checked' : '') + '> الأصناف التي تحتاج تعبئة فقط</label></div>' +
         '<div class="row"><button class="btn sec" id="r-pick"' + (due.length ? '' : ' disabled') + '>قائمة التجهيز · Pick list</button><button class="btn" id="r-go"' + (picked.length ? '' : ' disabled') + '>تأكيد التعبئة · Confirm refill' + (picked.length ? ' (' + picked.length + ')' : '') + '</button></div></div>' +
         '<div class="tw" style="margin-top:10px"><table><tr><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>Par Min</th><th>Par Max</th><th>الرصيد · SOH</th><th>الحالة · Status</th><th>الكمية المُعبّأة · Qty added</th></tr>' +
-        (list.length ? list.map(function (x) { return '<tr><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span></td><td class="muted">' + E(x.adc.slice(0, 6)) + '</td><td>' + x.parMin + '</td><td>' + x.parMax + '</td><td><b>' + x.soh + '</b></td>' +
+        (list.length ? list.map(function (x) { return '<tr' + (x.code === HIT ? ' style="background:#fef9c3;outline:2px solid #ca8a04"' : '') + '><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span></td><td class="muted">' + E(x.adc.slice(0, 6)) + '</td><td>' + x.parMin + '</td><td>' + x.parMax + '</td><td><b>' + x.soh + '</b></td>' +
           '<td><span class="pill ' + x.status + '">' + ST[x.status] + '</span></td><td><input type="number" min="0" step="1" inputmode="numeric" data-q="' + E(x.code) + '" value="' + (qty[x.code] > 0 ? qty[x.code] : '') + '" placeholder="0" style="width:100px"></td></tr>'; }).join('')
           : '<tr><td colspan="7" class="muted" style="padding:16px">لا توجد أصناف مطابقة · No matching items</td></tr>') + '</table></div><div class="msg" id="r-m"></div></div>';
       el.querySelector('#r-cl').onchange = function () { CL = this.value; draw(); };
       el.querySelector('#r-only').onchange = function () { ONLY = this.checked; draw(); };
       var rq = el.querySelector('#r-q'); rq.oninput = function () { var p = rq.selectionStart; Q = rq.value.trim().toLowerCase(); draw(); var n2 = el.querySelector('#r-q'); n2.focus(); try { n2.setSelectionRange(p, p); } catch (e) {} };
-      el.querySelectorAll('input[data-q]').forEach(function (i) { i.onchange = function () { var v = Math.max(0, Math.floor(Number(i.value) || 0)); qty[i.dataset.q] = v; draw(); }; });
+      /* scan: the scanner types the code then Enter → the cursor jumps to that item's quantity; Enter there → back to the scan box */
+      rq.onkeydown = function (ev) {
+        if (ev.key !== 'Enter') return; ev.preventDefault();
+        var v = rq.value.trim().toLowerCase(); if (!v) return;
+        var hit = rows.filter(function (x) { return x.code.toLowerCase() === v || String(x.nupco || '').toLowerCase() === v; })[0];
+        if (!hit) { var f = rows.filter(function (x) { return (x.name + ' ' + x.code + ' ' + (x.nupco || '')).toLowerCase().indexOf(v) > -1; }); if (f.length === 1) hit = f[0]; }
+        if (!hit) { var mm = el.querySelector('#r-m'); mm.className = 'msg err'; mm.textContent = 'الرمز «' + rq.value.trim() + '» غير موجود في أصناف الكابينة'; rq.select(); return; }
+        HIT = hit.code; Q = ''; draw();
+        var qi = el.querySelector('input[data-q="' + hit.code.replace(/"/g, '\\"') + '"]'); if (qi) { qi.focus(); qi.select(); qi.scrollIntoView({ block: 'center' }); }
+      };
+      el.querySelectorAll('input[data-q]').forEach(function (i) {
+        var save = function () { qty[i.dataset.q] = Math.max(0, Math.floor(Number(i.value) || 0)); };
+        i.onchange = function () { save(); draw(); };
+        i.onkeydown = function (ev) { if (ev.key !== 'Enter') return; ev.preventDefault(); save(); i.onchange = null; draw(); var s2 = el.querySelector('#r-q'); s2.focus(); };
+      });
       el.querySelector('#r-pick').onclick = function () { pickList(due.map(function (x) { return Object.assign({}, x, { refill: qty[x.code] > 0 ? qty[x.code] : x.refill }); })); };
       var go = el.querySelector('#r-go');
       go.onclick = function () {
