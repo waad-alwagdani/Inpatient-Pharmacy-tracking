@@ -1659,27 +1659,36 @@ var OrgUI = (function () {
 
   /* ---------- 2) Daily refill — priority list, confirm refill to Par Max, pick list per cabinet ---------- */
   function refill(el) {
-    var CL = 'all', sel = {};
+    /* daily refill: every item of the cabinet is listed; the employee enters the quantity actually put in the drawer.
+       Items below Par Min come first with the suggested quantity (up to Par Max) already filled in. */
+    var CL = 'all', Q = '', ONLY = false, qty = {};
     function draw() {
-      var rows = D.items.filter(function (x) { return CL === 'all' || x.adc === CL; }), n = { STAT: 0, REORDER: 0, OK: 0 }, units = 0, cost = 0;
-      rows.forEach(function (x) { n[x.status]++; units += x.refill; if (x.cost) cost += x.refill * x.cost; });
-      var due = rows.filter(function (x) { return x.status !== 'OK'; }).sort(function (a, b) { return (a.status === 'STAT' ? 0 : 1) - (b.status === 'STAT' ? 0 : 1) || a.fill - b.fill; });
+      var rows = D.items.filter(function (x) { return CL === 'all' || x.adc === CL; }), n = { STAT: 0, REORDER: 0, OK: 0 };
+      rows.forEach(function (x) { n[x.status]++; if (qty[x.code] === undefined && x.status !== 'OK' && x.refill > 0) qty[x.code] = x.refill; });
+      var due = rows.filter(function (x) { return x.status !== 'OK'; });
+      var list = rows.filter(function (x) { return (!ONLY || x.status !== 'OK') && (!Q || (x.name + ' ' + x.code).toLowerCase().indexOf(Q) > -1); })
+        .sort(function (a, b) { var r = { STAT: 0, REORDER: 1, OK: 2 }; return r[a.status] - r[b.status] || a.fill - b.fill; });
+      var picked = rows.filter(function (x) { return qty[x.code] > 0; }), units = picked.reduce(function (s, x) { return s + qty[x.code]; }, 0);
       el.innerHTML = '<div class="k"><div><b style="color:#b91c1c">' + n.STAT + '</b><span>🔴 تدخل عاجل · STAT</span></div><div><b style="color:#a16207">' + n.REORDER + '</b><span>🟡 تعبئة يومية · Reorder</span></div>' +
-        '<div><b style="color:#15803d">' + n.OK + '</b><span>🟢 رصيد آمن · OK</span></div><div><b>' + units + '</b><span>وحدات مطلوبة · Units to refill</span></div>' + (D.priced ? '<div><b>' + sar(cost) + '</b><span>قيمة التعبئة (للأصناف المسعّرة) · SAR</span></div>' : '') + '</div>' +
-        '<div class="card"><div class="row" style="justify-content:space-between"><label>الكابينة · Cabinet<select id="r-cl"><option value="all">كل الكابينات · All</option>' + D.clusters.map(function (c) { return '<option' + (c === CL ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label>' +
-        '<div class="row"><button class="btn sec" id="r-pick">قائمة التجهيز · Pick list</button><button class="btn sec" id="r-all">تحديد الكل · Select all</button><button class="btn" id="r-go" disabled>تأكيد التعبئة · Confirm refill</button></div></div>' +
-        '<div class="tw" style="margin-top:10px"><table><tr><th></th><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>Par Min</th><th>Par Max</th><th>الرصيد · SOH</th><th>الامتلاء · Fill</th><th>يكفي · Days</th><th>الحالة · Status</th><th>المطلوب · Qty</th></tr>' +
-        (due.length ? due.map(function (x) { return '<tr><td><input type="checkbox" data-c="' + E(x.code) + '"' + (sel[x.code] ? ' checked' : '') + '></td><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span>' + (x.alert ? ' <span class="pill ' + (x.alert === 'HIGH' ? 'STAT' : '') + '" style="' + (x.alert === 'CONTROLLED' ? 'background:#ede9fe;color:#5b21b6' : '') + '">' + x.alert + '</span>' : '') + '</td>' +
-          '<td class="muted">' + E(x.adc.slice(0, 6)) + '</td><td>' + x.parMin + '</td><td>' + x.parMax + '</td><td><b>' + x.soh + '</b></td><td>' + x.fill + '%</td><td>' + (x.days === null ? '—' : x.days) + '</td><td><span class="pill ' + x.status + '">' + ST[x.status] + '</span></td><td><b>' + x.refill + '</b></td></tr>'; }).join('')
-          : '<tr><td colspan="10" class="muted" style="padding:16px">لا توجد أصناف تحتاج تعبئة · Nothing to refill</td></tr>') + '</table></div><div class="msg" id="r-m"></div></div>';
-      var go = el.querySelector('#r-go'), upd = function () { var k = Object.keys(sel).filter(function (c) { return sel[c]; }).length; go.disabled = !k; go.textContent = 'تأكيد التعبئة · Confirm refill' + (k ? ' (' + k + ')' : ''); };
-      el.querySelectorAll('input[data-c]').forEach(function (c) { c.onchange = function () { sel[c.dataset.c] = c.checked; upd(); }; }); upd();
-      el.querySelector('#r-cl').onchange = function () { CL = this.value; sel = {}; draw(); };
-      el.querySelector('#r-all').onclick = function () { due.forEach(function (x) { sel[x.code] = true; }); draw(); };
-      el.querySelector('#r-pick').onclick = function () { pickList(due); };
+        '<div><b style="color:#15803d">' + n.OK + '</b><span>🟢 رصيد آمن · OK</span></div><div><b>' + units + '</b><span>وحدات التعبئة الحالية · Units to add</span></div></div>' +
+        '<div class="card"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div class="row" style="gap:10px;flex-wrap:wrap"><label>الكابينة · Cabinet<select id="r-cl"><option value="all">كل الكابينات · All</option>' + D.clusters.map(function (c) { return '<option' + (c === CL ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label>' +
+        '<input type="search" id="r-q" placeholder="بحث أو مسح · Search / scan" value="' + E(Q) + '" style="min-width:220px">' +
+        '<label style="display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" id="r-only"' + (ONLY ? ' checked' : '') + '> الأصناف التي تحتاج تعبئة فقط</label></div>' +
+        '<div class="row"><button class="btn sec" id="r-pick"' + (due.length ? '' : ' disabled') + '>قائمة التجهيز · Pick list</button><button class="btn" id="r-go"' + (picked.length ? '' : ' disabled') + '>تأكيد التعبئة · Confirm refill' + (picked.length ? ' (' + picked.length + ')' : '') + '</button></div></div>' +
+        '<div class="tw" style="margin-top:10px"><table><tr><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>Par Min</th><th>Par Max</th><th>الرصيد · SOH</th><th>الحالة · Status</th><th>الكمية المُعبّأة · Qty added</th></tr>' +
+        (list.length ? list.map(function (x) { return '<tr><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span></td><td class="muted">' + E(x.adc.slice(0, 6)) + '</td><td>' + x.parMin + '</td><td>' + x.parMax + '</td><td><b>' + x.soh + '</b></td>' +
+          '<td><span class="pill ' + x.status + '">' + ST[x.status] + '</span></td><td><input type="number" min="0" step="1" inputmode="numeric" data-q="' + E(x.code) + '" value="' + (qty[x.code] > 0 ? qty[x.code] : '') + '" placeholder="0" style="width:100px"></td></tr>'; }).join('')
+          : '<tr><td colspan="7" class="muted" style="padding:16px">لا توجد أصناف مطابقة · No matching items</td></tr>') + '</table></div><div class="msg" id="r-m"></div></div>';
+      el.querySelector('#r-cl').onchange = function () { CL = this.value; draw(); };
+      el.querySelector('#r-only').onchange = function () { ONLY = this.checked; draw(); };
+      var rq = el.querySelector('#r-q'); rq.oninput = function () { var p = rq.selectionStart; Q = rq.value.trim().toLowerCase(); draw(); var n2 = el.querySelector('#r-q'); n2.focus(); try { n2.setSelectionRange(p, p); } catch (e) {} };
+      el.querySelectorAll('input[data-q]').forEach(function (i) { i.onchange = function () { var v = Math.max(0, Math.floor(Number(i.value) || 0)); qty[i.dataset.q] = v; draw(); }; });
+      el.querySelector('#r-pick').onclick = function () { pickList(due.map(function (x) { return Object.assign({}, x, { refill: qty[x.code] > 0 ? qty[x.code] : x.refill }); })); };
+      var go = el.querySelector('#r-go');
       go.onclick = function () {
-        var codes = Object.keys(sel).filter(function (c) { return sel[c]; }), m = el.querySelector('#r-m'); go.disabled = true; m.textContent = '…';
-        AuthGate.run('adcRefill', codes).then(function (r) { sel = {}; return load().then(function () { draw(); var mm = el.querySelector('#r-m'); mm.className = 'msg ok'; mm.textContent = '✓ تمت تعبئة ' + r.lines + ' صنف (' + r.units + ' وحدة) حتى Par Max'; }); },
+        var lines = rows.filter(function (x) { return qty[x.code] > 0; }).map(function (x) { return { code: x.code, qty: qty[x.code] }; }), m = el.querySelector('#r-m');
+        go.disabled = true; m.textContent = '…';
+        AuthGate.run('adcRefill', lines).then(function (r) { qty = {}; return load().then(function () { draw(); var mm = el.querySelector('#r-m'); mm.className = 'msg ok'; mm.textContent = '✓ سُجّلت تعبئة ' + r.lines + ' صنف (' + r.units + ' وحدة)'; }); },
           function (e) { go.disabled = false; m.className = 'msg err'; m.textContent = OrgUI.err(e); });
       };
     }
