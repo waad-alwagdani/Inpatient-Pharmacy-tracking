@@ -1053,6 +1053,13 @@ var OosUI = (function () {
 
   /* ---------- Expiry ---------- */
   function renderExp(){
+    // expiry dates recorded on the items (drug formulary) are shown too, not only batches received through the system
+    if(!F){$('app').innerHTML='<div class="card"><div class="st">جاري التحميل…</div></div>';AuthGate.run('formGet').then(function(d){F=d;renderExp();},function(){F={rows:[],statuses:[]};renderExp();});return;}
+    var inStock={};D.batches.forEach(function(b){inStock[b.no]=1;});
+    var fr=F.rows.filter(function(r){return !inStock[r.no]&&r.days!==null&&r.days<=92;}).sort(function(a,b){return a.days-b.days;});
+    var frHtml=fr.length?'<div class="card"><div class="st" style="margin-bottom:6px">أصناف دليل الأدوية المنتهية أو التي تنتهي خلال ٣ أشهر — حسب تاريخ الانتهاء المسجّل للصنف ('+fr.length+')</div>'+
+      fr.map(function(r){var ex=r.days<0;return '<div class="item"><div class="top" style="cursor:default"><div><div class="nm ltr">'+esc(r.name+(r.strength?' '+r.strength:''))+'</div><div class="st">#'+esc(r.no)+' · '+esc(r.exp[0])+
+        '<span class="tag '+(ex?'t-red':'t-amb')+'">'+(ex?'منتهي':'ينتهي قريباً')+'</span></div></div><div class="qty" style="font-size:13px">'+(ex?'منذ '+(-r.days):'بعد '+r.days)+' يومًا</div></div></div>';}).join('')+'</div>':'';
     var bs=D.batches.map(function(b){return{b:b,m:monthsLeft(b.exp),it:byNo(b.no)};}).filter(function(x){return x.it&&x.m<=3;})
       .sort(function(a,b){return a.m-b.m;});
     $('app').innerHTML='<div class="card"><div class="st" style="margin-bottom:6px">التشغيلات المنتهية أو التي تنتهي خلال ٣ أشهر (٩٠ يوماً تقريباً)، الأقرب أولاً.</div>'+
@@ -1063,7 +1070,7 @@ var OosUI = (function () {
           '<div class="rm" hidden data-f="'+esc(x.b.id)+'"><input type="number" min="1" max="'+x.b.qty+'" value="'+x.b.qty+'" aria-label="الكمية">'+
           '<select aria-label="السبب"><option value="منتهي">منتهي</option><option value="تالف">تالف</option><option value="مرتجع للمستودع">مرتجع للمستودع</option></select>'+
           '<button class="btn2" type="button" data-ok="'+esc(x.b.id)+'" style="background:var(--red);color:#fff;border-color:var(--red)">تأكيد</button></div></div>';}).join('')
-      :'<div class="empty">لا توجد تشغيلات منتهية أو قريبة الانتهاء</div>')+'</div><div class="msg" id="emsg" role="status"></div>';
+      :'<div class="empty">لا توجد تشغيلات مسجّلة في المخزون منتهية أو قريبة الانتهاء</div>')+'</div>'+frHtml+'<div class="msg" id="emsg" role="status"></div>';
     document.querySelectorAll('[data-rm]').forEach(function(b){b.onclick=function(){var f=document.querySelector('[data-f="'+b.dataset.rm+'"]');f.hidden=!f.hidden;};});
     document.querySelectorAll('[data-ok]').forEach(function(b){b.onclick=function(){
       var f=document.querySelector('[data-f="'+b.dataset.ok+'"]');b.disabled=true;
