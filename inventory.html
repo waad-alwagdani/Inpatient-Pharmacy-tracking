@@ -237,6 +237,11 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .ag-tabi[aria-current=true]{background:#efede8;color:#0a0a0a}
   .ag-tabi[aria-current=true]::before{content:"";width:6px;height:6px;border-radius:50%;background:#0a0a0a;flex:none;margin-inline-end:4px}
   .ag-nav-list{flex:1;overflow:auto;margin:0 -4px;padding:0 4px}
+  .ag-gh{width:100%;border:0;background:transparent;cursor:pointer;font-family:inherit;align-items:center;border-radius:8px;margin-top:4px;padding:10px 10px!important;font-size:12.5px!important;font-weight:700!important;color:#3f3f46!important;letter-spacing:.02em!important}
+  .ag-gh:hover{background:#f4f4f5;color:#52525b}
+  .ag-gh i{font-style:normal;font-size:15px;line-height:1;transition:transform .15s ease;display:inline-block}
+  .ag-grp.open>.ag-gh i{transform:rotate(-90deg)}
+  .ag-gb{display:none}.ag-grp.open>.ag-gb{display:block}
   .ag-me{border:1px solid #e4e4e7;border-radius:14px;padding:10px;display:flex;align-items:center;gap:10px;margin-top:10px}
   .ag-av{width:36px;height:36px;border-radius:10px;background:#f4f4f5;color:#0a0a0a;display:grid;place-items:center;font:700 13px/1 "IBM Plex Sans",Arial;flex:none}
   .ag-me b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ag-me small{display:block;font-size:11.5px;color:#71717a}
@@ -649,21 +654,28 @@ var AuthGate = (function () {
     if (PREVIEW) return '';
     var list = EXT.filter(function (x) { return user.isOwner || x.roles.indexOf(user.sysRole) > -1; });
     if (!list.length) return '';
-    return '<div class="ag-sec"><span>' + L(['Spreadsheets', 'جداول البيانات']) + '</span></div>' + list.map(function (x) {
+    var NO = {}; try { NO = JSON.parse(localStorage.getItem('pt.navopen') || '{}'); } catch (e) {}
+    return '<div class="ag-grp' + (NO.ext === 1 ? ' open' : '') + '" data-g="ext"><button type="button" class="ag-sec ag-gh" aria-expanded="' + (NO.ext === 1) + '"><span>' + L(['Spreadsheets', 'جداول البيانات']) + '</span><i aria-hidden="true">‹</i></button><div class="ag-gb">' + list.map(function (x) {
       return '<a class="ag-item" href="' + esc(x.href) + '" target="_blank" rel="noopener" style="text-decoration:none"><svg viewBox="0 0 24 24">' + IC_SHEET + '</svg><span>' + esc(L(x.label)) + '<em>' + esc(LANG === 'en' ? x.label[1] : x.label[0]) + '</em></span></a>';
-    }).join('');
+    }).join('') + '</div></div>';
   }
   function bar() {
     var old = $('ag-bar'); if (old) old.remove();
     ['ag-side', 'ag-top', 'ag-pv', 'ag-scrim'].forEach(function (id) { var x = $(id); if (x) x.remove(); });
     var pages = user.pages || [];
     var dir = document.documentElement.getAttribute('dir') || 'rtl';
+    // collapsible groups: the group of the open page is expanded, the others show only their title (choice remembered)
+    var NO = {}; try { NO = JSON.parse(localStorage.getItem('pt.navopen') || '{}'); } catch (e) {}
+    var grp = function (key, title, inner, hasCur) {
+      var open = hasCur || NO[key] === 1;
+      return '<div class="ag-grp' + (open ? ' open' : '') + '" data-g="' + key + '"><button type="button" class="ag-sec ag-gh" aria-expanded="' + open + '"><span>' + title + '</span><i aria-hidden="true">‹</i></button><div class="ag-gb">' + inner + '</div></div>';
+    };
     var nav = GROUPS.map(function (g) {
       var items = g[2].filter(function (p) { return pages.indexOf(p) > -1; });
       if (!items.length) return '';
-      return '<div class="ag-sec"><span>' + L(g) + '</span></div>' + items.map(function (p) {
+      return grp(g[0], L(g), items.map(function (p) {
         return '<button type="button" class="ag-item ag-nav" data-p="' + p + '"' + (p === cfg.page ? ' aria-current="page"' : '') + '><svg viewBox="0 0 24 24">' + ICON[p] + '</svg><span>' + L(NAV[p]) + '<em>' + (LANG === 'en' ? NAV[p][1] : NAV[p][0]) + '</em></span></button>';
-      }).join('');
+      }).join(''), items.indexOf(cfg.page) > -1);
     }).join('');
     var nm = user.displayName || user.username, ini = nm.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
     var side = document.createElement('aside'); side.id = 'ag-side'; side.className = 'ag-side'; side.setAttribute('dir', LANG === 'en' ? 'ltr' : 'rtl');
@@ -688,6 +700,11 @@ var AuthGate = (function () {
     scrim.onclick = function () { document.body.classList.remove('ag-menu'); };
     $('ag-lang2').onclick = function () { LANG = LANG === 'en' ? 'ar' : 'en'; try { localStorage.setItem('ipq_lang', LANG); } catch (e) {} location.reload(); };
     side.querySelectorAll('.ag-nav').forEach(function (x) { x.onclick = function () { document.body.classList.remove('ag-menu'); if (x.dataset.p !== cfg.page) open(x.dataset.p); }; });
+    side.querySelectorAll('.ag-gh').forEach(function (h) { h.onclick = function () {
+      var g = h.parentNode, on = !g.classList.contains('open'); g.classList.toggle('open', on); h.setAttribute('aria-expanded', on);
+      var NO = {}; try { NO = JSON.parse(localStorage.getItem('pt.navopen') || '{}'); } catch (e) {}
+      NO[g.dataset.g] = on ? 1 : 0; try { localStorage.setItem('pt.navopen', JSON.stringify(NO)); } catch (e) {}
+    }; });
     renderSub();
   }
 
