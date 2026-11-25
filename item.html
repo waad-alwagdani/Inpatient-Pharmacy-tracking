@@ -301,8 +301,8 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
       '<label class="oos" id="oosL"><span class="q"><b>هل الصنف غير متوفر؟</b><small>Item out of stock?</small></span><input type="checkbox" id="oos"><span class="sw"></span></label>'+
       '<div class="drawer" id="oosD"><div><div class="pad"><label for="oosN"><span>ملاحظة (اختياري)</span><span>Note (optional)</span></label>'+
       '<input type="text" id="oosN" maxlength="200" placeholder="'+P('اكتب ملاحظة قصيرة…')+'">'+
-      '<label for="oosW" style="margin-top:10px"><span>الاسم الكامل (إلزامي)</span><span>Full name (required)</span></label>'+
-      '<input type="text" id="oosW" maxlength="80" autocomplete="name" dir="auto" value="'+esc(SIGNED?SIGNED.displayName:(emp?emp.name:''))+'"></div></div></div></div>';
+      '<label for="oosW" style="margin-top:10px"><span>الاسم الكامل <b style="color:#b91c1c">*</b></span><span>Full name <b style="color:#b91c1c">*</b></span></label>'+
+      '<input type="text" id="oosW" maxlength="80" autocomplete="name" dir="auto" value="'+esc(SIGNED?SIGNED.displayName:'')+'"></div></div></div></div>';
     var eduBox= drug ? '<div class="edu"><div class="eh"><div class="t"><span class="ic">'+ICO.book+'</span><span><b>معلومة تثقيفية</b><small>Educational Info</small></span></div>'+
       (drug.edu?'<div class="lsw"><button type="button" id="eduEn" class="on">EN</button><button type="button" id="eduAr" aria-pressed="false">AR</button></div>':'')+'</div>'+
       '<div class="box"><p id="eduT" dir="ltr" style="text-align:left;margin:0">'+(drug.edu?esc(drug.edu):'—')+'</p></div>'+
