@@ -441,7 +441,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     if(SIGNED){ payload.token=SIGNED.token; }   // verified attribution: the server resolves the signed-in account
     else {
       if(!emp){
-        if(DATA.employees.length) return msg('يُختار الاسم من القائمة المقترحة',false);
+        if((DATA.employees||[]).length) return msg('يُختار الاسم من القائمة المقترحة',false);
         var typed=document.getElementById('empQ').value.trim();
         if(!typed) return msg('الاسم مطلوب',false);
         emp={name:typed,id:''};
@@ -478,7 +478,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     google.script.run
       .withSuccessHandler(function(d){
         DATA=d;
-        if(emp){var m=d.employees.filter(function(e){return (emp.id&&e.id===emp.id)||(emp.name&&e.name===emp.name);})[0];
+        if(emp && (d.employees||[]).length){var m=d.employees.filter(function(e){return (emp.id&&e.id===emp.id)||(emp.name&&e.name===emp.name);})[0];
           emp=m||null; store('udt_emp',emp?JSON.stringify(emp):'');}
         var p=norm(param||DRUG_PARAM);
         if(p){drug=d.drugs.filter(function(x){return norm(x.no)===p;})[0]||null;}

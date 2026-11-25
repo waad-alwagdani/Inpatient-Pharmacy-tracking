@@ -330,9 +330,9 @@ var AuthGate = (function () {
     INVALID_SETUP_CODE: ['رمز الإعداد غير صالح أو منتهٍ.', 'Invalid or expired setup code.'],
     INVALID_USERNAME: ['اسم المستخدم: ٣–٣٢ حرفاً إنجليزياً صغيراً أو أرقاماً أو . _ -', 'Username: 3–32 lowercase letters, digits, . _ -'],
     toSignup: ['موظف جديد؟ تفعيل حساب', 'New employee? Activate an account'], signup: ['تفعيل حساب موظف', 'Activate employee account'],
-    signupNote: ['يُرجى اختيار الاسم من القائمة، ثم اختيار اسم مستخدم وكلمة مرور. يبدأ الحساب بعد موافقة المالك.', 'Choose your name from the list, then a username and password. The account starts after the Owner approves it.'],
-    empno: ['اسم الموظف', 'Employee name'], empPick: ['يُرجى اختيار الاسم من القائمة المقترحة.', 'Choose your name from the suggested list.'], signupDone: ['تم إرسال الطلب. يمكن تسجيل الدخول بعد موافقة المالك.', 'Request sent. Sign in after the Owner approves it.'],
-    EMPLOYEE_NOT_FOUND: ['الرقم الوظيفي غير مسجّل. يُرجى مراجعة الصيدلية.', 'Employee number not registered. Please contact the pharmacy.'],
+    signupNote: ['يُرجى كتابة الاسم الكامل والرقم الوظيفي كما هما مسجّلان في الصيدلية، ثم اختيار اسم مستخدم وكلمة مرور. يبدأ الحساب بعد موافقة المالك.', 'Choose your name from the list, then a username and password. The account starts after the Owner approves it.'],
+    empno: ['الاسم الكامل', 'Full name'], empnum: ['الرقم الوظيفي', 'Employee number'], empPick: ['يُرجى اختيار الاسم من القائمة المقترحة.', 'Choose your name from the suggested list.'], signupDone: ['تم إرسال الطلب. يمكن تسجيل الدخول بعد موافقة المالك.', 'Request sent. Sign in after the Owner approves it.'],
+    EMPLOYEE_NOT_FOUND: ['تعذّر التحقق من الاسم والرقم الوظيفي. تأكد من كتابتهما كما هما مسجّلان، أو راجع الصيدلية.', 'Name and employee number could not be verified. Type them as registered, or contact the pharmacy.'],
     ALREADY_REGISTERED: ['يوجد حساب لهذا الرقم الوظيفي مسبقًا.', 'An account already exists for this employee number.'],
     ACCOUNT_PENDING: ['الحساب بانتظار موافقة المالك.', 'The account is awaiting Owner approval.'],
     USERNAME_TAKEN: ['اسم المستخدم مستخدم مسبقًا.', 'Username already taken.'],
@@ -444,11 +444,9 @@ var AuthGate = (function () {
       else if (cfg.allowBootstrap) { alt.hidden = false; alt.textContent = t('toSignup'); alt.onclick = function () { show('signup'); }; }
     } else if (v === 'signup') {
       $('ag-title').textContent = t('signup'); note.hidden = false; note.textContent = t('signupNote');
-      f.innerHTML = field('ag-e', t('empno'), 'text', IC_USER, 'off', 'required list="ag-el" dir="auto"') + '<datalist id="ag-el"></datalist>' + field('ag-u', t('user'), 'text', IC_USER, 'username', 'required') +
+      f.innerHTML = field('ag-e', t('empno'), 'text', IC_USER, 'off', 'required dir="auto"') + field('ag-r', t('empnum'), 'text', IC_USER, 'off', 'required inputmode="numeric"') + field('ag-u', t('user'), 'text', IC_USER, 'username', 'required') +
         field('ag-n', t('pass'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + field('ag-n2', t('newp2'), 'password', IC_LOCK, 'new-password', 'required minlength="10"') + button(t('signup'));
       alt.hidden = false; alt.textContent = t('toLogin'); alt.onclick = function () { show('login'); };
-      call('getData').then(function (d) { EMPS = (d && d.employees || []).filter(function (e) { return e.name && e.id; });
-        var dl = $('ag-el'); if (dl) dl.innerHTML = EMPS.map(function (e) { return '<option value="' + esc(e.name) + '">'; }).join(''); }, function () {});
     } else if (v === 'change') {
       $('ag-title').textContent = t('change'); note.hidden = false; note.textContent = t('changeNote');
       f.innerHTML = field('ag-o', t('oldp'), 'password', IC_LOCK, 'current-password', 'required') + field('ag-n', t('newp'), 'password', IC_KEY, 'new-password', 'required minlength="10"') +
@@ -506,9 +504,7 @@ var AuthGate = (function () {
     } else if (view === 'signup') {
       if (v('ag-n') !== v('ag-n2')) { $('ag-err').textContent = t('mismatch'); return; }
       busy(true);
-      var en = v('ag-e').trim(), emp = EMPS.filter(function (e) { return e.name === en; })[0];
-      if (!emp) { busy(false); $('ag-err').textContent = t('empPick'); return; }   // the employee number is looked up from the chosen name
-      call('authSignup', emp.id, v('ag-u'), v('ag-n')).then(function () {
+      call('authSignup', v('ag-r').trim(), v('ag-u'), v('ag-n'), v('ag-e').trim()).then(function () {
         busy(false); show('login'); $('ag-err').style.color = '#276b3e'; $('ag-err').textContent = t('signupDone');
         setTimeout(function () { $('ag-err').style.color = ''; }, 8000);
       }, fail);
