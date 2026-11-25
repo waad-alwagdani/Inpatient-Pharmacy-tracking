@@ -960,9 +960,9 @@ var AuthGate = (function () {
   function saveList(){
     if(needPlace())return;var items=collect();if(!items)return;
     $('save').disabled=true;
-    google.script.run.withSuccessHandler(function(r){$('save').disabled=false;
+    AuthGate.run('wardSaveList',{hospital:SEL.h,dept:SEL.d,type:TYPE,items:items,by:$('by').value.trim()}).then(function(r){$('save').disabled=false;
       msg('<span class="bi"><span class="en">Default list saved ✓ ('+r.count+')</span><span class="ar">تم حفظ القائمة الافتراضية ✓ ('+r.count+')</span></span>',true,false);
-    }).withFailureHandler(function(e){$('save').disabled=false;serverErr(e);}).wardSaveList({hospital:SEL.h,dept:SEL.d,type:TYPE,items:items,by:$('by').value.trim()});
+    },function(e){$('save').disabled=false;serverErr(e);});
   }
   function send(){
     if(BUSY)return;$('msg').hidden=true;

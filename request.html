@@ -180,8 +180,8 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     h+='</div><div class="card"><div class="fld"><div class="cap"><span>Requested by</span><span class="ar">اسم مقدّم الطلب</span></div><input type="text" id="by" maxlength="60" autocomplete="off" value="'+esc(store('ward_by')||'')+'"><div class="err"></div></div></div>';
     h+='<div class="card"><div class="lbl bi"><span class="en">Items</span><span class="ar">الأصناف المطلوبة</span></div>'+
       '<div class="tools"><button type="button" id="load">Load default list<br><span class="ar">تحميل القائمة الافتراضية</span></button>'+
-      '<button type="button" id="save">Save as default<br><span class="ar">حفظ كقائمة افتراضية</span></button></div>'+
-      '<div class="hint" dir="rtl">القائمة الافتراضية محفوظة لكل قسم ونوع طلب، وتُحمَّل بضغطة واحدة بدل إدخال الأصناف كل مرة.</div><div id="rows" style="margin-top:10px"></div>'+
+      '</div>'+
+      '<div class="hint" dir="rtl">القائمة الافتراضية للقسم تُحمَّل بضغطة واحدة بدل إدخال الأصناف كل مرة، ويعدّلها حساب التمريض للقسم.</div><div id="rows" style="margin-top:10px"></div>'+
       '<button type="button" class="add" id="add"><span class="btnbi"><span class="en">+ Add Item</span><span class="ar">إضافة صنف</span></span></button>'+
       '<div class="fld" style="margin-top:10px"><div class="cap"><span>Needed by (optional — schedule ahead)</span><span class="ar">موعد الاحتياج (اختياري — للجدولة مسبقًا)</span></div><input type="datetime-local" id="need"></div>'+
       '<div class="fld" style="margin-top:10px"><div class="cap"><span>Note (optional)</span><span class="ar">ملاحظة (اختياري)</span></div><input type="text" id="note" maxlength="200" autocomplete="off"></div></div>'+
@@ -190,7 +190,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     document.querySelectorAll('.tp').forEach(function(p){p.onclick=function(){TYPE=p.dataset.t;dirty();document.querySelectorAll('.tp').forEach(function(x){x.setAttribute('aria-checked',x===p?'true':'false');});$('typeErr').innerHTML='';};});
     document.querySelectorAll('.dp').forEach(function(p){p.onclick=function(){SEL={h:p.dataset.h,d:p.dataset.d};dirty();document.querySelectorAll('.dp').forEach(function(x){x.setAttribute('aria-checked',x===p?'true':'false');});$('deptErr').innerHTML='';};});
     $('add').onclick=function(){addRow(true);};
-    $('go').onclick=send; $('load').onclick=loadList; $('save').onclick=saveList;
+    $('go').onclick=send; $('load').onclick=loadList;
     $('by').addEventListener('input',function(){this.classList.remove('bad');this.parentNode.querySelector('.err').innerHTML='';dirty();});
     ROWS=[];$('rows').innerHTML='';addRow(false);
   }
