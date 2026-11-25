@@ -2088,6 +2088,18 @@ var TECHUI = (function () {
     };
   }
 
+  /* expiry picker: month list + year list (value MM/YYYY) */
+  function expSel(key, val) {
+    var m = /^(\d{1,2})\/(\d{4})$/.exec(String(val || '')), mm = m ? ('0' + m[1]).slice(-2) : '', yy = m ? m[2] : '', y0 = new Date().getFullYear(), ys = [];
+    for (var y = y0 - 1; y <= y0 + 8; y++) ys.push(String(y));
+    if (yy && ys.indexOf(yy) === -1) ys.push(yy);
+    return '<span class="exp-sel" data-exp="' + E(key) + '" style="display:inline-flex;gap:6px;direction:ltr">' +
+      '<select data-em style="width:84px"><option value="">MM</option>' + MONTHS_12.map(function (x) { return '<option value="' + x.num + '"' + (x.num === mm ? ' selected' : '') + '>' + x.num + '</option>'; }).join('') + '</select>' +
+      '<select data-ey style="width:96px"><option value="">YYYY</option>' + ys.map(function (y) { return '<option' + (y === yy ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select></span>';
+  }
+  function expVal(box) { var m = box.querySelector('[data-em]').value, y = box.querySelector('[data-ey]').value; return m && y ? m + '/' + y : ''; }
+  function expBind(fn) { document.querySelectorAll('.exp-sel').forEach(function (b) { b.querySelectorAll('select').forEach(function (x) { x.onchange = function () { fn(b.dataset.exp, expVal(b)); }; }); }); }
+
   function findReq(id) { return TECH.requests.filter(function (r) { return r.id === id; })[0]; }
   function strengthCell(s) { return s === 'n/a' ? '<span class="na">n/a</span>' : E(s); }
 
@@ -2405,7 +2417,7 @@ var TECHUI = (function () {
         '<div class="toolbar"><b>1 / 2</b><span class="muted">' + E(monthLabel(TECH.period)) + '</span></div>' +
         '<div class="grid-2">' +
           '<label class="fld" style="margin-bottom:0">اسم الصنف<input type="text" id="rf-item" list="rf-items-list" value="' + E(RF.itemName) + '" placeholder="اسم الصنف"><datalist id="rf-items-list">' + TECH.items.map(function (x) { return '<option value="' + E(x.name) + '">'; }).join('') + '</datalist></label>' +
-          '<label class="fld" style="margin-bottom:0">تاريخ الانتهاء<input type="text" inputmode="numeric" id="rf-exp" value="' + E(RF.expiry) + '" placeholder="MM/YYYY" style="text-align:center;direction:ltr"></label>' +
+          '<label class="fld" style="margin-bottom:0">تاريخ الانتهاء' + expSel('rf', RF.expiry) + '</label>' +
         '</div>' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
           '<span class="msg ok" id="rf-msg">' + E(RF.msg) + '</span>' +
@@ -2450,15 +2462,15 @@ var TECHUI = (function () {
 
   function bindRefill() {
     if (RF.step === 1) {
-      var itemIn = document.getElementById('rf-item'), expIn = document.getElementById('rf-exp');
+      var itemIn = document.getElementById('rf-item'), expBox = document.querySelector('.exp-sel[data-exp="rf"]');
       itemIn.oninput = function () {
         RF.itemName = itemIn.value; RF.msg = '';
         var match = TECH.items.filter(function (x) { return x.name === RF.itemName; })[0];
-        if (match && !expIn.value.trim()) { expIn.value = match.nearestExp; RF.expiry = match.nearestExp; }
+        if (match && !expVal(expBox) && match.nearestExp) { var mm = /^(\d{1,2})\/(\d{4})$/.exec(match.nearestExp); if (mm) { expBox.querySelector('[data-em]').value = ('0' + mm[1]).slice(-2); var ys = expBox.querySelector('[data-ey]'); ys.value = mm[2]; RF.expiry = expVal(expBox); } }
       };
-      expIn.oninput = function () { RF.expiry = expIn.value; };
+      expBind(function (k, v) { RF.expiry = v; });
       document.getElementById('rf-next').onclick = function () {
-        RF.itemName = itemIn.value.trim(); RF.expiry = expIn.value.trim();
+        RF.itemName = itemIn.value.trim(); RF.expiry = expVal(expBox);
         if (!RF.itemName) { itemIn.focus(); return; }
         RF.step = 2; render();
       };
@@ -2525,7 +2537,7 @@ var TECHUI = (function () {
         '</div>' +
         '<div class="grid-2" style="margin-bottom:8px">' +
           '<label class="fld" style="margin-bottom:0">الكمية المتوفرة<input type="number" inputmode="numeric" min="0" step="1" id="fc-q" value="' + (curDr.physical !== undefined ? curDr.physical : '') + '" placeholder="0" style="font-size:17px;font-weight:700;text-align:center"></label>' +
-          '<label class="fld" style="margin-bottom:0">تاريخ الانتهاء<input type="text" inputmode="numeric" id="fc-e" value="' + E(curDr.expiry || '') + '" placeholder="MM/YYYY" style="text-align:center;direction:ltr"></label>' +
+          '<label class="fld" style="margin-bottom:0">تاريخ الانتهاء' + expSel(cur.code, curDr.expiry) + '</label>' +
         '</div>' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
           '<button type="button" class="btn sec sm" id="q-zero">0</button>' +
@@ -2554,7 +2566,7 @@ var TECHUI = (function () {
             return '<tr class="' + (has ? 'done' : '') + '">' +
               '<td class="r" style="cursor:pointer" data-sel="' + realIdx + '"><span class="idx">' + (realIdx + 1) + '</span> <b>' + E(x.name) + '</b> <span class="code">' + E(x.code) + '</span> · <span class="ward-pill">' + E(x.ward) + '</span></td>' +
               '<td><input type="number" inputmode="numeric" min="0" step="1" class="qty-in" data-cp="' + E(x.code) + '" value="' + (has ? dr.physical : '') + '" placeholder="0"></td>' +
-              '<td><input type="text" inputmode="numeric" class="exp-in" data-ce="' + E(x.code) + '" value="' + E(dr.expiry || '') + '" placeholder="MM/YYYY"></td>' +
+              '<td>' + expSel(x.code, dr.expiry) + '</td>' +
             '</tr>';
           }).join('') +
         '</table></div>' +
@@ -2606,7 +2618,7 @@ var TECHUI = (function () {
       fcq.oninput = function () { setPhys(cur.code, fcq.value.trim() === '' ? '' : Number(fcq.value)); };
       fcq.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); countFocus = countFocus < TECH.items.length - 1 ? countFocus + 1 : 0; render(); } };
     }
-    if (fce) fce.oninput = function () { setExp(cur.code, fce.value); };
+    expBind(function (code, v) { setExp(code, v); render(); });
     if (document.getElementById('q-zero')) document.getElementById('q-zero').onclick = function () { setPhys(cur.code, 0); render(); };
     if (document.getElementById('q-plus5')) document.getElementById('q-plus5').onclick = function () { setPhys(cur.code, ((TECH.countDraft[cur.code] && TECH.countDraft[cur.code].physical) || 0) + 5); render(); };
     if (document.getElementById('q-plus10')) document.getElementById('q-plus10').onclick = function () { setPhys(cur.code, ((TECH.countDraft[cur.code] && TECH.countDraft[cur.code].physical) || 0) + 10); render(); };
@@ -2618,7 +2630,7 @@ var TECHUI = (function () {
     cq.oninput = function () { countSearch = cq.value.trim().toLowerCase(); var p = cq.selectionStart; render(); var n = document.getElementById('cnt-q'); n.focus(); try { n.setSelectionRange(p, p); } catch (e) {} };
     document.querySelectorAll('[data-sel]').forEach(function (td) { td.onclick = function () { countFocus = Number(td.dataset.sel); showFocusBox = true; render(); }; });
     document.querySelectorAll('input[data-cp]').forEach(function (inp) { inp.onchange = function () { setPhys(inp.dataset.cp, inp.value.trim() === '' ? '' : Number(inp.value)); render(); }; });
-    document.querySelectorAll('input[data-ce]').forEach(function (inp) { inp.onchange = function () { setExp(inp.dataset.ce, inp.value); render(); }; });
+
 
     document.getElementById('cnt-save').onclick = function () {
       var st = document.getElementById('cnt-status'); st.className = 'msg'; st.textContent = '…';
