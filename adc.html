@@ -2009,10 +2009,9 @@ var TECHUI = (function () {
       '</style></head><body>' +
       '<div class="hdr">' +
         '<div><h2>إدارة الرعاية الصيدلانية · ' + E(TECH.cabinet) + '</h2><small>' + E(meta.title) + '</small></div>' +
-        '<div style="text-align:left"><small>التاريخ: ' + E(now.isoDate) + ' · ' + E(now.time) + '</small><br><small>' + E(meta.ref || '') + '</small></div>' +
       '</div>' +
       '<table class="meta"><tr>' +
-        '<td><span>القسم: </span><b>' + E(meta.ward || 'جميع الأقسام') + '</b></td>' +
+        '<td><span>القسم: </span><b>' + E(meta.ward || TECH.wards.join('، ')) + '</b></td>' +
         '<td><span>الفترة: </span><b>' + E(meta.period || monthLabel(TECH.period)) + '</b></td>' +
         '<td><span>المسؤول: </span><b>' + E(meta.by || TECH.name) + '</b></td>' +
       '</tr></table>' +
@@ -2586,7 +2585,7 @@ var TECHUI = (function () {
 
     var exportCnt = function (fmt) {
       exportReport(fmt,
-        { title: 'الجرد الشهري · ' + monthLabel(TECH.period), ref: TECH.period, ward: 'جميع الأقسام', fileName: 'MonthlyCount_' + TECH.period },
+        { title: 'الجرد الشهري · ' + monthLabel(TECH.period), ref: TECH.period, ward: TECH.wards.join('، '), fileName: 'MonthlyCount_' + TECH.period },
         ['#', 'الرقم التشغيلي', 'اسم الدواء', 'التركيز', 'الشكل الدوائي', 'الكمية المتوفرة', 'تاريخ الانتهاء'],
         TECH.items.map(function (x, i) {
           var dr = TECH.countDraft[x.code] || {};
