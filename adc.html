@@ -1898,6 +1898,26 @@ var OrgUI = (function () {
     });
   }
 
+  /* monthly count reminder: shown to the count staff while last month's count is still open (once per day) */
+  function countReminder(d, tabs) {
+    var idx = -1; tabs.forEach(function (t, i) { if (t.render === count) idx = i; });
+    if (idx < 0 || !d.period) return;
+    var now = new Date(), cur = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    if (d.period >= cur) return;
+    var key = 'adc.remind.' + d.period, today = now.toISOString().slice(0, 10);
+    try { if (localStorage.getItem(key) === today) return; } catch (e) {}
+    var w = document.createElement('div');
+    w.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+    w.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:20px;box-shadow:0 20px 40px -12px rgba(0,0,0,.35)">' +
+      '<div style="display:flex;gap:12px;align-items:flex-start"><div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:grid;place-items:center;flex:none">🔔</div>' +
+      '<div><b style="font-size:17px">تذكير الجرد الشهري</b><div class="muted">جرد شهر ' + E(d.period) + ' لم يُعتمد بعد</div></div></div>' +
+      '<p style="margin:12px 0 16px;line-height:1.7">يُرجى إكمال جرد الكابينات واعتماده. يختفي هذا التذكير تلقائيًا بعد اعتماد الجرد.</p>' +
+      '<div style="display:flex;gap:8px"><button class="btn" id="rm-go">الانتقال للجرد</button><button class="btn sec" id="rm-later">لاحقًا</button></div></div>';
+    document.body.appendChild(w);
+    w.querySelector('#rm-later').onclick = function () { try { localStorage.setItem(key, today); } catch (e) {} w.remove(); };
+    w.querySelector('#rm-go').onclick = function () { w.remove(); var b = document.querySelector('#main [data-t="' + idx + '"]'); if (b) b.click(); };
+  }
+
   AuthGate.start({ accent: '#1c1c1c', bg: '#f6f5f2', barWidth: '1180px', page: 'adc', onReady: function () {
     var main = document.getElementById('main');
     load().then(function (d) {
@@ -1910,6 +1930,7 @@ var OrgUI = (function () {
       if (d.scoped && !d.clusters.length) { main.innerHTML = '<div class="card msg err">لم تُسند إليك أي كابينة بعد — يُرجى مراجعة المشرف · No cabinet assigned to you yet</div>'; return; }
       if (!tabs.length) { main.innerHTML = '<div class="card msg err">لا توجد صلاحية على الكابينات · No ADC permission</div>'; return; }
       OrgUI.tabs(main, tabs);
+      countReminder(d, tabs);
     }, function (e) { main.innerHTML = '<div class="card msg err">' + (/ADC_NOT_INSTALLED/.test(String(e && e.message)) ? 'وحدة الكابينات غير مثبّتة — يُرجى تشغيل adcInstall من المحرر' : OrgUI.err(e)) + '</div>'; });
   } });
 </script>
