@@ -2019,7 +2019,7 @@ var TECHUI = (function () {
         headers.map(function (h) { return '<th>' + E(h) + '</th>'; }).join('') +
       '</tr></thead><tbody>' +
         rows.map(function (r) {
-          return '<tr>' + r.map(function (c) { return '<td>' + E(c) + '</td>'; }).join('') + '</tr>';
+          return '<tr>' + r.map(function (c) { return '<td dir="auto">' + E(c) + '</td>'; }).join('') + '</tr>';
         }).join('') +
       '</tbody></table>' +
       '<table class="sigs"><tr>' +
@@ -2586,10 +2586,10 @@ var TECHUI = (function () {
     var exportCnt = function (fmt) {
       exportReport(fmt,
         { title: 'الجرد الشهري · ' + monthLabel(TECH.period), ref: TECH.period, ward: TECH.wards.join('، '), fileName: 'MonthlyCount_' + TECH.period },
-        ['#', 'الرقم التشغيلي', 'اسم الدواء', 'التركيز', 'الشكل الدوائي', 'الكمية المتوفرة', 'تاريخ الانتهاء'],
+        ['#', 'الرقم التشغيلي', 'اسم الدواء', 'التركيز', 'الشكل الدوائي', 'القسم', 'الكمية المتوفرة', 'تاريخ الانتهاء'],
         TECH.items.map(function (x, i) {
           var dr = TECH.countDraft[x.code] || {};
-          return [i + 1, x.code, x.name, x.strength || '—', x.form || '—', dr.physical !== undefined ? dr.physical : '—', dr.expiry || '—'];
+          return [i + 1, x.code, x.name, x.strength || '—', x.form || '—', x.ward, dr.physical !== undefined ? dr.physical : '—', dr.expiry || '—'];
         })
       );
     };
@@ -2772,12 +2772,13 @@ var TECHUI = (function () {
       var mo = String(c[0]), rec = recs[mo] || (recs[mo] = { by: String(c[11] || '').replace(/\s*\(@.*$/, ''), wards: {} });
       (rec.wards[it.ward] = rec.wards[it.ward] || []).push({ code: it.code, name: it.name, cat: it.abc || '', strength: it.strength || '', physical: Number(c[7]) || 0, unit: it.form || '', expiry: '—' });
     });
+    Object.keys(recs).forEach(function (m) { Object.keys(recs[m].wards).forEach(function (w) { recs[m].wards[w].sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'en', { sensitivity: 'base' }); }); }); });
     var nm = String(d.me || '');
     return { loggedIn: true, name: nm, initials: nm.split(' ').slice(0, 2).map(function (s) { return s.charAt(0); }).join(' '), id: '', role: 'فني صيدلية',
       period: d.period, cabinet: (d.clusters || []).map(function (c) { return c.split(' ')[0]; }).join(' · '),
       wards: (d.wards || []).map(function (w) { return w.ward; }), canCount: !!(d.perms && d.perms.count), reminderDismissed: TECH ? TECH.reminderDismissed : false,
       completedCountPeriods: {}, previewReminder: false,
-      items: d.items.map(function (i) { return { code: i.code, name: i.name, cat: i.abc || '', strength: i.strength || '', form: i.form || '', ward: i.ward, stock: i.soh, nearestExp: (dr[i.code] && dr[i.code].expiry) || '' }; }),
+      items: d.items.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'en', { sensitivity: 'base' }); }).map(function (i) { return { code: i.code, name: i.name, cat: i.abc || '', strength: i.strength || '', form: i.form || '', ward: i.ward, stock: i.soh, nearestExp: (dr[i.code] && dr[i.code].expiry) || '' }; }),
       requests: techReqs(w, d), reqNote: w && w.err ? w.err : '', refillHistory: hist, countDraft: dr, recordsByMonth: recs };
   }
   function techLoad() {
