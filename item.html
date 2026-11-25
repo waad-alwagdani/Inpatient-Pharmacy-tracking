@@ -104,6 +104,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .fbadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;background:var(--navy);color:#fff;font-size:12px;font-weight:600}
   .fbadge svg{color:rgba(255,255,255,.8)}
   .sbadge{padding:4px 10px;border-radius:8px;background:#f2f1ed;border:1px solid #e7e5e0;color:var(--navy);font-weight:700;font-size:12px}
+  .avst{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid;white-space:nowrap}.avst.av{color:#2f6b3a;background:#eef6ef;border-color:#b9d8bf}.avst.na{color:#a3231b;background:#fbeceb;border-color:#eab3ae}
   .code{font-size:11px;color:var(--t3);background:#f7f6f3;border:1px solid rgba(231,229,224,.8);padding:2px 8px;border-radius:6px}
   .gname{direction:ltr;text-align:left;margin-bottom:6px}.gname small{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:2px}
   .gname h2{margin:0;font-size:24px;font-weight:700;letter-spacing:-.01em;color:var(--t1);line-height:1.2}
@@ -258,7 +259,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   function drugCard(d){
     return '<div class="ccard"><div class="bar"></div><div class="in">'+
       '<div class="pills"><div class="l"><span class="fbadge" style="background:'+formColor(d.form||'Tab.')+'">'+ICO.pill+'<span>'+esc(d.form||'Tab.')+'</span></span>'+
-        (d.strength?'<span class="sbadge">'+esc(d.strength)+'</span>':'')+'</div><span class="code">#'+esc(d.no)+'</span></div>'+
+        (d.strength?'<span class="sbadge">'+esc(d.strength)+'</span>':'')+'</div>'+(d.avail===false?'<span class="avst na">غير متوفر · Not available</span>':'<span class="avst av">متوفر · Available</span>')+'</div>'+
       '<div class="gname"><small>Generic Medication Name</small><h2>'+tallMan(d.name)+'</h2>'+
       ((d.lasa||d.ha||d.hd)?'<div class="flags">'+(d.lasa?'<span class="flag" style="color:#a16207;background:#fef3c7;border-color:#f59e0b">LASA</span>':'')+
         (d.ha?'<span class="flag" style="color:#b91c1c;background:#fef2f2;border-color:#fca5a5">HIGH ALERT</span>':'')+
