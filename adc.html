@@ -2256,7 +2256,7 @@ var TECHUI = (function () {
               '</div>' +
             '</div>' +
             '<div class="tw"><table>' +
-              '<tr><th>#</th><th>رقم الستوك</th><th class="r">اسم الصنف</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المطلوبة</th></tr>' +
+              '<tr><th>#</th><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المطلوبة</th></tr>' +
               pr.items.map(function (it, idx) {
                 return '<tr><td class="idx">' + (idx + 1) + '</td><td class="code">' + E(it.stockNo) + '</td><td class="r"><b>' + E(it.name) + '</b></td><td>' + E(it.strength) + '</td><td>' + E(it.form) + '</td><td><b>' + it.reqQty + '</b></td></tr>';
               }).join('') +
@@ -2292,7 +2292,7 @@ var TECHUI = (function () {
               '</div>' +
             '</div>' +
             '<div class="tw"><table>' +
-              '<tr><th>#</th><th>رقم الستوك</th><th class="r">اسم الصنف</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المطلوبة</th><th>الكمية المجهزة</th><th>ملاحظات</th></tr>' +
+              '<tr><th>#</th><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المطلوبة</th><th>الكمية المجهزة</th><th>ملاحظات</th></tr>' +
               tk.items.map(function (it, idx) {
                 var valStr = String(it.prepQty == null ? '' : it.prepQty).trim();
                 var isNA = valStr === '' || Number(valStr) <= 0;
@@ -2340,7 +2340,7 @@ var TECHUI = (function () {
       var exportPr = function (fmt) {
         exportReport(fmt,
           { title: 'طلب تموين قسم ' + pr.ward, ref: pr.id, ward: pr.ward, fileName: 'Order_' + pr.id },
-          ['#', 'رقم الستوك', 'اسم الصنف', 'التركيز', 'الشكل الدوائي', 'الكمية المطلوبة'],
+          ['#', 'الرقم التشغيلي', 'اسم الصنف', 'التركيز', 'الشكل الدوائي', 'الكمية المطلوبة'],
           pr.items.map(function (it, i) { return [i + 1, it.stockNo, it.name, it.strength, it.form, it.reqQty]; })
         );
       };
@@ -2367,7 +2367,7 @@ var TECHUI = (function () {
       var exportTk = function (fmt) {
         exportReport(fmt,
           { title: 'تجهيز طلب قسم ' + tk.ward, ref: tk.id, ward: tk.ward, fileName: 'Prepared_' + tk.id },
-          ['#', 'رقم الستوك', 'اسم الصنف', 'التركيز', 'الشكل الدوائي', 'الكمية المطلوبة', 'الكمية المجهزة', 'ملاحظات'],
+          ['#', 'الرقم التشغيلي', 'اسم الصنف', 'التركيز', 'الشكل الدوائي', 'الكمية المطلوبة', 'الكمية المجهزة', 'ملاحظات'],
           tk.items.map(function (it, i) {
             var pv = String(it.prepQty == null ? '' : it.prepQty).trim();
             return [i + 1, it.stockNo, it.name, it.strength, it.form, it.reqQty, (pv === '' || Number(pv) <= 0) ? 'N/A' : pv, it.note || '—'];
@@ -2560,11 +2560,11 @@ var TECHUI = (function () {
           '</div>' +
         '</div>' +
         '<div class="tw"><table>' +
-          '<tr><th class="r">اسم الدواء</th><th>الكمية المتوفرة</th><th>تاريخ الانتهاء</th></tr>' +
+          '<tr><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المتوفرة</th><th>تاريخ الانتهاء</th></tr>' +
           rows.map(function (x) {
             var realIdx = TECH.items.indexOf(x), dr = TECH.countDraft[x.code] || {}, has = dr.physical !== undefined;
             return '<tr class="' + (has ? 'done' : '') + '">' +
-              '<td class="r" style="cursor:pointer" data-sel="' + realIdx + '"><span class="idx">' + (realIdx + 1) + '</span> <b>' + E(x.name) + '</b> <span class="code">' + E(x.code) + '</span> · <span class="ward-pill">' + E(x.ward) + '</span></td>' +
+              '<td class="code">' + E(x.code) + '</td><td class="r" style="cursor:pointer" data-sel="' + realIdx + '"><b>' + E(x.name) + '</b></td><td>' + E(x.strength || '—') + '</td><td>' + E(x.form || '—') + '</td>' +
               '<td><input type="number" inputmode="numeric" min="0" step="1" class="qty-in" data-cp="' + E(x.code) + '" value="' + (has ? dr.physical : '') + '" placeholder="0"></td>' +
               '<td>' + expSel(x.code, dr.expiry) + '</td>' +
             '</tr>';
@@ -2587,10 +2587,10 @@ var TECHUI = (function () {
     var exportCnt = function (fmt) {
       exportReport(fmt,
         { title: 'الجرد الشهري · ' + monthLabel(TECH.period), ref: TECH.period, ward: 'جميع الأقسام', fileName: 'MonthlyCount_' + TECH.period },
-        ['#', 'رقم الستوك', 'اسم الدواء', 'القسم', 'الكمية المتوفرة', 'تاريخ الانتهاء'],
+        ['#', 'الرقم التشغيلي', 'اسم الدواء', 'التركيز', 'الشكل الدوائي', 'الكمية المتوفرة', 'تاريخ الانتهاء'],
         TECH.items.map(function (x, i) {
           var dr = TECH.countDraft[x.code] || {};
-          return [i + 1, x.code, x.name, x.ward, dr.physical !== undefined ? dr.physical : '—', dr.expiry || '—'];
+          return [i + 1, x.code, x.name, x.strength || '—', x.form || '—', dr.physical !== undefined ? dr.physical : '—', dr.expiry || '—'];
         })
       );
     };
@@ -2677,9 +2677,9 @@ var TECHUI = (function () {
             '</div>' +
           '</div>' +
           '<div class="tw"><table>' +
-            '<thead><tr><th>#</th><th>رقم الستوك</th><th class="r">اسم الصنف</th><th>التصنيف</th><th>التركيز</th><th>الكمية</th><th>الشكل الدوائي</th><th>القسم</th><th>الانتهاء</th></tr></thead>' +
+            '<thead><tr><th>#</th><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية</th><th>القسم</th><th>الانتهاء</th></tr></thead>' +
             '<tbody>' + wRows.map(function (r, idx) {
-              return '<tr><td class="idx">' + (idx + 1) + '</td><td class="code">' + E(r.code) + '</td><td class="r"><b>' + E(r.name) + '</b></td><td><span class="cat-pill">' + E(r.cat || 'Medicine and Drugs') + '</span></td><td>' + strengthCell(r.strength || 'n/a') + '</td><td><b>' + r.physical + '</b></td><td>' + E(r.unit || 'Unit') + '</td><td><span class="ward-pill">' + E(selectedWardRecord) + '</span></td><td>' + E(r.expiry) + '</td></tr>';
+              return '<tr><td class="idx">' + (idx + 1) + '</td><td class="code">' + E(r.code) + '</td><td class="r"><b>' + E(r.name) + '</b></td><td>' + strengthCell(r.strength || 'n/a') + '</td><td>' + E(r.unit || '—') + '</td><td><b>' + r.physical + '</b></td><td><span class="ward-pill">' + E(selectedWardRecord) + '</span></td><td>' + E(r.expiry) + '</td></tr>';
             }).join('') + '</tbody>' +
           '</table></div>' +
           (wRefills.length ?
@@ -2733,8 +2733,8 @@ var TECHUI = (function () {
       var exportRec = function (fmt) {
         exportReport(fmt,
           { title: 'جرد قسم ' + selectedWardRecord, ref: ym, ward: selectedWardRecord, period: monthLabel(ym), by: monthRecord.by, fileName: 'Ward_' + selectedWardRecord + '_' + ym },
-          ['#', 'رقم الستوك', 'اسم الصنف', 'التصنيف', 'التركيز', 'الكمية', 'الشكل الدوائي', 'الانتهاء'],
-          wRows.map(function (r, i) { return [i + 1, r.code, r.name, r.cat || '', r.strength || 'n/a', r.physical, r.unit || '', r.expiry]; })
+          ['#', 'الرقم التشغيلي', 'اسم الدواء', 'التركيز', 'الشكل الدوائي', 'الكمية', 'الانتهاء'],
+          wRows.map(function (r, i) { return [i + 1, r.code, r.name, r.strength || 'n/a', r.unit || '', r.physical, r.expiry]; })
         );
       };
       var rPdf = document.getElementById('rec-pdf');
@@ -2771,14 +2771,14 @@ var TECHUI = (function () {
     (x && x.counts || []).forEach(function (c) {
       var it = byCode[String(c[1])]; if (!it) return;
       var mo = String(c[0]), rec = recs[mo] || (recs[mo] = { by: String(c[11] || '').replace(/\s*\(@.*$/, ''), wards: {} });
-      (rec.wards[it.ward] = rec.wards[it.ward] || []).push({ code: it.code, name: it.name, cat: it.abc || '', strength: '', physical: Number(c[7]) || 0, unit: '', expiry: '—' });
+      (rec.wards[it.ward] = rec.wards[it.ward] || []).push({ code: it.code, name: it.name, cat: it.abc || '', strength: it.strength || '', physical: Number(c[7]) || 0, unit: it.form || '', expiry: '—' });
     });
     var nm = String(d.me || '');
     return { loggedIn: true, name: nm, initials: nm.split(' ').slice(0, 2).map(function (s) { return s.charAt(0); }).join(' '), id: '', role: 'فني صيدلية',
       period: d.period, cabinet: (d.clusters || []).map(function (c) { return c.split(' ')[0]; }).join(' · '),
       wards: (d.wards || []).map(function (w) { return w.ward; }), canCount: !!(d.perms && d.perms.count), reminderDismissed: TECH ? TECH.reminderDismissed : false,
       completedCountPeriods: {}, previewReminder: false,
-      items: d.items.map(function (i) { return { code: i.code, name: i.name, cat: i.abc || '', strength: '', form: '', ward: i.ward, stock: i.soh, nearestExp: (dr[i.code] && dr[i.code].expiry) || '' }; }),
+      items: d.items.map(function (i) { return { code: i.code, name: i.name, cat: i.abc || '', strength: i.strength || '', form: i.form || '', ward: i.ward, stock: i.soh, nearestExp: (dr[i.code] && dr[i.code].expiry) || '' }; }),
       requests: techReqs(w, d), reqNote: w && w.err ? w.err : '', refillHistory: hist, countDraft: dr, recordsByMonth: recs };
   }
   function techLoad() {
