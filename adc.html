@@ -1942,7 +1942,7 @@ var TECHUI = (function () {
   };
 
   var TECH = null;
-  var screen = 'refill';
+  var screen = 'home';
   var homeTab = 'inbox';
   var previewReqId = '';
   var editModeForReq = '';
@@ -2128,6 +2128,7 @@ var TECHUI = (function () {
           '</div>' +
           '<div class="side-label">القائمة</div>' +
           '<nav class="side-nav">' +
+            '<button type="button" class="s-btn' + (screen === 'home' ? ' on' : '') + '" data-s="home"><span class="s-l">' + IC.inbox + '<span>صندوق الطلبات</span></span>' + (pendingCnt ? '<span class="s-cnt">' + pendingCnt + '</span>' : '') + '</button>' +
             '<button type="button" class="s-btn' + (screen === 'refill' ? ' on' : '') + '" data-s="refill"><span class="s-l">' + IC.box + '<span>التعبئة اليومية</span></span></button>' +
             '<button type="button" class="s-btn' + (screen === 'count' ? ' on' : '') + '" data-s="count"><span class="s-l">' + IC.clip + '<span>الجرد الشهري</span></span></button>' +
             '<button type="button" class="s-btn' + (screen === 'records' ? ' on' : '') + '" data-s="records"><span class="s-l">' + IC.archive + '<span>السجلات</span></span></button>' +
@@ -2206,7 +2207,7 @@ var TECHUI = (function () {
           '</div>' +
           (r.returnNote ? '<div class="muted" style="margin-top:8px">التعديل: ' + E(r.returnNote) + '</div>' : '') +
         '</div>';
-      }).join('') : '<div class="card muted">—</div>') + '</div>';
+      }).join('') : '<div class="card muted">' + (TECH.reqNote ? 'تعذّر عرض الطلبات: ' + E(TECH.reqNote) + ' — تُفعّل صلاحية «طلبات الأقسام» للحساب من صفحة الحسابات' : 'لا توجد طلبات حاليًا') + '</div>') + '</div>';
     } else {
       listHtml = '<div class="orders-stack">' + (myTasks.length ? myTasks.map(function (r) {
         var stBadge = r.status === 'done'
@@ -2224,7 +2225,7 @@ var TECHUI = (function () {
             '<div class="meta-box"><span>الوقت</span><b>' + E(r.date) + ' · ' + E(r.time) + '</b></div>' +
           '</div>' +
         '</div>';
-      }).join('') : '<div class="card muted">—</div>') + '</div>';
+      }).join('') : '<div class="card muted">' + (TECH.reqNote ? 'تعذّر عرض الطلبات: ' + E(TECH.reqNote) + ' — تُفعّل صلاحية «طلبات الأقسام» للحساب من صفحة الحسابات' : 'لا توجد طلبات حاليًا') + '</div>') + '</div>';
     }
 
     var previewHtml = '';
@@ -2336,7 +2337,7 @@ var TECHUI = (function () {
       document.getElementById('pr-close').onclick = function () { previewReqId = ''; editModeForReq = ''; render(); };
 
       var accBtn = document.getElementById('pr-accept-btn');
-      if (accBtn) accBtn.onclick = function () { pr.status = 'task'; homeTab = 'tasks'; previewReqId = ''; editModeForReq = ''; activeTaskId = pr.id; render(); };
+      if (accBtn) accBtn.onclick = function () { accBtn.disabled = true; var id = pr.id; AuthGate.run('wardSetStatus', id, 'Preparing').then(function () { homeTab = 'tasks'; previewReqId = ''; editModeForReq = ''; activeTaskId = id; return techLoad().then(render); }, function (e) { accBtn.disabled = false; alert(OrgUI.err(e)); }); };
       var edBtn = document.getElementById('pr-edit-btn');
       if (edBtn) edBtn.onclick = function () { editModeForReq = pr.id; render(); };
       var edCancel = document.getElementById('pr-edit-cancel');
@@ -2388,12 +2389,8 @@ var TECHUI = (function () {
         inp.oninput = function () { tk.items[Number(inp.dataset.tkn)].note = inp.value; };
       });
       document.getElementById('tk-finish').onclick = function () {
-        var nowTime = getGregorianNow().time;
-        tk.items.forEach(function (it) {
-          var q = Math.floor(Number(it.prepQty));
-          if (q > 0) TECH.refillHistory.unshift({ time: nowTime, period: TECH.period, ward: tk.ward, item: it.name, qty: q, exp: '—', by: TECH.name });
-        });
-        tk.status = 'done'; activeTaskId = ''; render();
+        var b = document.getElementById('tk-finish'); b.disabled = true;
+        AuthGate.run('wardSetStatus', tk.id, 'Ready').then(function () { activeTaskId = ''; return techLoad().then(render); }, function (e) { b.disabled = false; alert(OrgUI.err(e)); });
       };
     }
   }
@@ -2739,7 +2736,19 @@ var TECHUI = (function () {
   /* ---------- data from the server (ADC technician) ---------- */
   function ymToMmYyyy(v) { var m = /^(\d{4})-(\d{2})$/.exec(String(v || '')); return m ? m[2] + '/' + m[1] : ''; }
   function mmYyyyToYm(v) { var m = /^(\d{1,2})\/(\d{4})$/.exec(String(v || '').trim()); return m ? m[2] + '-' + String(m[1]).padStart(2, '0') : ''; }
-  function techBuild(d, x) {
+  /* ward requests (floor stock / crash cart) of this technician's wards: New → pending, Preparing → my task, Ready/Delivered → done */
+  function techReqs(w, d) {
+    if (!w || !w.rows) return [];
+    var mine = (d.wards || []).map(function (x) { return String(x.ward).toLowerCase(); });
+    var rows = w.rows.filter(function (r) { return r.status !== 'Cancelled'; });
+    var hit = rows.filter(function (r) { return mine.indexOf(String(r.dept).toLowerCase()) > -1; });
+    if (hit.length || !mine.length) rows = hit.length ? hit : rows;
+    var ST = { New: 'pending', Preparing: 'task', Ready: 'done', Delivered: 'done' };
+    return rows.map(function (r) { var at = String(r.at || '');
+      return { id: r.id, ward: r.dept, date: at.slice(0, 10), time: at.slice(11, 16), status: ST[r.status] || 'done', returnNote: '', srv: r.status,
+        items: (r.items || []).map(function (it) { return { stockNo: it.no || '', name: it.name, strength: it.strength || 'n/a', form: it.form || '', reqQty: it.qty, prepQty: '', note: '' }; }) }; });
+  }
+  function techBuild(d, x, w) {
     var dr = {}; Object.keys(d.draft || {}).forEach(function (c) { var k = d.draft[c]; dr[c] = { physical: k.physical === '' ? undefined : k.physical, expiry: ymToMmYyyy(k.expiry) }; });
     var byCode = {}; d.items.forEach(function (i) { byCode[i.code] = i; });
     var hist = [], recs = {};
@@ -2758,17 +2767,17 @@ var TECHUI = (function () {
       wards: (d.wards || []).map(function (w) { return w.ward; }), canCount: !!(d.perms && d.perms.count), reminderDismissed: TECH ? TECH.reminderDismissed : false,
       completedCountPeriods: {}, previewReminder: false,
       items: d.items.map(function (i) { return { code: i.code, name: i.name, cat: i.abc || '', strength: '', form: '', ward: i.ward, stock: i.soh, nearestExp: (dr[i.code] && dr[i.code].expiry) || '' }; }),
-      requests: [], refillHistory: hist, countDraft: dr, recordsByMonth: recs };
+      requests: techReqs(w, d), reqNote: w && w.err ? w.err : '', refillHistory: hist, countDraft: dr, recordsByMonth: recs };
   }
   function techLoad() {
-    return Promise.all([AuthGate.run('adcGet'), AuthGate.run('adcExport').catch(function () { return null; })]).then(function (r) { D = r[0]; TECH = techBuild(r[0], r[1]); });
+    return Promise.all([AuthGate.run('adcGet'), AuthGate.run('adcExport').catch(function () { return null; }), AuthGate.run('wardQueue').catch(function (e) { return { err: OrgUI.err(e) }; })]).then(function (r) { D = r[0]; TECH = techBuild(r[0], r[1], r[2]); });
   }
   function techSave() {
     var out = {}; TECH.items.forEach(function (x) { var k = TECH.countDraft[x.code]; out[x.code] = { physical: k && k.physical !== undefined ? k.physical : '', expiry: k ? mmYyyyToYm(k.expiry) : '' }; });
     return AuthGate.run('adcCountSave', out);
   }
   function techStart() {
-    var st = document.createElement('style'); st.textContent = TECH_CSS + '\n.tk-nav{display:flex!important;flex-direction:row!important;gap:6px;flex-wrap:wrap;margin:0 0 14px}.tk-nav .s-btn{width:auto}.banner{display:none!important}#tk-foot{position:sticky;bottom:0}';
+    var st = document.createElement('style'); st.textContent = TECH_CSS + '\n.tk-nav{display:flex!important;flex-direction:row!important;gap:6px;flex-wrap:wrap;margin:0 0 14px}.tk-nav .s-btn{width:auto}.banner{display:none!important}#tk-foot{position:sticky;bottom:0}#pr-edit-btn{display:none!important}';
     document.head.appendChild(st);
     if (!document.getElementById('modal-host')) { var mh = document.createElement('div'); mh.id = 'modal-host'; document.body.appendChild(mh); }
     if (!document.getElementById('tk-foot')) { var f = document.createElement('div'); f.id = 'tk-foot'; f.className = 'foot'; f.hidden = true; document.getElementById('main').after(f); }
