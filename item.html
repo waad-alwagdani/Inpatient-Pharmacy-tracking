@@ -338,7 +338,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     if(who==='pharm' && !SIGNED){
       bindAuto('empQ','empS',function(q){
         q=q.trim().toLowerCase(); if(!q) return [];
-        return DATA.employees.filter(function(e){return e.name.toLowerCase().indexOf(q)===0 || e.name.toLowerCase().indexOf(' '+q)>-1 || e.id.toLowerCase().indexOf(q)===0;}).slice(0,8)
+        return (DATA.employees||[]).filter(function(e){return e.name.toLowerCase().indexOf(q)===0 || e.name.toLowerCase().indexOf(' '+q)>-1 || e.id.toLowerCase().indexOf(q)===0;}).slice(0,8)
           .map(function(e){return {html:esc(e.name)+'<small>'+esc(e.id)+'</small>',val:e};});
       },function(e){emp=e; store('udt_emp',JSON.stringify(e)); render();});
       document.getElementById('empQ').addEventListener('input',function(){emp=null;document.getElementById('empP').textContent='';});
