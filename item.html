@@ -414,7 +414,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     if(drug.group==='other'){
       if(!oos) return msg('يلزم تحديد «هل الصنف غير متوفر؟» لإرسال البلاغ',false);
       btn.disabled=true; btn.innerHTML=B('جاري الإرسال…');
-      google.script.run.withSuccessHandler(function(r){done(PAIR(['تم الإبلاغ: ',r.drug,' غير متوفر']));
+      google.script.run.withSuccessHandler(function(r){done(r.duplicate?{ar:r.msg,en:'An open report already exists for this item — under review'}:PAIR(['تم الإبلاغ: ',r.drug,' غير متوفر']));
         setOos(false);})
         .withFailureHandler(fail).submitOOS({drugNo:drug.no,empName:emp?emp.name:'',dept:dept||'',note:document.getElementById('oosN').value.trim()});
       return;
