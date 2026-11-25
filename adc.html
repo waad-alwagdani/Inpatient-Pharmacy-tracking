@@ -2207,7 +2207,7 @@ var TECHUI = (function () {
           '</div>' +
           (r.returnNote ? '<div class="muted" style="margin-top:8px">التعديل: ' + E(r.returnNote) + '</div>' : '') +
         '</div>';
-      }).join('') : '<div class="card muted">' + (TECH.reqNote ? 'تعذّر عرض الطلبات: ' + E(TECH.reqNote) + ' — تُفعّل صلاحية «طلبات الأقسام» للحساب من صفحة الحسابات' : 'لا توجد طلبات حاليًا') + '</div>') + '</div>';
+      }).join('') : '<div class="card muted">' + (TECH.reqNote ? TECH.reqNote : 'لا توجد طلبات حاليًا') + '</div>') + '</div>';
     } else {
       listHtml = '<div class="orders-stack">' + (myTasks.length ? myTasks.map(function (r) {
         var stBadge = r.status === 'done'
@@ -2225,7 +2225,7 @@ var TECHUI = (function () {
             '<div class="meta-box"><span>الوقت</span><b>' + E(r.date) + ' · ' + E(r.time) + '</b></div>' +
           '</div>' +
         '</div>';
-      }).join('') : '<div class="card muted">' + (TECH.reqNote ? 'تعذّر عرض الطلبات: ' + E(TECH.reqNote) + ' — تُفعّل صلاحية «طلبات الأقسام» للحساب من صفحة الحسابات' : 'لا توجد طلبات حاليًا') + '</div>') + '</div>';
+      }).join('') : '<div class="card muted">' + (TECH.reqNote ? TECH.reqNote : 'لا توجد طلبات حاليًا') + '</div>') + '</div>';
     }
 
     var previewHtml = '';
