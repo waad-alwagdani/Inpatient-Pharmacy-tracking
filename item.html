@@ -104,7 +104,6 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .fbadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;background:var(--navy);color:#fff;font-size:12px;font-weight:600}
   .fbadge svg{color:rgba(255,255,255,.8)}
   .sbadge{padding:4px 10px;border-radius:8px;background:#f2f1ed;border:1px solid #e7e5e0;color:var(--navy);font-weight:700;font-size:12px}
-  .staffbtn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin-top:16px;padding:12px;border:1px dashed var(--cbord,#d8d6d0);border-radius:12px;background:transparent;color:var(--t3,#6b6a66);font:inherit;font-size:13px;cursor:pointer}.staffbtn small{font-size:11px;direction:ltr}
   .avst{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid;white-space:nowrap}.avst.av{color:#2f6b3a;background:#eef6ef;border-color:#b9d8bf}.avst.na{color:#a3231b;background:#fbeceb;border-color:#eab3ae}
   .code{font-size:11px;color:var(--t3);background:#f7f6f3;border:1px solid rgba(231,229,224,.8);padding:2px 8px;border-radius:6px}
   .gname{direction:ltr;text-align:left;margin-bottom:6px}.gname small{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:2px}
@@ -126,7 +125,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .stk .hd{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid #f2f1ed;font-size:12px;font-weight:600;color:var(--t2)}
   .stbadge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#ecf6ef;color:#256b3c;border:1px solid #cfe6d6}
   .stbadge i{width:6px;height:6px;border-radius:50%;background:currentColor}
-  .stk.on{border-color:#fca5a5}.stk.on .stbadge{background:var(--cr-bg);color:var(--cr-t);border-color:var(--cr-b)}
+  .stk.on{border-color:#fca5a5}.stk.na .stbadge{background:var(--cr-bg);color:var(--cr-t);border-color:var(--cr-b)}.stk.on .stbadge{background:var(--cr-bg);color:var(--cr-t);border-color:var(--cr-b)}
   .oos{display:flex!important;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;margin:0!important;padding:4px 0!important;border:0!important;background:transparent!important;color:inherit!important}
   .oos input{position:absolute;opacity:0;width:1px;height:1px}
   .oos .q b{display:block;font-size:15px;color:var(--t1)}.oos .q small{display:block;font-size:12px;color:var(--t2);direction:ltr;text-align:right;margin-top:2px}
@@ -135,7 +134,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   .oos.on .sw{background:var(--cr-t)}.oos.on .sw::after{transform:translateX(-22px)}
   .oos input:focus-visible+.sw{outline:2px solid rgba(28,28,28,.35);outline-offset:2px}
   .drawer{max-height:0;overflow:hidden;opacity:0;transition:max-height .28s ease-out,opacity .2s}
-  .drawer.open{max-height:160px;opacity:1}
+  .drawer.open{max-height:260px;opacity:1}
   .drawer .pad{padding:12px 3px 4px;margin-top:12px;border-top:1px solid #fee2e2}
   .drawer label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--cr-t);margin-bottom:6px}
   .drawer input{font-size:13px!important;padding:10px 12px!important;background:rgba(254,242,242,.5)!important;border:1px solid #fecaca!important;border-radius:12px!important}
@@ -226,7 +225,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
 <body>
 <div class="wrap">
   <header class="pt-top"><div style="display:flex;gap:12px;align-items:center"><div class="em"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fdfdfb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5 19 12a4.95 4.95 0 1 0-7-7l-8.5 8.5a4.95 4.95 0 0 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div>
-    <div class="t"><b>Pharmacy Tracker</b><small>Clinical Inventory System</small></div></div>
+    <div class="t"><b>Pharmacy Tracker</b></div></div>
     <div class="pt-live"><i></i><span>متصل</span><span style="opacity:.5">•</span><span>Online</span></div></header>
   <div class="brand">Pharmacy Tracker</div>
   <div id="app"><div class="loading">جاري التحميل…</div></div>
@@ -293,19 +292,16 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     var drugPart = drug ? drugCard(drug) :
       '<div class="card" style="margin-bottom:16px"><div class="field" style="margin:0"><label class="l">'+B('الصنف')+'</label>'+
       '<input type="text" id="drugQ" placeholder="'+P('اسم الصنف')+'" autocomplete="off"><div class="sugg" id="drugS" hidden></div></div></div>';
-    var oosBox='<div class="ccard stk" id="stk"><div class="hd"><span>حالة المخزون • Stock Status</span><span class="stbadge" id="stB"><i></i><span>متوفر • In Stock</span></span></div>'+
+    var oosBox='<div class="ccard stk'+(drug&&drug.avail===false?' na':'')+'" id="stk"><div class="hd"><span>حالة المخزون • Stock Status</span><span class="stbadge" id="stB"><i></i><span>'+(drug&&drug.avail===false?'غير متوفر • Out of Stock':'متوفر • In Stock')+'</span></span></div>'+
       '<label class="oos" id="oosL"><span class="q"><b>هل الصنف غير متوفر؟</b><small>Item out of stock?</small></span><input type="checkbox" id="oos"><span class="sw"></span></label>'+
       '<div class="drawer" id="oosD"><div><div class="pad"><label for="oosN"><span>ملاحظة (اختياري)</span><span>Note (optional)</span></label>'+
-      '<input type="text" id="oosN" maxlength="200" placeholder="'+P('اكتب ملاحظة قصيرة…')+'"></div></div></div></div>';
+      '<input type="text" id="oosN" maxlength="200" placeholder="'+P('اكتب ملاحظة قصيرة…')+'">'+
+      '<label for="oosW" style="margin-top:10px"><span>الاسم الكامل (إلزامي)</span><span>Full name (required)</span></label>'+
+      '<input type="text" id="oosW" maxlength="80" autocomplete="name" dir="auto" value="'+esc(SIGNED?SIGNED.displayName:(emp?emp.name:''))+'"></div></div></div></div>';
     var eduBox= drug ? '<div class="edu"><div class="eh"><div class="t"><span class="ic">'+ICO.book+'</span><span><b>معلومة تثقيفية</b><small>Educational Info</small></span></div>'+
       (drug.edu?'<div class="lsw"><button type="button" id="eduEn" class="on">EN</button><button type="button" id="eduAr" aria-pressed="false">AR</button></div>':'')+'</div>'+
       '<div class="box"><p id="eduT" dir="ltr" style="text-align:left;margin:0">'+(drug.edu?esc(drug.edu):'—')+'</p></div>'+
       '<div class="disc">'+ICO.info+B('للتثقيف فقط، لا يغني عن المرجع المعتمد')+'</div></div>' : '';
-    // visitors (not pharmacy staff) see the item card and the educational info only
-    if(drug && !SIGNED && !emp && store('udt_staff')!=='1'){
-      app.innerHTML = drugPart + '<div style="margin-top:16px">' + eduBox + '</div><button class="staffbtn" id="staffGo" type="button"><span>تسجيل حركة — لمنسوبي الصيدلية فقط</span><small>Pharmacy staff only</small></button>';
-      bindEdu(); document.getElementById('staffGo').onclick=function(){store('udt_staff','1');render();}; return;
-    }
     var tail = '</div>' + eduBox + oosBox + '<button class="submit" id="go" type="button">'+SEND+'</button><div class="msg" id="msg"></div><div>';
     if(drug && drug.group==='other'){
       app.innerHTML = drugPart + '<div style="display:contents">' + tail + '</div>';
@@ -370,10 +366,13 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     var c=document.getElementById('oos'); c.checked=on;
     document.getElementById('oosL').classList.toggle('on',on); document.getElementById('stk').classList.toggle('on',on);
     document.getElementById('oosD').classList.toggle('open',on);
-    document.querySelector('#stB span').textContent= on?'غير متوفر • Out of Stock':'متوفر • In Stock';
+    document.querySelector('#stB span').textContent= (on||(drug&&drug.avail===false))?'غير متوفر • Out of Stock':'متوفر • In Stock';
     if(!on) document.getElementById('oosN').value='';
   }
-  function bindOos(){ var c=document.getElementById('oos'); c.onchange=function(){setOos(c.checked);}; }
+  function oosGate(){ var c=document.getElementById('oos'), w=document.getElementById('oosW'), g=document.getElementById('go'); if(!c||!w||!g) return;
+    g.disabled = c.checked && !w.value.trim(); }
+  function bindOos(){ var c=document.getElementById('oos'); c.onchange=function(){setOos(c.checked);oosGate();};
+    var w=document.getElementById('oosW'); if(w) w.oninput=oosGate; }
   function markChips(){
     var v=(document.getElementById('deptQ')||{}).value||'';
     document.querySelectorAll('#chips button').forEach(function(b){b.classList.toggle('on',b.dataset.d===v);});
@@ -417,12 +416,14 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     var btn=document.getElementById('go');
     function done(text){btn.disabled=false;btn.innerHTML=SEND;msg(text,true);}
     function fail(e){btn.disabled=false;btn.innerHTML=SEND;msg(PAIR(['تعذّر الإرسال: ',(e&&e.message?e.message:'يُرجى المحاولة مرة أخرى')]),false);}
-    if(drug.group==='other'){
+    var qv=document.getElementById('qty'), qn=qv?parseInt(qv.value,10):0, wn=(document.getElementById('oosW')||{}).value||'';
+    if(oos && !wn.trim()) return msg('الاسم مطلوب',false);
+    if(drug.group==='other' || (oos && !(qn>0))){
       if(!oos) return msg('يلزم تحديد «هل الصنف غير متوفر؟» لإرسال البلاغ',false);
       btn.disabled=true; btn.innerHTML=B('جاري الإرسال…');
-      google.script.run.withSuccessHandler(function(r){done(r.duplicate?{ar:r.msg,en:'An open report already exists for this item — under review'}:PAIR(['تم الإبلاغ: ',r.drug,' غير متوفر']));
-        setOos(false);})
-        .withFailureHandler(fail).submitOOS({drugNo:drug.no,empName:emp?emp.name:'',dept:dept||'',note:document.getElementById('oosN').value.trim()});
+      google.script.run.withSuccessHandler(function(r){done(PAIR(['تم الإبلاغ: ',r.drug,' غير متوفر']));
+        setOos(false);oosGate();})
+        .withFailureHandler(fail).submitOOS({drugNo:drug.no,empName:wn.trim(),dept:dept||'',note:document.getElementById('oosN').value.trim()});
       return;
     }
     var qty=parseInt(document.getElementById('qty').value,10);
