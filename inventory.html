@@ -1076,6 +1076,22 @@ var OosUI = (function () {
 
   /* ---- Formulary: search, availability (available / limited / not available), nearest expiries, add a new item ---- */
   var F=null,FQ='',FS='';
+  var FORMS_ = [
+    ['Oral solids', [['Tab.','Tablet'],['Cap.','Capsule'],['Cap. ER','Capsule, extended-release'],['Tab. ER','Tablet, extended-release'],
+      ['Tab. EC','Tablet, enteric-coated / delayed-release'],['ODT','Orally disintegrating tablet'],['SL Tab.','Sublingual tablet'],
+      ['Chew. Tab.','Chewable tablet'],['Tab. Eff.','Effervescent tablet'],['Loz.','Lozenge / troche']]],
+    ['Oral liquids', [['Sol.','Oral solution'],['Susp.','Oral suspension'],['Syr.','Syrup'],['Elix.','Elixir'],['Emuls.','Emulsion'],
+      ['Gran.','Granules'],['Powd.','Powder, oral'],['Sach.','Sachet']]],
+    ['Injectables', [['Inj.','Injection'],['Amp.','Ampoule'],['Vial','Vial'],['P.F.S.','Prefilled syringe'],['Inf.','Infusion bag / solution']]],
+    ['Topical', [['Oint.','Ointment'],['Cr.','Cream'],['Gel','Gel'],['Lot.','Lotion'],['Patch','Transdermal patch'],['Foam','Foam']]],
+    ['Rectal / vaginal', [['Supp.','Suppository'],['Pess.','Pessary'],['En.','Enema']]],
+    ['Inhalation / nasal / eye-ear', [['MDI','Metered-dose inhaler'],['DPI','Dry-powder inhaler'],['Neb.','Nebule / nebulizer solution'],
+      ['N. Spray','Nasal spray'],['Gtt. Ophth.','Eye drops'],['Gtt. Aur.','Ear drops']]],
+    ['Other', [['Impl.','Implant'],['Irrig.','Irrigation solution'],['Other','Other']]]
+  ];
+  function formSel(attr,val){val=String(val||'');var has=false,h='<select '+attr+' style="width:100%;direction:ltr"><option value="">—</option>'+FORMS_.map(function(g){return '<optgroup label="'+esc(g[0])+'">'+g[1].map(function(o){if(o[0]===val)has=true;return '<option value="'+esc(o[0])+'"'+(o[0]===val?' selected':'')+'>'+esc(o[0]+' — '+o[1])+'</option>';}).join('')+'</optgroup>';}).join('');
+    if(val&&!has)h+='<option value="'+esc(val)+'" selected>'+esc(val)+'</option>';return h+'</select>';}
+
   function renderFrm(){
     if(!F){$('app').innerHTML='<div class="card"><div class="st">جاري التحميل…</div></div>';
       AuthGate.run('formGet').then(function(d){F=d;renderFrm();},function(e){$('app').innerHTML='<div class="msg err" style="display:block">'+esc(errText(e))+'</div>';});return;}
@@ -1110,7 +1126,7 @@ var OosUI = (function () {
       box.innerHTML='<div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px;display:grid;gap:6px;direction:rtl;text-align:right">'+
         '<label style="font-size:12px;font-weight:700">اسم الصنف *<input type="text" data-en style="direction:ltr;text-align:left;width:100%" value="'+esc(r.name)+'"></label>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label style="font-size:12px;font-weight:700">التركيز<input type="text" data-es style="direction:ltr;width:100%" value="'+esc(r.strength)+'"></label>'+
-        '<label style="font-size:12px;font-weight:700">الشكل الدوائي<input type="text" data-ef style="direction:ltr;width:100%" value="'+esc(r.form)+'"></label></div>'+
+        '<label style="font-size:12px;font-weight:700">الشكل الدوائي'+formSel('data-ef',r.form)+'</label></div>'+
         '<div style="font-size:12px;color:#71717a">الرقم التشغيلي #'+esc(no)+' ثابت، والليبل المطبوع يبقى صالحًا ويعرض البيانات الجديدة.</div>'+
         '<div style="display:grid;grid-template-columns:1fr auto;gap:6px"><button class="btn" type="button" data-esave>حفظ التعديل</button><button class="btn2" type="button" data-edel style="color:#b91c1c;border-color:#fecaca">حذف الصنف</button></div></div>';
       box.querySelector('[data-edel]').onclick=function(){var m=document.createElement('div');
@@ -1130,7 +1146,7 @@ var OosUI = (function () {
       p.innerHTML='<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;display:grid;gap:8px">'+
         '<b>إضافة صنف — يُضاف في نهاية القائمة برقم تشغيلي جديد</b>'+
         '<label style="font-size:12px;font-weight:700">اسم الصنف *<input type="text" id="fnm" style="direction:ltr;text-align:left;width:100%"></label>'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input type="text" id="fst" placeholder="التركيز (مثل 50 mg)" style="direction:ltr"><input type="text" id="ffm" placeholder="الشكل الدوائي (مثل Tablet)" style="direction:ltr"></div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label style="font-size:12px;font-weight:700">التركيز<input type="text" id="fst" style="direction:ltr;width:100%"></label><label style="font-size:12px;font-weight:700">الشكل الدوائي'+formSel('id="ffm"','')+'</label></div>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><label style="font-size:12px">تاريخ الانتهاء ١<input type="month" class="fex"></label><label style="font-size:12px">تاريخ الانتهاء ٢<input type="month" class="fex"></label><label style="font-size:12px">تاريخ الانتهاء ٣<input type="month" class="fex"></label></div>'+
         '<button class="btn" id="fgo" type="button">إضافة الصنف</button></div>';
       $('fgo').onclick=function(){var b=this,it={sheet:'Pharmacy Items',name:$('fnm').value.trim(),strength:$('fst').value.trim(),form:$('ffm').value.trim(),
