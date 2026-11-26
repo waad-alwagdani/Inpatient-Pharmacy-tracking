@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Pharmacy Tracker by WaadAlwagdani — ADC cabinets: withdraw, daily refill, count & zeroing, supervisor view -->
+<title>Pharmacy Tracker ADC by WaadAlwagdani</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+  body{margin:0;background:#f6f5f2;color:#0a0a0a;font-family:"IBM Plex Sans","IBM Plex Sans Arabic",Arial,sans-serif;font-size:15px}
+  .wrap{max-width:1180px;margin:0 auto;padding:12px 16px 40px}
+  .banner{background:#1c1c1c;color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+  .banner b{font-size:19px}.banner small{opacity:.8;font-size:12.5px}
+  .card{background:var(--pt-card,#fff);border:1px solid #e7e4de;border-radius:12px;padding:14px;margin-bottom:12px}
+  .k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+  .k div{border-radius:10px;padding:10px 12px;background:var(--pt-card,#fff);border:1px solid #e7e4de}
+  .k b{display:block;font-size:22px}.k span{font-size:12px;color:#5f5c57}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{background:#f1efeb;font-size:12px;text-align:center;padding:8px 6px;white-space:nowrap}
+  td{border-top:1px solid #ece9e3;padding:7px 6px;text-align:center}
+  td.l,th.l{text-align:left}
+  .tw{overflow:auto}
+  input,select,button{font:inherit}
+  input[type=text],input[type=number],input[type=search],select{height:40px;border:1px solid #dedad3;border-radius:9px;padding:0 10px;background:#fff;color:#0a0a0a}
+  .btn{height:40px;border:0;border-radius:10px;background:#1c1c1c;color:#fff;font-weight:600;padding:0 16px;cursor:pointer}
+  .btn.sec{background:#fff;color:#1c1c1c;border:1px solid #d3cfc8}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row label{font-size:12.5px;font-weight:600;display:flex;flex-direction:column;gap:4px}
+  .pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .STAT{background:#fde8e8;color:#b91c1c}.REORDER{background:#fef6dc;color:#a16207}.OK{background:#e6f4ea;color:#15803d}
+  .alert{border-radius:10px;padding:10px 12px;font-weight:700;margin:8px 0;display:flex;gap:8px;align-items:center}
+  .alert.HIGH{background:#b91c1c;color:#fff}.alert.CONTROLLED{background:#5b21b6;color:#fff}
+  .msg{margin-top:8px;font-weight:600;min-height:20px}.msg.ok{color:#15803d}.msg.err{color:#b91c1c}
+  .scan{font-size:18px!important;height:52px!important;width:100%;direction:ltr;text-align:left}
+  .sugg{border:1px solid #e7e4de;border-radius:10px;margin-top:6px;max-height:260px;overflow:auto;background:#fff}
+  .sugg div{padding:9px 12px;border-bottom:1px solid #f0ede8;cursor:pointer;direction:ltr;text-align:left;display:flex;justify-content:space-between;gap:8px}
+  .sugg div:hover{background:#f6f5f2}
+  .big{font-size:26px;font-weight:700}
+  .muted{color:#6b6862;font-size:12.5px}
+  footer{text-align:center;font-size:11px;color:#8a867f;margin-top:24px}
+  @media print{body *{visibility:hidden}#pick,#pick *{visibility:visible}#pick{position:absolute;inset:0}}
+</style>
+</head>
+<body>
+<!-- One language at a time across the whole system (Arabic only or English only) — Pharmacy Tracker by WaadAlwagdani -->
+<style>
+  html[data-pl="ar"] .bi .en, html[data-pl="ar"] .btnbi .en, html[data-pl="ar"] .cap > span:first-child:not(.ar),
+  html[data-pl="en"] .bi .ar, html[data-pl="en"] .btnbi .ar, html[data-pl="en"] .cap .ar, html[data-pl="en"] .ar-only { display: none !important; }
+  .bi, .btnbi { justify-content: flex-start !important; }
+  .ag-item em, .ag-tabi em { display: none !important; }
+  /* phones: every field label sits above its field, fields take the full width (arrow never covers the text) */
+  @media (max-width: 768px) {
+    .form-group, .field-row, .input-wrapper,
+    label:has(> select), label:has(> input[type="date"]), label:has(> input[type="month"]), label:has(> input[type="text"]), label:has(> input[type="number"]), label:has(> input:not([type])) {
+      display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 6px !important; width: 100% !important; flex: 1 1 100% !important; min-width: 0 !important; }
+    select, input[type="date"], input[type="month"], input[type="text"], input[type="number"], input[type="search"], input:not([type]) {
+      width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; font-size: 15px !important; text-overflow: ellipsis; }
+    select { padding: 10px 14px 10px 36px !important; }
+    html[data-pl="en"] select { padding: 10px 36px 10px 14px !important; }
+  }
+  button { white-space: nowrap; flex-shrink: 0; }
+</style>
+<script>
+(function () {
+  var L = 'ar'; try { L = localStorage.getItem('ipq_lang') === 'en' ? 'en' : 'ar'; } catch (e) {}
+  var root = document.documentElement; root.setAttribute('data-pl', L);
+  var AR = /[؀-ۿ]/, EN = /[A-Za-z]{2,}/, SEP = /\s+[·|]\s+/;
+  function kind(s) { return AR.test(s) ? 'ar' : (EN.test(s) ? 'en' : ''); }
+  /* "عربي · English" → keep only the active language (segments without letters, like numbers, stay) */
+  function pick(t) {
+    if (!SEP.test(t)) return t;
+    var parts = t.split(/(\s+[·|]\s+)/), segs = [], seps = [];
+    for (var i = 0; i < parts.length; i++) (i % 2 ? seps : segs).push(parts[i]);
+    var ks = segs.map(kind);
+    if (ks.indexOf('ar') === -1 || ks.indexOf('en') === -1) return t;      // not a bilingual label (e.g. "Amoxicillin 500 mg · Tab.")
+    var out = [];
+    segs.forEach(function (s, i) { if (ks[i] === L || ks[i] === '') out.push(s.trim()); });
+    return out.join(' · ').replace(/^[\s·|]+|[\s·|]+$/g, '');
+  }
+  function fix(n) {
+    if (n.nodeType === 3) { if (n.parentNode && /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode.nodeName)) return; var v = n.nodeValue, w = pick(v); if (w !== v) n.nodeValue = (/^\s/.test(v) ? ' ' : '') + w + (/\s$/.test(v) ? ' ' : ''); return; }
+    if (n.nodeType !== 1 || /^(SCRIPT|STYLE)$/.test(n.nodeName)) return;
+    ['placeholder', 'title', 'aria-label'].forEach(function (a) { var v = n.getAttribute && n.getAttribute(a); if (v) { var w = pick(v); if (w !== v) n.setAttribute(a, w); } });
+    if (n.nodeName === 'INPUT' && /^(button|submit)$/i.test(n.type) && n.value) n.value = pick(n.value);
+    for (var c = n.firstChild; c; c = c.nextSibling) fix(c);
+  }
+  function run() { fix(document.body); if (document.title) document.title = pick(document.title); }
+  var busy = false;
+  new MutationObserver(function (ms) { if (busy) return; busy = true; try { ms.forEach(function (m) { if (m.type === 'characterData') fix(m.target); else m.addedNodes.forEach(fix); }); } finally { busy = false; } })
+    .observe(root, { childList: true, subtree: true, characterData: true });
+  if (document.readyState !== 'loading') run(); else document.addEventListener('DOMContentLoaded', run);
+  /* public pages (no sidebar) get a small language switch */
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (document.getElementById('ag-lang2') || document.getElementById('ag-lang') || document.getElementById('pl-sw')) return;
+      var b = document.createElement('button'); b.id = 'pl-sw'; b.type = 'button'; b.textContent = L === 'en' ? 'ع' : 'EN';
+      b.setAttribute('aria-label', L === 'en' ? 'العربية' : 'English');
+      b.style.cssText = 'position:fixed;top:12px;left:12px;z-index:50;width:40px;height:40px;border-radius:12px;border:1px solid #e4e2dd;background:#fff;color:#1c1c1c;font:700 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 12px -6px rgba(0,0,0,.25)';
+      b.onclick = function () { try { localStorage.setItem('ipq_lang', L === 'en' ? 'ar' : 'en'); } catch (e) {} location.reload(); };
+      document.body.appendChild(b);
+    }, 300);
+  });
+  window.PTLang = { lang: L, pick: pick };
+})();
+</script>
+<?!= include_('AuthGate') ?>
+<?!= include_('OrgUI') ?>
+
+<div class="wrap">
+  <div class="banner"><div><b>الكابينات الآلية · ADC Cabinets</b><br><small>NUPCO ABC-VEN · 160 items · ADC-01 → ADC-04</small></div><small id="per"></small></div>
+  <div id="main"><div class="card muted">Loading · جاري التحميل…</div></div>
+  <footer>Pharmacy Tracker by <a href="https://www.linkedin.com/in/waad-alwagdani" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">WaadAlwagdani</a></footer>
+</div>
+<div id="pick" hidden></div>
+<script>
+  /* ADC cabinets — Pharmacy Tracker by WaadAlwagdani */
+  var D = null, E = function (s) { return OrgUI.esc(s); };
+  var ST = { STAT: '🔴 تدخل عاجل · STAT', REORDER: '🟡 تعبئة يومية · Reorder', OK: '🟢 رصيد آمن · OK' };
+  var ALERT = { HIGH: '⚠ دواء عالي الخطورة · HIGH-ALERT MEDICATION', CONTROLLED: '🔒 دواء خاضع للرقابة · CONTROLLED DRUG — witness & count required' };
+  function load() { return AuthGate.run('adcGet').then(function (d) { D = d; document.getElementById('per').textContent = 'الفترة المفتوحة · Open period: ' + d.period; return d; }); }
+  function find(q) { q = String(q || '').trim().toUpperCase(); return D.items.filter(function (x) { return x.code.toUpperCase() === q || x.nupco === q; })[0]; }
+  function sar(n) { return (Math.round(n * 100) / 100).toLocaleString('en-US'); }
+  // money is optional: an item without a unit cost shows a dash, and totals appear only when costs exist
+  function money(q, cost) { return cost ? sar(q * cost) : '—'; }
+
+  /* ---------- 1) Withdraw (nursing) — barcode wedge: scan + Enter opens the drug card ---------- */
+  function withdraw(el) {
+    el.innerHTML = '<div class="card"><label class="muted" style="display:block;margin-bottom:6px">امسح الباركود أو اكتب اسم الدواء · Scan the barcode or type the drug name</label>' +
+      '<input type="search" class="scan" id="w-q" autocomplete="off" placeholder="MED-001 / NUPCO code / name"><div class="sugg" id="w-s" hidden></div></div><div id="w-card"></div>';
+    var q = el.querySelector('#w-q'), sg = el.querySelector('#w-s');
+    q.focus();
+    q.onkeydown = function (e) {
+      if (e.key !== 'Enter') return; e.preventDefault();
+      var it = find(q.value); if (it) { sg.hidden = true; card(it, true); } else if (q.value.trim()) { msgCard('لا يوجد صنف بهذا الرمز · No item with this code', true); }
+    };
+    q.oninput = function () {
+      var v = q.value.trim().toLowerCase(); if (v.length < 2) { sg.hidden = true; return; }
+      var r = D.items.filter(function (x) { return (x.name + ' ' + x.code + ' ' + x.nupco).toLowerCase().indexOf(v) > -1; }).slice(0, 12);
+      sg.innerHTML = r.map(function (x) { return '<div data-c="' + E(x.code) + '"><span>' + E(x.name) + '</span><small class="muted">' + E(x.code) + ' · SOH ' + x.soh + '</small></div>'; }).join('');
+      sg.hidden = !r.length;
+      sg.querySelectorAll('div').forEach(function (d) { d.onclick = function () { sg.hidden = true; card(find(d.dataset.c), false); }; });
+    };
+    function msgCard(t, bad) { el.querySelector('#w-card').innerHTML = '<div class="card msg ' + (bad ? 'err' : 'ok') + '">' + E(t) + '</div>'; }
+    function card(it, scanned) {
+      var cl = D.wards.filter(function (w) { return w.adc === it.adc; });
+      var h = '<div class="card">' + (it.alert ? '<div class="alert ' + it.alert + '">' + ALERT[it.alert] + '</div>' : '') +
+        '<div class="row" style="justify-content:space-between;align-items:flex-start"><div><div class="big" dir="ltr">' + E(it.name) + '</div>' +
+        '<div class="muted" dir="ltr">' + E(it.code) + ' · NUPCO ' + E(it.nupco) + ' · ' + E(it.abc) + ' · ' + E(it.adc) + '</div></div>' +
+        '<div style="text-align:center"><div class="muted">الرصيد في الدرج · Live stock</div><div class="big">' + it.soh + '</div><span class="pill ' + it.status + '">' + ST[it.status] + '</span></div></div>' +
+        '<div class="row" style="margin-top:12px"><label>القسم الوجهة · Destination ward<select id="w-ward">' + cl.map(function (w) { return '<option' + (w.ward === it.ward ? ' selected' : '') + '>' + E(w.ward) + '</option>'; }).join('') + '</select></label>' +
+        '<label>الكمية · Qty<input type="number" id="w-qty" min="1" max="' + it.soh + '" value="1" style="width:110px"></label>' +
+        (scanned ? '<label>نوع السحب · Type<input type="text" value="ممسوح بالباركود · Scanned (BCMA)" disabled style="width:240px"></label>'
+          : '<label>سبب السحب الطارئ (مطلوب) · STAT override reason<select id="w-reason"><option value="">—</option>' + D.reasons.map(function (r) { return '<option>' + E(r) + '</option>'; }).join('') + '</select></label>') +
+        '<button class="btn" id="w-go">' + (scanned ? 'تأكيد السحب · Confirm' : 'تأكيد سحب طارئ · Confirm override') + '</button></div>' +
+        (scanned ? '' : '<div class="muted" style="margin-top:6px">لم يُمسح الباركود، فيُسجَّل السحب كسحب طارئ غير ممسوح ويظهر في تقارير الامتثال. · Not scanned: recorded as an override.</div>') +
+        '<div class="msg" id="w-m"></div></div>';
+      el.querySelector('#w-card').innerHTML = h;
+      var qi = el.querySelector('#w-qty'), go = el.querySelector('#w-go'), m = el.querySelector('#w-m');
+      var chk = function () { var n = Number(qi.value); go.disabled = !(n >= 1 && n === Math.floor(n) && n <= it.soh); m.className = 'msg' + (n > it.soh ? ' err' : ''); m.textContent = n > it.soh ? 'الكمية أكبر من الرصيد المتاح في الدرج (' + it.soh + ') · Exceeds stock in the drawer' : ''; };
+      qi.oninput = chk; chk(); qi.focus(); qi.select();
+      qi.onkeydown = function (e) { if (e.key === 'Enter' && !go.disabled) go.click(); };
+      go.onclick = function () {
+        var r = scanned ? '' : el.querySelector('#w-reason').value;
+        if (!scanned && !r) { m.className = 'msg err'; m.textContent = 'يُرجى اختيار سبب السحب الطارئ · Choose the override reason'; return; }
+        go.disabled = true; m.className = 'msg'; m.textContent = '…';
+        AuthGate.run('adcWithdraw', it.code, Number(qi.value), el.querySelector('#w-ward').value, scanned, r).then(function (res) {
+          it.soh = res.soh; msgCard('✓ ' + res.txId + ' — ' + it.name + ' · الرصيد الآن ' + res.soh, false); q.value = ''; q.focus();
+          load();
+        }, function (e) { go.disabled = false; m.className = 'msg err'; var c = String(e && e.message || e);
+          m.textContent = /ADC_INSUFFICIENT/.test(c) ? 'الرصيد غير كافٍ — المتاح ' + c.split(':')[1] + ' · Not enough stock' : OrgUI.err(e); });
+      };
+    }
+  }
+
+  /* ---------- 2) Daily refill — priority list, confirm refill to Par Max, pick list per cabinet ---------- */
+  function refill(el) {
+    /* daily refill: every item of the cabinet is listed; the employee enters the quantity actually put in the drawer.
+       Items below Par Min come first with the suggested quantity (up to Par Max) already filled in. */
+    var CL = 'all', Q = '', ONLY = false, qty = {}, HIT = '';
+    function draw() {
+      var rows = D.items.filter(function (x) { return CL === 'all' || x.adc === CL; }), n = { STAT: 0, REORDER: 0, OK: 0 };
+      rows.forEach(function (x) { n[x.status]++; if (qty[x.code] === undefined && x.status !== 'OK' && x.refill > 0) qty[x.code] = x.refill; });
+      var due = rows.filter(function (x) { return x.status !== 'OK'; });
+      var list = rows.filter(function (x) { return (!ONLY || x.status !== 'OK') && (!Q || (x.name + ' ' + x.code + ' ' + (x.nupco || '')).toLowerCase().indexOf(Q) > -1); })
+        .sort(function (a, b) { var r = { STAT: 0, REORDER: 1, OK: 2 }; return (b.code === HIT) - (a.code === HIT) || r[a.status] - r[b.status] || a.fill - b.fill; });
+      var picked = rows.filter(function (x) { return qty[x.code] > 0; }), units = picked.reduce(function (s, x) { return s + qty[x.code]; }, 0);
+      el.innerHTML = '<div class="k"><div><b style="color:#b91c1c">' + n.STAT + '</b><span>🔴 تدخل عاجل · STAT</span></div><div><b style="color:#a16207">' + n.REORDER + '</b><span>🟡 تعبئة يومية · Reorder</span></div>' +
+        '<div><b style="color:#15803d">' + n.OK + '</b><span>🟢 رصيد آمن · OK</span></div><div><b>' + units + '</b><span>وحدات التعبئة الحالية · Units to add</span></div></div>' +
+        '<div class="card"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div class="row" style="gap:10px;flex-wrap:wrap"><label>الكابينة · Cabinet<select id="r-cl"><option value="all">جميع الكابينات · All</option>' + D.clusters.map(function (c) { return '<option' + (c === CL ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label>' +
+        '<input type="search" id="r-q" placeholder="بحث أو مسح · Search / scan" value="' + E(Q) + '" style="min-width:220px">' +
+        '<label style="display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" id="r-only"' + (ONLY ? ' checked' : '') + '> الأصناف التي تحتاج تعبئة فقط</label></div>' +
+        '<div class="row"><button class="btn sec" id="r-pick"' + (due.length ? '' : ' disabled') + '>قائمة التجهيز · Pick list</button><button class="btn" id="r-go"' + (picked.length ? '' : ' disabled') + '>تأكيد التعبئة · Confirm refill' + (picked.length ? ' (' + picked.length + ')' : '') + '</button></div></div>' +
+        '<div class="tw" style="margin-top:10px"><table><tr><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>Par Min</th><th>Par Max</th><th>الرصيد · SOH</th><th>الحالة · Status</th><th>الكمية المُعبّأة · Qty added</th></tr>' +
+        (list.length ? list.map(function (x) { return '<tr' + (x.code === HIT ? ' style="background:#fef9c3;outline:2px solid #ca8a04"' : '') + '><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span></td><td class="muted">' + E(x.adc.slice(0, 6)) + '</td><td>' + x.parMin + '</td><td>' + x.parMax + '</td><td><b>' + x.soh + '</b></td>' +
+          '<td><span class="pill ' + x.status + '">' + ST[x.status] + '</span></td><td><input type="number" min="0" step="1" inputmode="numeric" data-q="' + E(x.code) + '" value="' + (qty[x.code] > 0 ? qty[x.code] : '') + '" placeholder="0" style="width:100px"></td></tr>'; }).join('')
+          : '<tr><td colspan="7" class="muted" style="padding:16px">لا توجد أصناف مطابقة · No matching items</td></tr>') + '</table></div><div class="msg" id="r-m"></div></div>';
+      el.querySelector('#r-cl').onchange = function () { CL = this.value; draw(); };
+      el.querySelector('#r-only').onchange = function () { ONLY = this.checked; draw(); };
+      var rq = el.querySelector('#r-q'); rq.oninput = function () { var p = rq.selectionStart; Q = rq.value.trim().toLowerCase(); draw(); var n2 = el.querySelector('#r-q'); n2.focus(); try { n2.setSelectionRange(p, p); } catch (e) {} };
+      /* scan: the scanner types the code then Enter → the cursor jumps to that item's quantity; Enter there → back to the scan box */
+      rq.onkeydown = function (ev) {
+        if (ev.key !== 'Enter') return; ev.preventDefault();
+        var v = rq.value.trim().toLowerCase(); if (!v) return;
+        var hit = rows.filter(function (x) { return x.code.toLowerCase() === v || String(x.nupco || '').toLowerCase() === v; })[0];
+        if (!hit) { var f = rows.filter(function (x) { return (x.name + ' ' + x.code + ' ' + (x.nupco || '')).toLowerCase().indexOf(v) > -1; }); if (f.length === 1) hit = f[0]; }
+        if (!hit) { var mm = el.querySelector('#r-m'); mm.className = 'msg err'; mm.textContent = 'الرمز «' + rq.value.trim() + '» غير موجود في أصناف الكابينة'; rq.select(); return; }
+        HIT = hit.code; Q = ''; draw();
+        var qi = el.querySelector('input[data-q="' + hit.code.replace(/"/g, '\\"') + '"]'); if (qi) { qi.focus(); qi.select(); qi.scrollIntoView({ block: 'center' }); }
+      };
+      el.querySelectorAll('input[data-q]').forEach(function (i) {
+        var save = function () { qty[i.dataset.q] = Math.max(0, Math.floor(Number(i.value) || 0)); };
+        i.onchange = function () { save(); draw(); };
+        i.onkeydown = function (ev) { if (ev.key !== 'Enter') return; ev.preventDefault(); save(); i.onchange = null; draw(); var s2 = el.querySelector('#r-q'); s2.focus(); };
+      });
+      el.querySelector('#r-pick').onclick = function () { pickList(due.map(function (x) { return Object.assign({}, x, { refill: qty[x.code] > 0 ? qty[x.code] : x.refill }); })); };
+      var go = el.querySelector('#r-go');
+      go.onclick = function () {
+        var lines = rows.filter(function (x) { return qty[x.code] > 0; }).map(function (x) { return { code: x.code, qty: qty[x.code] }; }), m = el.querySelector('#r-m');
+        go.disabled = true; m.textContent = '…';
+        AuthGate.run('adcRefill', lines).then(function (r) { qty = {}; return load().then(function () { draw(); var mm = el.querySelector('#r-m'); mm.className = 'msg ok'; mm.textContent = '✓ سُجّلت تعبئة ' + r.lines + ' صنف (' + r.units + ' وحدة)'; }); },
+          function (e) { go.disabled = false; m.className = 'msg err'; m.textContent = OrgUI.err(e); });
+      };
+    }
+    draw();
+  }
+  function pickList(due) {
+    var by = {}; due.forEach(function (x) { (by[x.adc] = by[x.adc] || []).push(x); });
+    var p = document.getElementById('pick');
+    p.innerHTML = '<div style="padding:24px;font-family:IBM Plex Sans,Arial;color:#000"><h2 style="margin:0">Pick List · قائمة التجهيز من المستودع الرئيسي</h2><div style="font-size:12px;margin-bottom:12px">' + new Date().toLocaleString('en-GB') + ' · Pharmacy Tracker by WaadAlwagdani</div>' +
+      Object.keys(by).sort().map(function (k) { return '<h3 style="margin:14px 0 6px">' + E(k) + '</h3><table style="width:100%;border-collapse:collapse;font-size:12px" border="1" cellpadding="5"><tr><th>Code</th><th>NUPCO</th><th>Drug</th><th>SOH</th><th>Par Max</th><th>Qty to pick</th><th>✓</th></tr>' +
+        by[k].map(function (x) { return '<tr><td>' + E(x.code) + '</td><td>' + E(x.nupco) + '</td><td>' + E(x.name) + (x.alert ? ' [' + x.alert + ']' : '') + '</td><td>' + x.soh + '</td><td>' + x.parMax + '</td><td><b>' + x.refill + '</b></td><td></td></tr>'; }).join('') + '</table>'; }).join('') + '</div>';
+    p.hidden = false; window.print(); setTimeout(function () { p.hidden = true; }, 500);
+  }
+
+  /* ---------- 3) Count & monthly zeroing ---------- */
+  /* Monthly count: item · physical quantity (any number) · expiry. Approving closes the month and the physical
+     count becomes the opening balance of the next month; refills during the month are added on top of it. */
+  function count(el) {
+    var dr = D.draft || {}, Q = '';
+    function draw() {
+      var done = D.items.filter(function (x) { return dr[x.code] && dr[x.code].physical !== ''; }).length;
+      var rows = D.items.filter(function (x) { return !Q || (x.name + ' ' + x.code).toLowerCase().indexOf(Q) > -1; });
+      el.innerHTML = '<div class="k"><div><b>' + done + ' / ' + D.items.length + '</b><span>تم عدّها · Counted</span></div><div><b>' + E(D.period) + '</b><span>الشهر · Month</span></div></div>' +
+        '<div class="card"><div class="row" style="justify-content:space-between"><input type="search" id="c-q" placeholder="بحث أو مسح · Search / scan" value="' + E(Q) + '" style="min-width:260px">' +
+        '<div class="row"><button class="btn sec" id="c-save">حفظ المسودة · Save draft</button><button class="btn" id="c-ok"' + (done === D.items.length ? '' : ' disabled') + '>اعتماد الجرد وبدء الشهر الجديد · Approve & start new month</button></div></div>' +
+        '<div class="muted" style="margin:6px 0 0">يبدأ الشهر الجديد بالعدد الفعلي فقط، وتُضاف عليه التعبئات خلال الشهر. · The new month starts from the physical count only.</div>' +
+        '<div class="tw" style="margin-top:10px"><table><tr><th class="l">الدواء · Drug</th><th>الكمية المتوفرة (العدد الفعلي) · Physical qty</th><th>تاريخ الانتهاء · Expiry</th></tr>' +
+        rows.map(function (x) { var d = dr[x.code];
+          return '<tr><td class="l" dir="ltr"><b>' + E(x.name) + '</b> <span class="muted">' + E(x.code) + '</span></td>' +
+            '<td><input type="number" min="0" step="1" inputmode="numeric" data-p="' + E(x.code) + '" value="' + (d ? d.physical : '') + '" style="width:120px"></td>' +
+            '<td><input type="month" data-x="' + E(x.code) + '" value="' + E(d && d.expiry || '') + '" style="width:160px"></td></tr>'; }).join('') +
+        '</table></div><div class="msg" id="c-m"></div></div>';
+      var cq = el.querySelector('#c-q');
+      cq.onkeydown = function (e) { if (e.key === 'Enter') { var it = find(cq.value); if (it) { Q = ''; draw(); var i = el.querySelector('input[data-p="' + it.code + '"]'); if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); } } } };
+      cq.oninput = function () { Q = cq.value.trim().toLowerCase(); var p = cq.selectionStart; draw(); var n = el.querySelector('#c-q'); n.focus(); try { n.setSelectionRange(p, p); } catch (e) {} };
+      el.querySelectorAll('input[data-p]').forEach(function (i) { i.onchange = function () { var c = i.dataset.p; if (i.value === '') delete dr[c]; else dr[c] = { physical: Math.max(0, Math.floor(Number(i.value) || 0)), expiry: (dr[c] && dr[c].expiry) || '' }; draw(); }; });
+      el.querySelectorAll('input[data-x]').forEach(function (i) { i.onchange = function () { var c = i.dataset.x; if (!dr[c]) dr[c] = { physical: '', expiry: '' }; dr[c].expiry = i.value; if (dr[c].physical === '') { /* expiry kept until a quantity is entered */ } }; });
+      function clean() { var o = {}; Object.keys(dr).forEach(function (c) { if (dr[c].physical !== '' && dr[c].physical !== undefined) o[c] = dr[c]; }); return o; }
+      el.querySelector('#c-save').onclick = function () { var m = el.querySelector('#c-m'); m.textContent = '…';
+        AuthGate.run('adcCountSave', clean()).then(function (r) { m.className = 'msg ok'; m.textContent = '✓ حُفظت المسودة (' + r.saved + ' صنف)'; }, function (e) { m.className = 'msg err'; m.textContent = OrgUI.err(e); }); };
+      el.querySelector('#c-ok').onclick = function () {
+        var m = el.querySelector('#c-m');
+        if (!confirmZero()) return;
+        m.textContent = '…';
+        AuthGate.run('adcCountSave', clean()).then(function () { return AuthGate.run('adcCountApprove'); }).then(function (r) {
+          return load().then(function () { dr = {}; draw(); var mm = el.querySelector('#c-m'); mm.className = 'msg ok';
+            mm.textContent = '✓ أُغلق شهر ' + r.closed + ' وحُفظ في صفحة ' + (r.sheet || r.closed) + '. الشهر المفتوح الآن ' + r.next + ' ويبدأ بالعدد الفعلي.'; }); },
+          function (e) { m.className = 'msg err'; var c = String(e && e.message || e);
+            m.textContent = /INCOMPLETE/.test(c) ? (D.scoped ? '✓ حُفظ عدّ كابيناتك — يُعتمد الجرد بعد اكتمال عدّ بقية الكابينات (' + c.split(':')[1] + ' صنف متبقٍ)' : 'لم يكتمل عدّ ' + c.split(':')[1] + ' صنف') : OrgUI.err(e); });
+      };
+    }
+    function confirmZero() { var b = el.querySelector('#c-ok'); if (b.dataset.sure) return true; b.dataset.sure = '1'; b.textContent = 'اضغط مرة أخرى للتأكيد · Click again to confirm'; return false; }
+    draw();
+  }
+
+  /* ---------- 4) Supervisor — executive view ---------- */
+  /* who is responsible for which cabinet — each employee then sees only their cabinet(s) */
+  function assignCard() {
+    if (!D.staff) return '';
+    return '<div class="card"><div class="row" style="justify-content:space-between"><b>إسناد الكابينات · Cabinet assignment</b><button class="btn" id="as-save">حفظ التعيين · Save</button></div>' +
+      '<div class="muted" style="margin:4px 0 10px">يقتصر عرض كل موظف على الكابينة المُسندة إليه (السحب والتعبئة والجرد)، ويطّلع المشرف على جميع الكابينات.</div>' +
+      (D.staff.length ? '<div class="tw"><table><tr><th class="l">الكابينة · Cabinet</th><th class="l">الموظفون المسؤولون · Responsible staff</th></tr>' +
+        D.clusters.map(function (c) { var on = (D.assign && D.assign[c]) || [];
+          return '<tr><td class="l"><b>' + E(c) + '</b></td><td class="l"><div class="row" style="gap:6px">' + D.staff.map(function (u) {
+            return '<label style="flex-direction:row;align-items:center;gap:6px;border:1px solid #e7e4de;border-radius:999px;padding:4px 10px;font-weight:600"><input type="checkbox" data-as="' + E(c) + '" value="' + E(u.id) + '"' + (on.indexOf(u.id) > -1 ? ' checked' : '') + '>' + E(u.name) + '</label>';
+          }).join('') + '</div></td></tr>'; }).join('') + '</table></div>'
+        : '<div class="muted">لا يوجد موظفون بصلاحية الكابينات حاليًا — تُضاف الصلاحيات من لوحة المالك · No staff with ADC stations yet</div>') +
+      '<div class="msg" id="as-m"></div></div>';
+  }
+  function bindAssign(el) {
+    var b = el.querySelector('#as-save'); if (!b) return;
+    b.onclick = function () {
+      var map = {}; D.clusters.forEach(function (c) { map[c] = []; });
+      el.querySelectorAll('input[data-as]:checked').forEach(function (i) { map[i.dataset.as].push(i.value); });
+      var m = el.querySelector('#as-m'); b.disabled = true;
+      AuthGate.run('adcAssignSave', map).then(function (r) { D.assign = r.assign; b.disabled = false; m.className = 'msg ok'; m.textContent = '✓ تم حفظ التعيين · Saved'; },
+        function (e) { b.disabled = false; m.className = 'msg err'; m.textContent = OrgUI.err(e); });
+    };
+  }
+  /* monthly count — item by item, for the month or range of months the supervisor picks */
+  function countDetail(host) {
+    var F = '', T = '';
+    function go() {
+      host.innerHTML = '<div class="card muted">…</div>';
+      AuthGate.run('adcCountDetail', F, T).then(function (d) {
+        F = d.from; T = d.to;
+        var opt = function (v) { return d.months.map(function (m) { return '<option' + (m === v ? ' selected' : '') + '>' + E(m) + '</option>'; }).join(''); };
+        var net = 0, zero = 0; d.rows.forEach(function (r) { net += r.variance; if (!r.variance) zero++; });
+        var prog = d.open.progress.map(function (p) { return '<div><b dir="ltr" style="text-align:right">' + p.counted + ' / ' + p.total + '</b><span>' + E(p.adc.slice(0, 6)) + ' · جرد فترة ' + E(d.open.period) + '</span></div>'; }).join('');
+        host.innerHTML = '<div class="card"><div class="row" style="justify-content:space-between"><b>تفاصيل الجرد الشهري · Monthly count details</b>' +
+          (d.months.length ? '<div class="row"><label>من · From<select id="cd-f">' + opt(F) + '</select></label><label>إلى · To<select id="cd-t">' + opt(T) + '</select></label></div>' : '') + '</div>' +
+          '<div class="muted" style="margin:8px 0">تقدم الجرد المفتوح حاليًا · Open count progress (' + E(d.open.period) + ')</div><div class="k">' + prog + '</div>' +
+          (d.rows.length ? '<div class="k"><div><b>' + d.rows.length + '</b><span>الأصناف المجرودة · Items</span></div><div><b>' + (d.rows.length ? Math.round(zero / d.rows.length * 1000) / 10 : 0) + '%</b><span>دقة الجرد · Accuracy</span></div><div><b style="color:' + (net < 0 ? '#b91c1c' : '#15803d') + '">' + net + '</b><span>صافي الفارق · Net variance</span></div></div>' +
+            '<div class="tw"><table><tr><th>الشهر · Month</th><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>الافتتاحي</th><th>الوارد</th><th>المنصرف</th><th>الدفتري · System</th><th>الفعلي · Physical</th><th>الفارق · Var.</th>' + (D.priced ? '<th>SAR</th>' : '') + '<th class="l">السبب الجذري · Root cause</th><th>القائم بالجرد · Counted by</th></tr>' +
+            d.rows.map(function (r) { return '<tr><td>' + E(r.month) + '</td><td class="l" dir="ltr"><b>' + E(r.name) + '</b> <span class="muted">' + E(r.code) + '</span></td><td class="muted">' + E(r.adc.slice(0, 6)) + '</td><td>' + r.opening + '</td><td>' + r.rec + '</td><td>' + r.out + '</td><td>' + r.system + '</td><td><b>' + r.physical + '</b></td>' +
+              '<td style="font-weight:700;color:' + (r.variance < 0 ? '#b91c1c' : r.variance > 0 ? '#a16207' : '#15803d') + '">' + r.variance + '</td>' + (D.priced ? '<td>' + (r.sar === '' ? '' : sar(r.sar)) + '</td>' : '') +
+              '<td class="l">' + E(r.cause) + '</td><td class="muted">' + E(r.by) + '</td></tr>'; }).join('') + '</table></div>'
+            : '<div class="muted" style="padding:10px 0">لا يوجد جرد معتمد للفترة المحددة · No approved count yet</div>') + '</div>';
+        var f = host.querySelector('#cd-f'), t = host.querySelector('#cd-t');
+        if (f) { f.onchange = function () { F = f.value; go(); }; t.onchange = function () { T = t.value; go(); }; }
+      }, function (e) { host.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; });
+    }
+    go();
+  }
+  function sup(el) {
+    var M = 'all', C = 'all';
+    function go() {
+      el.innerHTML = '<div class="card muted">…</div>';
+      AuthGate.run('adcSummary', M, C).then(function (s) {
+        var t = s.totals;
+        el.innerHTML = assignCard() + '<div id="cd"></div>' + '<div class="card"><div class="row" style="justify-content:space-between"><div class="row"><label>الفترة · Period<select id="s-m"><option value="all">جميع الأشهر · All</option>' + s.months.map(function (m) { return '<option' + (m === M ? ' selected' : '') + '>' + E(m) + '</option>'; }).join('') + '</select></label>' +
+          '<label>الكابينة · Cabinet<select id="s-c"><option value="all">جميع الكابينات · All</option>' + s.clusters.map(function (c) { return '<option' + (c === C ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label></div>' +
+          '<button class="btn" id="s-x">تصدير ملف الإكسل · Download master Excel</button></div><div class="msg" id="s-msg"></div></div>' +
+          '<div class="k"><div><b>' + t.rec + '</b><span>الكمية الواردة · Received</span></div><div><b>' + t.scan + '</b><span>المنصرف بالباركود · Scanned out</span></div><div><b style="color:#b91c1c">' + t.over + '</b><span>الصرف الاستثنائي · Overrides</span></div>' +
+          (s.priced ? '<div><b>' + sar(t.outSAR) + '</b><span>قيمة المنصرف (المسعّر) · Out SAR</span></div>' : '') + '<div><b style="color:' + (t.bcma >= 95 ? '#15803d' : '#b91c1c') + '">' + t.bcma + '%</b><span>معدل الامتثال للمسح · BCMA</span></div></div>' +
+          '<div class="card"><b>الاستهلاك حسب القسم · Consumption by ward</b><div class="tw"><table><tr><th class="l">القسم · Ward</th><th>الكابينة · ADC</th><th>الوارد · In</th><th>بالباركود · Scanned</th><th>استثنائي · Override</th>' + (s.priced ? '<th>SAR</th>' : '') + '<th>BCMA</th></tr>' +
+          s.wards.map(function (w) { return '<tr><td class="l"><b>' + E(w.ward) + '</b></td><td class="muted">' + E(w.adc.slice(0, 6)) + '</td><td>' + w.rec + '</td><td>' + w.scan + '</td><td style="color:' + (w.over ? '#b91c1c' : '') + '">' + w.over + '</td>' + (s.priced ? '<td>' + sar(w.outSAR) + '</td>' : '') + '<td>' + w.bcma + '%</td></tr>'; }).join('') + '</table></div></div>' +
+          '<div class="card"><b>المطابقة والجرد الشهري · Monthly reconciliation</b><div class="tw"><table><tr><th>الشهر · Month</th><th>الأصناف · Items</th><th>مطابق · Zero variance</th><th>دقة الجرد · Accuracy</th><th>صافي الفارق · Net</th>' + (s.priced ? '<th>SAR</th>' : '') + '</tr>' +
+          s.variance.map(function (v) { return '<tr><td>' + E(v.month) + '</td><td>' + v.items + '</td><td>' + v.zero + '</td><td>' + v.accuracy + '%</td><td style="color:' + (v.net < 0 ? '#b91c1c' : '') + '">' + v.net + '</td>' + (s.priced ? '<td>' + sar(v.sar) + '</td>' : '') + '</tr>'; }).join('') + '</table></div></div>';
+        el.querySelector('#s-m').onchange = function () { M = this.value; go(); };
+        el.querySelector('#s-c').onchange = function () { C = this.value; go(); };
+        el.querySelector('#s-x').onclick = exportExcel;
+        bindAssign(el);
+        countDetail(el.querySelector('#cd'));
+      }, function (e) { el.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; });
+    }
+    go();
+  }
+
+  /* ---------- Master Excel: rebuilt with live formulas (System Balance, Variance, New Opening, Fill %, Qty to Refill) ---------- */
+  var AR_M = { '01': 'يناير', '02': 'فبراير', '03': 'مارس', '04': 'أبريل', '05': 'مايو', '06': 'يونيو', '07': 'يوليو', '08': 'أغسطس', '09': 'سبتمبر', '10': 'أكتوبر', '11': 'نوفمبر', '12': 'ديسمبر' };
+  function exportExcel() {
+    var m = document.getElementById('s-msg'); m.className = 'msg'; m.textContent = 'جاري التجهيز… · Preparing…';
+    Promise.all([OrgUI.loadLib ? OrgUI.loadLib('xlsx') : new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'; s.onload = ok; s.onerror = function () { no(new Error('LIB_FAILED')); }; document.head.appendChild(s); }),
+      AuthGate.run('adcExport')]).then(function (r) { return buildXlsx(r[1]); }).then(function () { m.className = 'msg ok'; m.textContent = '✓ تم تنزيل ملف الإكسل'; },
+      function (e) { m.className = 'msg err'; m.textContent = /LIB_FAILED/.test(String(e && e.message)) ? 'تعذّر تحميل أداة الإكسل — يُرجى التحقق من الاتصال' : OrgUI.err(e); });
+  }
+  function buildXlsx(X) {
+    var wb = new ExcelJS.Workbook(); wb.creator = 'Pharmacy Tracker by WaadAlwagdani';
+    var HEAD = { font: { bold: true, color: { argb: 'FFFFFFFF' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1C1C1C' } }, alignment: { horizontal: 'center', vertical: 'middle', wrapText: true } };
+    function head(ws, row, vals) { ws.getRow(row).values = vals; ws.getRow(row).eachCell(function (c) { c.font = HEAD.font; c.fill = HEAD.fill; c.alignment = HEAD.alignment; }); ws.getRow(row).height = 32; }
+    var items = X.items, n = items.length, TXN = 'سجل الحركات (Transactions)';
+    // supervisor summary — SUMIFS over the transactions sheet
+    var s = wb.addWorksheet('ملخص مشرف الصيدلية', { views: [{ rightToLeft: true }] });
+    s.getCell('A1').value = 'لوحة تحكم مشرف الصيدلية — Pharmacy Tracker by WaadAlwagdani'; s.getCell('A1').font = { bold: true, size: 14 };
+    head(s, 3, ['الكمية الواردة (Received)', 'المنصرف بالباركود (Scanned Out)', 'الصرف الاستثنائي (Override)', 'قيمة المنصرف للأصناف المسعّرة (SAR)', 'معدل الامتثال للمسح (BCMA %)']);
+    var T = "'" + TXN + "'!";
+    s.getRow(4).values = [{ formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"RECEIVED")+SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"RETURN")' }, { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"SCANNED")' },
+      { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"OVERRIDE")' }, { formula: 'SUMIFS(' + T + '$M:$M,' + T + '$E:$E,"SCANNED")+SUMIFS(' + T + '$M:$M,' + T + '$E:$E,"OVERRIDE")' }, { formula: 'IF((B4+C4)=0,1,B4/(B4+C4))' }];
+    s.getCell('E4').numFmt = '0.0%';
+    head(s, 6, ['القسم (Ward)', 'الكابينة (ADC)', 'الوارد (Received)', 'بالباركود (Scanned)', 'استثنائي (Override)', 'القيمة (SAR)', 'BCMA %']);
+    var wr = 7; D.wards.forEach(function (w) { var r = wr++;
+      s.getRow(r).values = [w.ward, w.adc, { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"RECEIVED")' }, { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"SCANNED")' },
+        { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"OVERRIDE")' }, { formula: 'SUMIFS(' + T + '$M:$M,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"SCANNED")+SUMIFS(' + T + '$M:$M,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"OVERRIDE")' },
+        { formula: 'IF((D' + r + '+E' + r + ')=0,1,D' + r + '/(D' + r + '+E' + r + '))' }]; s.getCell('G' + r).numFmt = '0.0%'; });
+    s.columns = [{ width: 14 }, { width: 38 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 12 }];
+    // daily refill — live SOH as values, Fill %, Days, Status and Qty to Refill as formulas
+    var d = wb.addWorksheet('التعبئة اليومية (Daily Refill)', { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] });
+    head(d, 1, ['Barcode ID', 'NUPCO Code', 'Drug & Strength', 'ADC Cluster', 'Ward', 'ABC-VEN', 'Unit Cost (optional)', 'Par Min', 'Par Max', 'Live Stock on Hand', 'Fill %', 'Avg Daily Use', 'Days of Supply', 'Replenishment Status', 'Qty to Refill to Max']);
+    items.forEach(function (x, i) { var r = i + 2;
+      d.getRow(r).values = [x.code, x.nupco, x.name, x.adc, x.ward, x.abc, x.cost || null, x.parMin, x.parMax, x.soh, { formula: 'IF(I' + r + '=0,0,J' + r + '/I' + r + ')' }, x.avg,
+        { formula: 'IF(L' + r + '=0,"",ROUND(J' + r + '/L' + r + ',1))' }, { formula: 'IF(J' + r + '<=MAX(1,ROUND(H' + r + '*0.45,0)),"🔴 تدخل عاجل (STAT Refill)",IF(J' + r + '<=H' + r + ',"🟡 تعبئة يومية (Reorder Due)","🟢 رصيد آمن (OK)"))' },
+        { formula: 'IF(J' + r + '<=H' + r + ',I' + r + '-J' + r + ',0)' }]; d.getCell('K' + r).numFmt = '0%'; d.getCell('B' + r).numFmt = '@'; });
+    d.columns = [{ width: 10 }, { width: 14 }, { width: 38 }, { width: 34 }, { width: 10 }, { width: 8 }, { width: 9 }, { width: 8 }, { width: 8 }, { width: 10 }, { width: 8 }, { width: 9 }, { width: 9 }, { width: 26 }, { width: 10 }];
+    // transactions — append-only log
+    var t = wb.addWorksheet(TXN, { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] });
+    head(t, 1, ['Tx ID', 'Timestamp', 'Month', 'Date & Shift', 'Type', 'Barcode ID', 'Drug & Strength', 'ADC Cluster', 'Destination Ward', 'User', 'Role', 'Qty', 'Value (SAR)', 'Override reason', 'Note']);
+    X.tx.forEach(function (r, i) { t.getRow(i + 2).values = r; });
+    t.columns = [{ width: 9 }, { width: 18 }, { width: 9 }, { width: 30 }, { width: 11 }, { width: 10 }, { width: 34 }, { width: 30 }, { width: 10 }, { width: 28 }, { width: 22 }, { width: 7 }, { width: 10 }, { width: 22 }, { width: 30 }];
+    // monthly counts — opening chained to the previous month's New Opening (P), formulas for System, Variance, SAR, New Opening
+    var months = {}; X.counts.forEach(function (c) { (months[String(c[0])] = months[String(c[0])] || {})[String(c[1])] = c; });
+    var order = Object.keys(months).sort(); if (order.indexOf(X.period) === -1) order.push(X.period);
+    var prev = null;
+    order.forEach(function (ym) {
+      var nm = 'جرد ' + (AR_M[ym.slice(5)] || ym.slice(5)) + ' ' + ym.slice(0, 4), w = wb.addWorksheet(nm, { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] }), rec = months[ym] || {}, open = ym === X.period;
+      head(w, 1, ['Barcode ID', 'NUPCO Code', 'Drug & Strength', 'ADC Cluster', 'Primary Ward', 'ABC-VEN', 'Unit Cost (optional)', 'Par Max', 'Opening Balance', 'Received', 'Scanned Out', 'System Balance', 'Physical Count', 'Variance Qty', 'Variance SAR', 'New Opening Balance', 'Root Cause']);
+      items.forEach(function (x, i) { var r = i + 2, c = rec[x.code];
+        var opening = prev ? { formula: "'" + prev + "'!P" + r } : (c ? Number(c[3]) : x.opening);
+        var received = open ? x.rec : (c ? Number(c[4]) : 0), out = open ? x.out : (c ? Number(c[5]) : 0), phys = open ? null : (c ? Number(c[7]) : null);
+        w.getRow(r).values = [x.code, x.nupco, x.name, x.adc, x.ward, x.abc, x.cost || null, x.parMax, opening, received, out, { formula: 'I' + r + '+J' + r + '-K' + r }, phys,
+          { formula: 'IF(M' + r + '="","",M' + r + '-L' + r + ')' }, { formula: 'IF(OR(N' + r + '="",G' + r + '=""),"",N' + r + '*G' + r + ')' }, { formula: 'IF(M' + r + '="",L' + r + ',M' + r + ')' }, c ? String(c[10] || '') : ''];
+        w.getCell('B' + r).numFmt = '@'; });
+      w.columns = [{ width: 10 }, { width: 14 }, { width: 36 }, { width: 32 }, { width: 10 }, { width: 8 }, { width: 9 }, { width: 8 }, { width: 10 }, { width: 9 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 9 }, { width: 10 }, { width: 11 }, { width: 34 }];
+      prev = nm;
+    });
+    var g = wb.addWorksheet('الدليل والمعايير (SOP)', { views: [{ rightToLeft: true }] });
+    head(g, 1, ['البند · Item', 'الصيغة · Formula', 'الأثر · Purpose']);
+    [['System Balance', 'Opening + Received − Scanned Out', 'الرصيد الدفتري المتوقع داخل الدرج'], ['Variance', 'Physical − System', 'القيمة السالبة تشير إلى صرف غير ممسوح أو عجز'],
+     ['Zeroing', 'New Opening = Physical count', 'يُعتمد الجرد الفعلي رصيدًا افتتاحيًا للفترة التالية'], ['Status', 'STAT ≤ max(1, round(ParMin×0.45)) · Reorder ≤ ParMin', 'أولوية التعبئة اليومية'],
+     ['Qty to Refill', 'Par Max − SOH when SOH ≤ Par Min', 'الكمية المطلوب تجهيزها من المستودع']].forEach(function (r, i) { g.getRow(i + 2).values = r; });
+    g.columns = [{ width: 18 }, { width: 46 }, { width: 46 }];
+    return wb.xlsx.writeBuffer().then(function (buf) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      a.download = 'NUPCO_ADC_Master_' + X.period + '_by_WaadAlwagdani.xlsx'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    });
+  }
+
+  /* monthly count reminder: shown to the count staff while last month's count is still open (once per day) */
+  function countReminder(d, tabs) {
+    var idx = -1; tabs.forEach(function (t, i) { if (t.render === count) idx = i; });
+    if (idx < 0 || !d.period) return;
+    var now = new Date(), cur = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    if (d.period >= cur) return;
+    var key = 'adc.remind.' + d.period, today = now.toISOString().slice(0, 10);
+    try { if (localStorage.getItem(key) === today) return; } catch (e) {}
+    var w = document.createElement('div');
+    w.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+    w.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:20px;box-shadow:0 20px 40px -12px rgba(0,0,0,.35)">' +
+      '<div style="display:flex;gap:12px;align-items:flex-start"><div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:grid;place-items:center;flex:none">🔔</div>' +
+      '<div><b style="font-size:17px">تذكير الجرد الشهري</b><div class="muted">جرد شهر ' + E(d.period) + ' لم يُعتمد بعد</div></div></div>' +
+      '<p style="margin:12px 0 16px;line-height:1.7">يُرجى إكمال جرد الكابينات واعتماده. يختفي هذا التذكير تلقائيًا بعد اعتماد الجرد.</p>' +
+      '<div style="display:flex;gap:8px"><button class="btn" id="rm-go">الانتقال للجرد</button><button class="btn sec" id="rm-later">لاحقًا</button></div></div>';
+    document.body.appendChild(w);
+    w.querySelector('#rm-later').onclick = function () { try { localStorage.setItem(key, today); } catch (e) {} w.remove(); };
+    w.querySelector('#rm-go').onclick = function () { w.remove(); var b = document.querySelector('#main [data-t="' + idx + '"]'); if (b) b.click(); };
+  }
+
+/* ADC technician view (approved design) — Pharmacy Tracker by WaadAlwagdani */
+var TECHUI = (function () {
+  var TECH_CSS = "\n  :root{\n    --bg:#f6f5f2;\n    --panel:#ffffff;\n    --side:#f7f6f3;\n    --border:#e7e5e0;\n    --text:#111827;\n    --muted:#64748b;\n    --accent:#1c1c1c;\n    --accent-soft:#f2f1ed;\n    --ink:#18181b;\n  }\n\n  .shell{display:flex;min-height:100vh}\n\n  /* \u0627\u0644\u0633\u0627\u064a\u062f \u0628\u0627\u0631 */\n  .sidebar{width:248px;background:var(--side);border-left:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;padding:18px 14px;position:sticky;top:0;height:100vh;flex-shrink:0}\n  .side-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;border-bottom:1px solid var(--border);margin-bottom:14px}\n  .side-logo{width:34px;height:34px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}\n  .side-brand b{display:block;font-size:15px;color:var(--text)}\n  .side-brand small{display:block;font-size:11.5px;color:var(--muted)}\n  .side-label{font-size:11px;font-weight:700;color:#94a3b8;padding:0 10px 8px}\n  .side-nav{display:flex;flex-direction:column;gap:4px}\n  .s-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;height:40px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:#475569;font-weight:600;font-size:13.5px;cursor:pointer;text-align:right;transition:background .15s,color .15s}\n  .s-btn:hover{background:#eef2f0;color:var(--text)}\n  .s-btn.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}\n  .s-btn .s-l{display:flex;align-items:center;gap:9px}\n  .s-ic{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}\n  .s-cnt{background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px}\n  .side-foot{border-top:1px solid var(--border);padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}\n  .user-mini{display:flex;align-items:center;gap:9px;min-width:0}\n  .avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;flex-shrink:0}\n  .user-mini b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n  .user-mini small{display:block;font-size:11px;color:var(--muted)}\n\n  /* \u0627\u0644\u0645\u0633\u0627\u062d\u0629 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629 */\n  .main{flex:1;min-width:0;padding:20px 24px 96px}\n  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}\n  .topbar h1{margin:0;font-size:21px;font-weight:700}\n  .clock-pill{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}\n  .clock-time{font-size:16px;font-weight:700;color:var(--accent);direction:ltr;font-variant-numeric:tabular-nums}\n  .clock-date{font-size:12.5px;color:#475569;font-weight:600;border-right:1px solid var(--border);padding-right:12px}\n\n  /* \u0628\u0637\u0627\u0642\u0627\u062a \u0627\u0644\u0637\u0644\u0628\u0627\u062a */\n  .seg-tabs{display:inline-flex;background:#e9eeeb;padding:4px;border-radius:11px;gap:4px;margin-bottom:14px}\n  .seg-btn{height:34px;border:0;border-radius:8px;padding:0 14px;background:transparent;color:#475569;font-weight:600;font-size:13px;cursor:pointer}\n  .seg-btn.on{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06)}\n  .orders-stack{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}\n  .order-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(15,23,42,.03);transition:border-color .15s}\n  .order-card:hover{border-color:#cbd5e1}\n  .order-card.active-card{border-color:var(--accent)}\n  .order-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid #f1f5f4}\n  .order-id{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}\n  .order-id .tag-ic{width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}\n  .order-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-top:12px}\n  @media (max-width:640px){.order-meta{grid-template-columns:1fr}}\n  .meta-box{background:#f7f6f3;border:1px solid #efede8;border-radius:10px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;font-size:12.5px}\n  .meta-box span{color:var(--muted)}\n  .meta-box b{color:var(--text)}\n\n  /* \u0639\u0627\u0645 */\n  .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.02)}\n  .focus-box{border:1.5px solid var(--accent);border-radius:14px;padding:16px;background:#fff;margin-bottom:14px;box-shadow:0 4px 14px rgba(28,28,28,.05)}\n  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}\n  @media (max-width:760px){.grid-2{grid-template-columns:1fr}}\n  .months-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}\n  @media (max-width:700px){.months-grid{grid-template-columns:repeat(3,1fr)}}\n  @media (max-width:440px){.months-grid{grid-template-columns:repeat(2,1fr)}}\n  .m-box{border:1.5px solid var(--border);border-radius:12px;padding:14px 12px;background:#fbfaf8;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}\n  .m-box:hover{border-color:var(--accent);background:#fff}\n  .m-box.active{border-color:var(--accent);background:var(--accent);color:#fff}\n  .m-box.active .muted{color:#d6d3cb}\n  .m-box.has-data{border-color:#94a3b8;background:#fff}\n  .m-box b{display:block;font-size:15px}\n  .m-box span{display:block;font-size:12px;margin-top:4px}\n  .wards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:10px}\n  .w-box{border:1.5px solid var(--border);border-radius:12px;padding:12px;background:#fff;cursor:pointer;text-align:right;transition:border-color .15s}\n  .w-box:hover,.w-box.selected{border-color:var(--accent);background:var(--accent-soft)}\n  .w-box b{display:block;font-size:15px}\n  .w-box span{display:block;font-size:12px;color:var(--muted);margin-top:3px}\n  .w-qty-box{margin-top:8px}\n  .w-qty-box input{width:100%;height:38px;text-align:center;font-weight:700;font-size:16px}\n  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}\n  .chip{border:1px solid var(--border);background:#f7f6f3;border-radius:8px;padding:4px 10px;font-size:12.5px;font-weight:600;color:#1e293b}\n  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px}\n  .btn-group{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center}\n  label.fld{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;margin-bottom:10px}\n  input,select,button,textarea{font:inherit}\n  input[type=text],input[type=password],input[type=number],input[type=search],select{height:38px;border:1px solid #d1d5db;border-radius:9px;padding:0 10px;background:#fff;color:var(--text)}\n  textarea{width:100%;min-height:76px;border:1px solid #d1d5db;border-radius:9px;padding:8px 10px;background:#fff;color:var(--text);resize:vertical}\n  .btn{height:36px;border:0;border-radius:9px;background:var(--accent);color:#fff;font-weight:600;padding:0 15px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}\n  .btn.dark{background:var(--ink)}\n  .btn.sec{background:#fff;color:var(--text);border:1px solid #d1d5db}\n  .btn.sm{height:30px;padding:0 10px;font-size:12px;border-radius:7px}\n  .btn:disabled{opacity:.4;cursor:not-allowed}\n  .tw{overflow:auto}\n  table{width:100%;border-collapse:collapse;font-size:13px}\n  th{background:#f7f6f3;color:#111827;font-weight:700;font-size:11.5px;padding:9px 8px;border-bottom:2px solid var(--border);white-space:nowrap;text-align:center}\n  td{border-top:1px solid #eef2f0;padding:8px;text-align:center;vertical-align:middle;white-space:nowrap;unicode-bidi:plaintext}\n  th.r,td.r{text-align:right}\n  tr:hover td{background:#fafcfb}\n  tr.done{background:#f7f6f3}\n  .idx{color:#6b7280;font-weight:700}\n  .code{color:#475569;font-family:\"IBM Plex Sans\",monospace;font-size:12px;font-weight:600}\n  .cat-pill{display:inline-block;background:#fef3c7;color:#1f2937;font-weight:600;font-size:12px;padding:4px 11px;border-radius:6px;min-width:140px;text-align:center}\n  .ward-pill{display:inline-block;background:#eef2f0;color:#1f2937;font-weight:600;font-size:12px;padding:3px 9px;border-radius:6px}\n  .na-badge{display:inline-block;background:#fee2e2;color:#b91c1c;font-weight:700;font-size:11.5px;padding:2px 8px;border-radius:6px;margin-right:6px}\n  .st-badge{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px}\n  .st-new{background:#fef3c7;color:#92400e}\n  .st-edit{background:#fee2e2;color:#991b1b}\n  .st-task{background:#dbeafe;color:#1e40af}\n  .st-done{background:#dcfce7;color:#166534}\n  .na{color:#ef4444;font-weight:600}\n  .qty-in{width:84px;text-align:center;font-weight:700}\n  .exp-in{width:104px;text-align:center;direction:ltr}\n  .note-wrap{display:flex;gap:6px;align-items:center;justify-content:center}\n  .note-in{width:155px}\n  .note-sel{width:125px;font-size:12px}\n  .muted{color:var(--muted);font-size:12.5px}\n  .msg{font-size:13px;font-weight:600;min-height:20px}.msg.ok{color:#15803d}.msg.err{color:#b91c1c}\n  .foot{position:fixed;bottom:0;left:0;right:248px;background:rgba(255,255,255,.97);backdrop-filter:blur(6px);border-top:1px solid var(--border);padding:10px 24px;z-index:20}\n  .foot-in{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}\n  .crumb{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:#475569;margin-bottom:8px}\n  .login-card{max-width:400px;margin:60px auto;background:#fff;border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,.04)}\n\n  /* \u0646\u0627\u0641\u0630\u0629 \u0627\u0644\u062a\u0630\u0643\u064a\u0631 (Popup) */\n  .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:100}\n  .modal-card{width:100%;max-width:430px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:0 20px 45px rgba(15,23,42,.18)}\n  .modal-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}\n  .modal-ic{width:38px;height:38px;border-radius:10px;background:#fef3c7;color:#92400e;display:flex;align-items:center;justify-content:center;flex-shrink:0}\n  .modal-card h2{margin:0;font-size:17px}\n  .modal-card p{margin:8px 0 18px;font-size:13.5px;color:#475569;line-height:1.6}\n  .modal-actions{display:flex;justify-content:flex-end;gap:8px}\n\n  @media (max-width:860px){\n    .shell{flex-direction:column}\n    .sidebar{width:100%;height:auto;position:static;border-left:0;border-bottom:1px solid var(--border);padding:12px}\n    .side-nav{flex-direction:row;flex-wrap:wrap}\n    .s-btn{width:auto;height:36px}\n    .side-foot{display:none}\n    .main{padding:14px 14px 92px}\n    .foot{right:0;padding:10px 14px}\n  }\n";
+  var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var MONTHS_12 = [
+    { num: '01', ar: 'يناير' }, { num: '02', ar: 'فبراير' }, { num: '03', ar: 'مارس' },
+    { num: '04', ar: 'أبريل' }, { num: '05', ar: 'مايو' }, { num: '06', ar: 'يونيو' },
+    { num: '07', ar: 'يوليو' }, { num: '08', ar: 'أغسطس' }, { num: '09', ar: 'سبتمبر' },
+    { num: '10', ar: 'أكتوبر' }, { num: '11', ar: 'نوفمبر' }, { num: '12', ar: 'ديسمبر' }
+  ];
+  var DAYS_AR = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  var QUICK_NOTES = ['غير متوفر', 'كمية جزئية', 'بديل متوفر', 'قريب الانتهاء', 'تجاوز الحد'];
+
+  /* أيقونات SVG نظيفة بدون إيموجيات */
+  var IC = {
+    inbox: '<svg class="s-ic" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+    box: '<svg class="s-ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+    clip: '<svg class="s-ic" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>',
+    archive: '<svg class="s-ic" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>',
+    bell: '<svg class="s-ic" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+    file: '<svg class="s-ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+  };
+
+  var TECH = null;
+  var screen = 'home', RO = false;
+  var homeTab = 'inbox';
+  var previewReqId = '';
+  var editModeForReq = '';
+  var activeTaskId = '';
+  var selectedYear = '2027';
+  var selectedMonthNum = '01';
+  var selectedWardRecord = '';
+  var lastExpiry = '';
+  var lastSavedAt = '';
+
+  var RF = { step: 1, itemName: '', expiry: '', selectedWards: {}, msg: '' };
+
+  function monthLabel(ym) {
+    var parts = String(ym || '').split('-');
+    var mObj = MONTHS_12.filter(function (m) { return m.num === parts[1]; })[0];
+    return (mObj ? mObj.ar : parts[1]) + ' ' + (parts[0] || '');
+  }
+
+  function getGregorianNow() {
+    var d = new Date();
+    var dayName = DAYS_AR[d.getDay()];
+    var dd = String(d.getDate()).padStart(2, '0');
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var yyyy = d.getFullYear();
+    var mName = MONTHS_12[d.getMonth()].ar;
+    var hh = String(d.getHours()).padStart(2, '0');
+    var mi = String(d.getMinutes()).padStart(2, '0');
+    return {
+      dayNum: d.getDate(),
+      time: hh + ':' + mi,
+      isoDate: yyyy + '-' + mm + '-' + dd,
+      dateText: dayName + '، ' + dd + ' ' + mName + ' ' + yyyy + ' (' + yyyy + '-' + mm + '-' + dd + ')'
+    };
+  }
+
+  function updateClockDom() {
+    var now = getGregorianNow();
+    var tEl = document.getElementById('live-time');
+    var dEl = document.getElementById('live-date');
+    if (tEl) tEl.textContent = now.time;
+    if (dEl) dEl.textContent = now.dateText;
+  }
+  setInterval(updateClockDom, 15000);
+
+  /* ---------- محرك التصدير المؤسسي (PDF / Word) ---------- */
+  function exportReport(format, meta, headers, rows) {
+    var now = getGregorianNow();
+    var docHtml =
+      '<!DOCTYPE html><html lang="ar" dir="rtl" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">' +
+      '<head><meta charset="utf-8"><title>' + E(meta.title) + '</title>' +
+      '<style>' +
+        '@page{size:A4;margin:16mm}' +
+        'body{font-family:Arial,"Segoe UI",Tahoma,sans-serif;color:#111827;margin:0;padding:18px;font-size:12.5px;direction:rtl}' +
+        '.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #18181b;padding-bottom:10px;margin-bottom:14px}' +
+        '.hdr h2{margin:0;font-size:17px;color:#111827}.hdr small{color:#475569;font-size:11.5px}' +
+        '.meta{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px}' +
+        '.meta td{border:1px solid #d1d5db;padding:6px 10px;background:#f8fafc}' +
+        '.meta td b{color:#111827}' +
+        'table.data{width:100%;border-collapse:collapse;font-size:12px}' +
+        'table.data th{background:#f1f5f9;border:1px solid #cbd5e1;padding:7px 6px;text-align:center;font-weight:700}' +
+        'table.data td{border:1px solid #cbd5e1;padding:7px 6px;text-align:center;unicode-bidi:plaintext}' +
+        '.sigs{margin-top:28px;width:100%;border-collapse:collapse;font-size:12px}' +
+        '.sigs td{width:33.3%;padding-top:18px;text-align:center;color:#334155}' +
+      '</style></head><body>' +
+      '<div class="hdr">' +
+        '<div><h2>إدارة الرعاية الصيدلانية · ' + E(TECH.cabinet) + '</h2><small>' + E(meta.title) + '</small></div>' +
+      '</div>' +
+      '<table class="meta"><tr>' +
+        '<td><span>القسم: </span><b>' + E(meta.ward || TECH.wards.join('، ')) + '</b></td>' +
+        '<td><span>الفترة: </span><b>' + E(meta.period || monthLabel(TECH.period)) + '</b></td>' +
+        '<td><span>المسؤول: </span><b>' + E(meta.by || TECH.name) + '</b></td>' +
+      '</tr></table>' +
+      '<table class="data"><thead><tr>' +
+        headers.map(function (h) { return '<th>' + E(h) + '</th>'; }).join('') +
+      '</tr></thead><tbody>' +
+        rows.map(function (r) {
+          return '<tr>' + r.map(function (c) { return '<td dir="auto">' + E(c) + '</td>'; }).join('') + '</tr>';
+        }).join('') +
+      '</tbody></table>' +
+      '<table class="sigs"><tr>' +
+        '<td>إعداد: ' + E(meta.by || TECH.name) + '<br><br>____________________</td>' +
+        '<td>مراجعة الصيدلية<br><br>____________________</td>' +
+        '<td>الاعتماد<br><br>____________________</td>' +
+      '</tr></table>' +
+      '</body></html>';
+
+    if (format === 'word') {
+      var blob = new Blob(['\ufeff' + docHtml], { type: 'application/msword;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = (meta.fileName || 'report') + '.doc';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } else {
+      var win = window.open('', '_blank', 'width=960,height=720');
+      if (!win) return;
+      win.document.open();
+      win.document.write(docHtml);
+      win.document.close();
+      win.focus();
+      setTimeout(function () { win.print(); }, 300);
+    }
+  }
+
+  /* ---------- تذكير الجرد الشهري (من يوم 28 حتى اكتمال جرد جميع الأقسام) ---------- */
+  function shouldShowCountReminder() {
+    if (TECH.reminderDismissed || !TECH.canCount) return false;
+    var n = new Date(), cur = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0');
+    return TECH.period < cur || n.getDate() >= 28;
+  }
+
+  function renderReminderModal() {
+    var host = document.getElementById('modal-host');
+    if (!shouldShowCountReminder()) { host.innerHTML = ''; return; }
+    var done = TECH.items.filter(function (x) { return TECH.countDraft[x.code] && TECH.countDraft[x.code].physical !== undefined; }).length;
+    host.innerHTML =
+      '<div class="modal-bg">' +
+        '<div class="modal-card">' +
+          '<div class="modal-head">' +
+            '<div class="modal-ic">' + IC.bell + '</div>' +
+            '<div><h2>تذكير الجرد الشهري</h2><span class="muted">' + E(monthLabel(TECH.period)) + ' · ' + done + ' / ' + TECH.items.length + '</span></div>' +
+          '</div>' +
+          '<p>بدء فترة الجرد الشهري للأقسام والكابينات. يختفي هذا التذكير تلقائياً فور اكتمال واعتماد جرد جميع الأقسام.</p>' +
+          '<div class="modal-actions">' +
+            '<button type="button" class="btn sec" id="rem-later">لاحقاً</button>' +
+            '<button type="button" class="btn" id="rem-go">الانتقال للجرد</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('rem-later').onclick = function () {
+      TECH.reminderDismissed = true;
+      renderReminderModal();
+    };
+    document.getElementById('rem-go').onclick = function () {
+      TECH.reminderDismissed = true;
+      screen = 'count';
+      render();
+    };
+  }
+
+  /* expiry picker: month list + year list (value MM/YYYY) */
+  function expSel(key, val) {
+    var m = /^(\d{1,2})\/(\d{4})$/.exec(String(val || '')), mm = m ? ('0' + m[1]).slice(-2) : '', yy = m ? m[2] : '', y0 = new Date().getFullYear(), ys = [];
+    for (var y = y0 - 1; y <= y0 + 8; y++) ys.push(String(y));
+    if (yy && ys.indexOf(yy) === -1) ys.push(yy);
+    return '<span class="exp-sel" data-exp="' + E(key) + '" style="display:inline-flex;gap:6px;direction:ltr">' +
+      '<select data-em style="width:84px"><option value="">MM</option>' + MONTHS_12.map(function (x) { return '<option value="' + x.num + '"' + (x.num === mm ? ' selected' : '') + '>' + x.num + '</option>'; }).join('') + '</select>' +
+      '<select data-ey style="width:96px"><option value="">YYYY</option>' + ys.map(function (y) { return '<option' + (y === yy ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select></span>';
+  }
+  function expVal(box) { var m = box.querySelector('[data-em]').value, y = box.querySelector('[data-ey]').value; return m && y ? m + '/' + y : ''; }
+  function expBind(fn) { document.querySelectorAll('.exp-sel').forEach(function (b) { b.querySelectorAll('select').forEach(function (x) { x.onchange = function () { fn(b.dataset.exp, expVal(b)); }; }); }); }
+
+  function findReq(id) { return TECH.requests.filter(function (r) { return r.id === id; })[0]; }
+  function strengthCell(s) { return s === 'n/a' ? '<span class="na">n/a</span>' : E(s); }
+
+  function pageTitle() {
+    if (screen === 'home') return 'صندوق الطلبات';
+    if (screen === 'refill') return 'التعبئة اليومية';
+    if (screen === 'count') return 'الجرد الشهري';
+    return 'السجلات';
+  }
+
+  function render() {
+    var root = document.getElementById('main');
+    var foot = document.getElementById('tk-foot');
+    foot.hidden = true;
+
+    if (false) {
+      root.innerHTML =
+        '<div class="login-card">' +
+          '<div class="side-brand" style="border:0;margin:0 0 14px;padding:0"><div class="side-logo">P</div><div><b>Pharmacy Tracker</b><small>' + E(TECH.cabinet) + '</small></div></div>' +
+          '<label class="fld">اسم المستخدم<input type="text" id="l-u" value="f.alsulami"></label>' +
+          '<label class="fld">كلمة المرور<input type="password" id="l-p" value="123456"></label>' +
+          '<button class="btn" style="width:100%;justify-content:center" id="l-go">دخول</button>' +
+        '</div>';
+      document.getElementById('l-go').onclick = function () { TECH.loggedIn = true; screen = 'home'; render(); };
+      renderReminderModal();
+      return;
+    }
+
+    var pendingCnt = TECH.requests.filter(function (r) { return r.status === 'pending'; }).length;
+    var now = getGregorianNow();
+
+    var sideHtml =
+      '<aside class="sidebar">' +
+        '<div>' +
+          '<div class="side-brand">' +
+            '<div class="side-logo">P</div>' +
+            '<div><b>Pharmacy Tracker</b><small>' + E(TECH.cabinet) + ' · ' + E(monthLabel(TECH.period)) + '</small></div>' +
+          '</div>' +
+          '<div class="side-label">القائمة</div>' +
+          '<nav class="side-nav">' +
+            '<button type="button" class="s-btn' + (screen === 'home' ? ' on' : '') + '" data-s="home"><span class="s-l">' + IC.inbox + '<span>صندوق الطلبات</span></span>' + (pendingCnt ? '<span class="s-cnt">' + pendingCnt + '</span>' : '') + '</button>' +
+            '<button type="button" class="s-btn' + (screen === 'refill' ? ' on' : '') + '" data-s="refill"><span class="s-l">' + IC.box + '<span>التعبئة اليومية</span></span></button>' +
+            '<button type="button" class="s-btn' + (screen === 'count' ? ' on' : '') + '" data-s="count"><span class="s-l">' + IC.clip + '<span>الجرد الشهري</span></span></button>' +
+            '<button type="button" class="s-btn' + (screen === 'records' ? ' on' : '') + '" data-s="records"><span class="s-l">' + IC.archive + '<span>السجلات</span></span></button>' +
+          '</nav>' +
+        '</div>' +
+        '<div class="side-foot">' +
+          '<div class="user-mini">' +
+            '<div class="avatar">' + E(TECH.initials) + '</div>' +
+            '<div><b>' + E(TECH.name) + '</b><small>' + E(TECH.id) + ' · ' + E(TECH.role) + '</small></div>' +
+          '</div>' +
+          '<button type="button" class="btn sec sm" id="btn-out">خروج</button>' +
+        '</div>' +
+      '</aside>';
+
+    var topbarHtml =
+      '<div class="topbar">' +
+        '<h1>' + E(pageTitle()) + '</h1>' +
+        '<div class="clock-pill">' +
+          '<span class="clock-time" id="live-time">' + E(now.time) + '</span>' +
+          '<span class="clock-date" id="live-date">' + E(now.dateText) + '</span>' +
+        '</div>' +
+      '</div>';
+
+    var bodyHtml = '';
+    if (screen === 'home') bodyHtml = buildHome();
+    else if (screen === 'refill') bodyHtml = buildRefill();
+    else if (screen === 'count') bodyHtml = buildCount();
+    else bodyHtml = buildRecords();
+
+    root.innerHTML = '<div class="tk"><main class="main" style="padding:0">' + topbarHtml + '<nav class="side-nav tk-nav">' + sideHtml.slice(sideHtml.indexOf('<nav class="side-nav">') + 22, sideHtml.indexOf('</nav>')) + '</nav>' + bodyHtml + '</main></div>';
+
+    var outBtn = document.getElementById('btn-out');
+
+    root.querySelectorAll('.s-btn').forEach(function (b) {
+      b.onclick = function () { screen = b.dataset.s; render(); };
+    });
+
+    if (screen === 'home') bindHome();
+    else if (screen === 'refill') bindRefill();
+    else if (screen === 'count') bindCount(foot);
+    else bindRecords();
+
+    if (RO) {
+      root.querySelectorAll('.s-btn').forEach(function (b) { if (b.dataset.s !== 'count' && b.dataset.s !== 'records') b.remove(); });
+      root.querySelectorAll('.s-btn[data-s="count"] span span').forEach(function (x) { x.textContent = 'معاينة الكابينات'; });
+      if (screen === 'count') {
+        root.querySelectorAll('table input, table select, .focus-box').forEach(function (x) { if (x.classList && x.classList.contains('focus-box')) x.remove(); else x.disabled = true; });
+        ['cnt-save', 'cnt-approve'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
+        foot.hidden = true;
+      }
+      return;
+    }
+    renderReminderModal();
+  }
+
+  /* ---------- 1) صندوق الطلبات + قائمة مهامي ---------- */
+  function buildHome() {
+    var pendingReqs = TECH.requests.filter(function (r) { return r.status === 'pending' || r.status === 'returned'; });
+    var myTasks = TECH.requests.filter(function (r) { return r.status === 'task' || r.status === 'done'; });
+
+    var tabsHtml =
+      '<div class="toolbar">' +
+        '<div class="seg-tabs">' +
+          '<button type="button" class="seg-btn' + (homeTab === 'inbox' ? ' on' : '') + '" data-ht="inbox">الطلبات الواردة (' + pendingReqs.length + ')</button>' +
+          '<button type="button" class="seg-btn' + (homeTab === 'tasks' ? ' on' : '') + '" data-ht="tasks">قائمة مهامي (' + myTasks.length + ')</button>' +
+        '</div>' +
+        '<div class="chips" style="margin-top:0">' + TECH.wards.map(function (w) { return '<span class="chip">' + E(w) + '</span>'; }).join('') + '</div>' +
+      '</div>';
+
+    var listHtml = '';
+    if (homeTab === 'inbox') {
+      listHtml = '<div class="orders-stack">' + (pendingReqs.length ? pendingReqs.map(function (r) {
+        var stBadge = r.status === 'returned'
+          ? '<span class="st-badge st-edit">بانتظار تعديل القسم</span>'
+          : '<span class="st-badge st-new">طلب مرسل</span>';
+        var isSel = previewReqId === r.id;
+        return '<div class="order-card' + (isSel ? ' active-card' : '') + '">' +
+          '<div class="order-top">' +
+            '<div class="order-id"><span class="tag-ic">#</span><span>رقم الطلب: ' + E(r.id) + '</span>' + stBadge + '</div>' +
+            '<button type="button" class="btn sm" data-prev="' + E(r.id) + '">معاينة</button>' +
+          '</div>' +
+          '<div class="order-meta">' +
+            '<div class="meta-box"><span>القسم</span><b>' + E(r.ward) + '</b></div>' +
+            '<div class="meta-box"><span>الأصناف</span><b>' + r.items.length + '</b></div>' +
+            '<div class="meta-box"><span>الوقت</span><b>' + E(r.date) + ' · ' + E(r.time) + '</b></div>' +
+          '</div>' +
+          (r.returnNote ? '<div class="muted" style="margin-top:8px">التعديل: ' + E(r.returnNote) + '</div>' : '') +
+        '</div>';
+      }).join('') : '<div class="card muted">' + (TECH.reqNote ? TECH.reqNote : 'لا توجد طلبات حاليًا') + '</div>') + '</div>';
+    } else {
+      listHtml = '<div class="orders-stack">' + (myTasks.length ? myTasks.map(function (r) {
+        var stBadge = r.status === 'done'
+          ? '<span class="st-badge st-done">مكتمل</span>'
+          : '<span class="st-badge st-task">قيد التجهيز</span>';
+        var isSel = activeTaskId === r.id;
+        return '<div class="order-card' + (isSel ? ' active-card' : '') + '" style="cursor:pointer" data-task="' + E(r.id) + '">' +
+          '<div class="order-top">' +
+            '<div class="order-id"><span class="tag-ic">✓</span><span>رقم الطلب: ' + E(r.id) + '</span>' + stBadge + '</div>' +
+            '<span class="btn sec sm">فتح</span>' +
+          '</div>' +
+          '<div class="order-meta">' +
+            '<div class="meta-box"><span>القسم</span><b>' + E(r.ward) + '</b></div>' +
+            '<div class="meta-box"><span>الأصناف</span><b>' + r.items.length + '</b></div>' +
+            '<div class="meta-box"><span>الوقت</span><b>' + E(r.date) + ' · ' + E(r.time) + '</b></div>' +
+          '</div>' +
+        '</div>';
+      }).join('') : '<div class="card muted">' + (TECH.reqNote ? TECH.reqNote : 'لا توجد طلبات حاليًا') + '</div>') + '</div>';
+    }
+
+    var previewHtml = '';
+    if (previewReqId) {
+      var pr = findReq(previewReqId);
+      if (pr) {
+        var isEditing = editModeForReq === pr.id;
+        previewHtml =
+          '<div class="focus-box">' +
+            '<div class="toolbar">' +
+              '<div><b>معاينة · ' + E(pr.ward) + ' (' + E(pr.id) + ')</b><div class="muted">' + E(pr.date) + ' · ' + E(pr.time) + '</div></div>' +
+              '<div class="btn-group">' +
+                '<button type="button" class="btn sec sm" id="pr-pdf">' + IC.file + ' PDF</button>' +
+                '<button type="button" class="btn sec sm" id="pr-word">' + IC.file + ' Word</button>' +
+                '<button type="button" class="btn sec sm" id="pr-close">إغلاق</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="tw"><table>' +
+              '<tr><th>#</th><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المطلوبة</th></tr>' +
+              pr.items.map(function (it, idx) {
+                return '<tr><td class="idx">' + (idx + 1) + '</td><td class="code">' + E(it.stockNo) + '</td><td class="r"><b>' + E(it.name) + '</b></td><td>' + E(it.strength) + '</td><td>' + E(it.form) + '</td><td><b>' + it.reqQty + '</b></td></tr>';
+              }).join('') +
+            '</table></div>' +
+            (isEditing ?
+              '<div style="margin-top:12px">' +
+                '<label class="fld">التعديل<textarea id="pr-edit-txt" placeholder="اكتب التعديل…">' + E(pr.returnNote) + '</textarea></label>' +
+                '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+                  '<button type="button" class="btn sec sm" id="pr-edit-cancel">إلغاء</button>' +
+                  '<button type="button" class="btn sm" id="pr-edit-send">إرسال للقسم</button>' +
+                '</div>' +
+              '</div>' :
+              '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">' +
+                '<button type="button" class="btn sec" id="pr-edit-btn">تعديل</button>' +
+                '<button type="button" class="btn" id="pr-accept-btn">قبول</button>' +
+              '</div>') +
+          '</div>';
+      }
+    }
+
+    var taskDetailHtml = '';
+    if (activeTaskId) {
+      var tk = findReq(activeTaskId);
+      if (tk) {
+        taskDetailHtml =
+          '<div class="focus-box">' +
+            '<div class="toolbar">' +
+              '<div><b>تجهيز · ' + E(tk.ward) + ' (' + E(tk.id) + ')</b><div class="muted">' + E(tk.date) + ' · ' + E(tk.time) + '</div></div>' +
+              '<div class="btn-group">' +
+                '<button type="button" class="btn sec sm" id="tk-pdf">' + IC.file + ' PDF</button>' +
+                '<button type="button" class="btn sec sm" id="tk-word">' + IC.file + ' Word</button>' +
+                '<button type="button" class="btn sec sm" id="tk-close">إغلاق</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="tw"><table>' +
+              '<tr><th>#</th><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المطلوبة</th><th>الكمية المجهزة</th><th>ملاحظات</th></tr>' +
+              tk.items.map(function (it, idx) {
+                var valStr = String(it.prepQty == null ? '' : it.prepQty).trim();
+                var isNA = valStr === '' || Number(valStr) <= 0;
+                return '<tr>' +
+                  '<td class="idx">' + (idx + 1) + '</td>' +
+                  '<td class="code">' + E(it.stockNo) + '</td>' +
+                  '<td class="r"><b>' + E(it.name) + '</b></td>' +
+                  '<td>' + E(it.strength) + '</td>' +
+                  '<td>' + E(it.form) + '</td>' +
+                  '<td><b>' + it.reqQty + '</b></td>' +
+                  '<td><input type="number" inputmode="numeric" min="0" step="1" class="qty-in" data-tkq="' + idx + '" value="' + E(valStr) + '" placeholder="0">' +
+                    '<span class="na-badge" data-nab="' + idx + '"' + (isNA ? '' : ' style="display:none"') + '>N/A</span></td>' +
+                  '<td><div class="note-wrap">' +
+                    '<select class="note-sel" data-tks="' + idx + '"><option value="">ملاحظة جاهزة…</option>' +
+                      QUICK_NOTES.map(function (qn) { return '<option value="' + E(qn) + '"' + (it.note === qn ? ' selected' : '') + '>' + E(qn) + '</option>'; }).join('') +
+                    '</select>' +
+                    '<input type="text" class="note-in" data-tkn="' + idx + '" value="' + E(it.note) + '" placeholder="ملاحظة…">' +
+                  '</div></td>' +
+                '</tr>';
+              }).join('') +
+            '</table></div>' +
+            '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">' +
+              '<button type="button" class="btn" id="tk-finish">تثبيت</button>' +
+            '</div>' +
+          '</div>';
+      }
+    }
+
+    return tabsHtml + previewHtml + taskDetailHtml + listHtml;
+  }
+
+  function bindHome() {
+    document.querySelectorAll('[data-ht]').forEach(function (b) {
+      b.onclick = function () { homeTab = b.dataset.ht; previewReqId = ''; activeTaskId = ''; render(); };
+    });
+    document.querySelectorAll('[data-prev]').forEach(function (btn) {
+      btn.onclick = function () { previewReqId = btn.dataset.prev; editModeForReq = ''; activeTaskId = ''; render(); };
+    });
+    document.querySelectorAll('[data-task]').forEach(function (card) {
+      card.onclick = function () { activeTaskId = card.dataset.task; previewReqId = ''; editModeForReq = ''; render(); };
+    });
+
+    if (previewReqId) {
+      var pr = findReq(previewReqId);
+      var exportPr = function (fmt) {
+        exportReport(fmt,
+          { title: 'طلب تموين قسم ' + pr.ward, ref: pr.id, ward: pr.ward, fileName: 'Order_' + pr.id },
+          ['#', 'الرقم التشغيلي', 'اسم الصنف', 'التركيز', 'الشكل الدوائي', 'الكمية المطلوبة'],
+          pr.items.map(function (it, i) { return [i + 1, it.stockNo, it.name, it.strength, it.form, it.reqQty]; })
+        );
+      };
+      document.getElementById('pr-pdf').onclick = function () { exportPr('pdf'); };
+      document.getElementById('pr-word').onclick = function () { exportPr('word'); };
+      document.getElementById('pr-close').onclick = function () { previewReqId = ''; editModeForReq = ''; render(); };
+
+      var accBtn = document.getElementById('pr-accept-btn');
+      if (accBtn) accBtn.onclick = function () { accBtn.disabled = true; var id = pr.id; AuthGate.run('wardSetStatus', id, 'Preparing').then(function () { homeTab = 'tasks'; previewReqId = ''; editModeForReq = ''; activeTaskId = id; return techLoad().then(render); }, function (e) { accBtn.disabled = false; alert(OrgUI.err(e)); }); };
+      var edBtn = document.getElementById('pr-edit-btn');
+      if (edBtn) edBtn.onclick = function () { editModeForReq = pr.id; render(); };
+      var edCancel = document.getElementById('pr-edit-cancel');
+      if (edCancel) edCancel.onclick = function () { editModeForReq = ''; render(); };
+      var edSend = document.getElementById('pr-edit-send');
+      if (edSend) edSend.onclick = function () {
+        var txt = document.getElementById('pr-edit-txt').value.trim();
+        if (!txt) { document.getElementById('pr-edit-txt').focus(); return; }
+        pr.returnNote = txt; pr.status = 'returned'; previewReqId = ''; editModeForReq = ''; render();
+      };
+    }
+
+    if (activeTaskId) {
+      var tk = findReq(activeTaskId);
+      var exportTk = function (fmt) {
+        exportReport(fmt,
+          { title: 'تجهيز طلب قسم ' + tk.ward, ref: tk.id, ward: tk.ward, fileName: 'Prepared_' + tk.id },
+          ['#', 'الرقم التشغيلي', 'اسم الصنف', 'التركيز', 'الشكل الدوائي', 'الكمية المطلوبة', 'الكمية المجهزة', 'ملاحظات'],
+          tk.items.map(function (it, i) {
+            var pv = String(it.prepQty == null ? '' : it.prepQty).trim();
+            return [i + 1, it.stockNo, it.name, it.strength, it.form, it.reqQty, (pv === '' || Number(pv) <= 0) ? 'N/A' : pv, it.note || '—'];
+          })
+        );
+      };
+      document.getElementById('tk-pdf').onclick = function () { exportTk('pdf'); };
+      document.getElementById('tk-word').onclick = function () { exportTk('word'); };
+      document.getElementById('tk-close').onclick = function () { activeTaskId = ''; render(); };
+
+      document.querySelectorAll('input[data-tkq]').forEach(function (inp) {
+        inp.oninput = function () {
+          var i = Number(inp.dataset.tkq);
+          tk.items[i].prepQty = inp.value;
+          var badge = document.querySelector('[data-nab="' + i + '"]');
+          var v = inp.value.trim();
+          if (badge) badge.style.display = (v === '' || Number(v) <= 0) ? 'inline-block' : 'none';
+        };
+      });
+      document.querySelectorAll('select[data-tks]').forEach(function (sel) {
+        sel.onchange = function () {
+          var i = Number(sel.dataset.tks);
+          if (sel.value) {
+            tk.items[i].note = sel.value;
+            var nInp = document.querySelector('input[data-tkn="' + i + '"]');
+            if (nInp) nInp.value = sel.value;
+          }
+        };
+      });
+      document.querySelectorAll('input[data-tkn]').forEach(function (inp) {
+        inp.oninput = function () { tk.items[Number(inp.dataset.tkn)].note = inp.value; };
+      });
+      document.getElementById('tk-finish').onclick = function () {
+        var b = document.getElementById('tk-finish'); b.disabled = true;
+        AuthGate.run('wardSetStatus', tk.id, 'Ready').then(function () { activeTaskId = ''; return techLoad().then(render); }, function (e) { b.disabled = false; alert(OrgUI.err(e)); });
+      };
+    }
+  }
+
+  /* ---------- 2) التعبئة اليومية السريعة ---------- */
+  function buildRefill() {
+    var selKeys = Object.keys(RF.selectedWards);
+    var allSelected = selKeys.length === TECH.wards.length;
+
+    var stepHtml = RF.step === 1 ?
+      '<div class="focus-box">' +
+        '<div class="toolbar"><b>1 / 2</b><span class="muted">' + E(monthLabel(TECH.period)) + '</span></div>' +
+        '<div class="grid-2">' +
+          '<label class="fld" style="margin-bottom:0">اسم الصنف<input type="text" id="rf-item" list="rf-items-list" value="' + E(RF.itemName) + '" placeholder="اسم الصنف"><datalist id="rf-items-list">' + TECH.items.map(function (x) { return '<option value="' + E(x.name) + '">'; }).join('') + '</datalist></label>' +
+          '<label class="fld" style="margin-bottom:0">تاريخ الانتهاء' + expSel('rf', RF.expiry) + '</label>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<span class="msg ok" id="rf-msg">' + E(RF.msg) + '</span>' +
+          '<button type="button" class="btn" id="rf-next">التالي</button>' +
+        '</div>' +
+      '</div>' :
+      '<div class="focus-box">' +
+        '<div class="toolbar">' +
+          '<div><b>' + E(RF.itemName) + '</b><div class="muted">' + E(RF.expiry || '—') + ' · 2 / 2</div></div>' +
+          '<div class="btn-group">' +
+            '<button type="button" class="btn sec sm" id="rf-all">' + (allSelected ? 'إلغاء الكل' : 'تحديد الكل') + '</button>' +
+            '<button type="button" class="btn sec sm" id="rf-repeat"' + (selKeys.length < 2 ? ' disabled' : '') + '>تكرار لباقي الأقسام</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="wards-grid">' +
+          TECH.wards.map(function (w) {
+            var isOn = Object.prototype.hasOwnProperty.call(RF.selectedWards, w);
+            return '<div class="w-box' + (isOn ? ' selected' : '') + '" data-rfw="' + E(w) + '">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center"><b>' + E(w) + '</b><span class="muted">' + (isOn ? '✓' : '+') + '</span></div>' +
+              (isOn ? '<div class="w-qty-box"><input type="number" inputmode="numeric" min="1" step="1" data-wqty="' + E(w) + '" value="' + E(RF.selectedWards[w]) + '" placeholder="العدد"></div>' : '') +
+            '</div>';
+          }).join('') +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px">' +
+          '<button type="button" class="btn sec" id="rf-back">السابق</button>' +
+          '<span class="msg err" id="rf-err"></span>' +
+          '<button type="button" class="btn" id="rf-done"' + (!selKeys.length ? ' disabled' : '') + '>تم</button>' +
+        '</div>' +
+      '</div>';
+
+    return stepHtml +
+      '<div class="card">' +
+        '<div class="toolbar"><b>عمليات اليوم</b><span class="chip">' + TECH.refillHistory.length + '</span></div>' +
+        '<div class="tw"><table>' +
+          '<tr><th>الوقت</th><th class="r">الصنف</th><th>القسم</th><th>العدد</th><th>الانتهاء</th></tr>' +
+          TECH.refillHistory.map(function (r) {
+            return '<tr><td>' + E(r.time) + '</td><td class="r"><b>' + E(r.item) + '</b></td><td><span class="ward-pill">' + E(r.ward) + '</span></td><td><b>' + r.qty + '</b></td><td>' + E(r.exp) + '</td></tr>';
+          }).join('') +
+        '</table></div>' +
+      '</div>';
+  }
+
+  function bindRefill() {
+    if (RF.step === 1) {
+      var itemIn = document.getElementById('rf-item'), expBox = document.querySelector('.exp-sel[data-exp="rf"]');
+      itemIn.oninput = function () {
+        RF.itemName = itemIn.value; RF.msg = '';
+        var match = TECH.items.filter(function (x) { return x.name === RF.itemName; })[0];
+        if (match && !expVal(expBox) && match.nearestExp) { var mm = /^(\d{1,2})\/(\d{4})$/.exec(match.nearestExp); if (mm) { expBox.querySelector('[data-em]').value = ('0' + mm[1]).slice(-2); var ys = expBox.querySelector('[data-ey]'); ys.value = mm[2]; RF.expiry = expVal(expBox); } }
+      };
+      expBind(function (k, v) { RF.expiry = v; });
+      document.getElementById('rf-next').onclick = function () {
+        RF.itemName = itemIn.value.trim(); RF.expiry = expVal(expBox);
+        if (!RF.itemName) { itemIn.focus(); return; }
+        RF.step = 2; render();
+      };
+      return;
+    }
+    document.querySelectorAll('[data-rfw]').forEach(function (box) {
+      box.onclick = function (e) {
+        if (e.target && e.target.tagName === 'INPUT') return;
+        var w = box.dataset.rfw;
+        if (Object.prototype.hasOwnProperty.call(RF.selectedWards, w)) delete RF.selectedWards[w];
+        else RF.selectedWards[w] = '';
+        render();
+        var inp = document.querySelector('input[data-wqty="' + w + '"]');
+        if (inp) inp.focus();
+      };
+    });
+    document.querySelectorAll('input[data-wqty]').forEach(function (inp) { inp.oninput = function () { RF.selectedWards[inp.dataset.wqty] = inp.value; }; });
+    document.getElementById('rf-all').onclick = function () {
+      var selKeys = Object.keys(RF.selectedWards);
+      if (selKeys.length === TECH.wards.length) RF.selectedWards = {};
+      else TECH.wards.forEach(function (w) { if (!Object.prototype.hasOwnProperty.call(RF.selectedWards, w)) RF.selectedWards[w] = ''; });
+      render();
+    };
+    document.getElementById('rf-repeat').onclick = function () {
+      var ordered = TECH.wards.filter(function (w) { return Object.prototype.hasOwnProperty.call(RF.selectedWards, w); });
+      if (ordered.length < 2) return;
+      var firstVal = '';
+      for (var i = 0; i < ordered.length; i++) { var v = String(RF.selectedWards[ordered[i]] || '').trim(); if (v !== '') { firstVal = v; break; } }
+      if (!firstVal) { document.getElementById('rf-err').textContent = 'أدخل العدد في أول قسم أولاً'; return; }
+      ordered.forEach(function (w) { RF.selectedWards[w] = firstVal; });
+      render();
+    };
+    document.getElementById('rf-back').onclick = function () { RF.step = 1; render(); };
+    document.getElementById('rf-done').onclick = function () {
+      var chosen = TECH.wards.filter(function (w) { return Object.prototype.hasOwnProperty.call(RF.selectedWards, w); });
+      var valid = [];
+      chosen.forEach(function (w) { var q = Math.floor(Number(RF.selectedWards[w])); if (q > 0) valid.push({ ward: w, qty: q }); });
+      if (!valid.length) { document.getElementById('rf-err').textContent = 'أدخل عدداً صحيحاً'; return; }
+      var match = TECH.items.filter(function (x) { return x.name === RF.itemName; })[0];
+      if (!match) { document.getElementById('rf-err').textContent = 'يُختار الصنف من القائمة'; return; }
+      var btn = document.getElementById('rf-done'); btn.disabled = true; btn.textContent = '…';
+      var doneName = RF.itemName;
+      AuthGate.run('adcRefill', valid.map(function (v) { return { code: match.code, qty: v.qty, ward: v.ward }; })).then(function (r) {
+        RF.step = 1; RF.itemName = ''; RF.expiry = ''; RF.selectedWards = {};
+        RF.msg = 'تم · ' + doneName + ' (' + valid.length + ' أقسام · ' + r.units + ')';
+        return techLoad().then(render);
+      }, function (e) { btn.disabled = false; btn.textContent = 'تم'; document.getElementById('rf-err').textContent = OrgUI.err(e); });
+    };
+  }
+
+  /* ---------- 3) الجرد الشهري (3 أعمدة) ---------- */
+  var countSearch = '', countFocus = 0, showFocusBox = true, confirmZero = null;
+  function buildCount() {
+    var done = TECH.items.filter(function (x) { return TECH.countDraft[x.code] && TECH.countDraft[x.code].physical !== undefined; }).length;
+    var cur = TECH.items[countFocus] || TECH.items[0];
+    var curDr = TECH.countDraft[cur.code] || {};
+    var rows = TECH.items.filter(function (x) { return !countSearch || (x.name + ' ' + x.code + ' ' + x.ward).toLowerCase().indexOf(countSearch) > -1; });
+
+    return (showFocusBox ?
+      '<div class="focus-box">' +
+        '<div class="toolbar">' +
+          '<div><b>' + E(cur.name) + '</b><div class="muted">' + E(cur.code) + ' · ' + E(cur.ward) + ' · ' + (countFocus + 1) + ' / ' + TECH.items.length + '</div></div>' +
+          '<button class="btn sec sm" id="cnt-hide-box">إخفاء</button>' +
+        '</div>' +
+        '<div class="grid-2" style="margin-bottom:8px">' +
+          '<label class="fld" style="margin-bottom:0">الكمية المتوفرة<input type="number" inputmode="numeric" min="0" step="1" id="fc-q" value="' + (curDr.physical !== undefined ? curDr.physical : '') + '" placeholder="0" style="font-size:17px;font-weight:700;text-align:center"></label>' +
+          '<label class="fld" style="margin-bottom:0">تاريخ الانتهاء' + expSel(cur.code, curDr.expiry) + '</label>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
+          '<button type="button" class="btn sec sm" id="q-zero">0</button>' +
+          '<button type="button" class="btn sec sm" id="q-plus5">+5</button>' +
+          '<button type="button" class="btn sec sm" id="q-plus10">+10</button>' +
+          (lastExpiry ? '<button type="button" class="btn sec sm" id="q-last-exp">' + E(lastExpiry) + '</button>' : '') +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;gap:8px">' +
+          '<button type="button" class="btn sec sm" id="fc-prev"' + (countFocus === 0 ? ' disabled' : '') + '>السابق</button>' +
+          '<button type="button" class="btn sm" id="fc-next">التالي</button>' +
+        '</div>' +
+      '</div>' : '') +
+      '<div class="card">' +
+        '<div class="toolbar">' +
+          '<input type="search" id="cnt-q" value="' + E(countSearch) + '" placeholder="بحث…" style="min-width:200px;flex:1">' +
+          '<div class="btn-group">' +
+            '<button type="button" class="btn sec sm" id="cnt-pdf">' + IC.file + ' PDF</button>' +
+            '<button type="button" class="btn sec sm" id="cnt-word">' + IC.file + ' Word</button>' +
+            '<span class="chip" id="cnt-prog">' + done + ' / ' + TECH.items.length + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="tw"><table>' +
+          '<tr><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المتوفرة</th><th>تاريخ الانتهاء</th></tr>' +
+          rows.map(function (x) {
+            var realIdx = TECH.items.indexOf(x), dr = TECH.countDraft[x.code] || {}, has = dr.physical !== undefined;
+            return '<tr class="' + (has ? 'done' : '') + '">' +
+              '<td class="code">' + E(x.code) + '</td><td class="r" style="cursor:pointer" data-sel="' + realIdx + '"><b>' + E(x.name) + '</b></td><td>' + E(x.strength || '—') + '</td><td>' + E(x.form || '—') + '</td>' +
+              '<td><input type="number" inputmode="numeric" min="0" step="1" class="qty-in" data-cp="' + E(x.code) + '" value="' + (has ? dr.physical : '') + '" placeholder="0"></td>' +
+              '<td>' + expSel(x.code, dr.expiry) + '</td>' +
+            '</tr>';
+          }).join('') +
+        '</table></div>' +
+      '</div>';
+  }
+  function bindCount(foot) {
+    foot.hidden = false;
+    var done = TECH.items.filter(function (x) { return TECH.countDraft[x.code] && TECH.countDraft[x.code].physical !== undefined; }).length;
+    foot.innerHTML =
+      '<div class="foot-in">' +
+        '<span class="msg ok" id="cnt-status">' + (lastSavedAt || '') + '</span>' +
+        '<div class="btn-group">' +
+          '<button class="btn sec" id="cnt-save">حفظ المسودة</button>' +
+          '<button class="btn" id="cnt-approve"' + (done !== TECH.items.length ? ' disabled' : '') + '>اعتماد</button>' +
+        '</div>' +
+      '</div>';
+
+    var exportCnt = function (fmt) {
+      exportReport(fmt,
+        { title: 'الجرد الشهري · ' + monthLabel(TECH.period), ref: TECH.period, ward: TECH.wards.join('، '), fileName: 'MonthlyCount_' + TECH.period },
+        ['#', 'الرقم التشغيلي', 'اسم الدواء', 'التركيز', 'الشكل الدوائي', 'القسم', 'الكمية المتوفرة', 'تاريخ الانتهاء'],
+        TECH.items.map(function (x, i) {
+          var dr = TECH.countDraft[x.code] || {};
+          return [i + 1, x.code, x.name, x.strength || '—', x.form || '—', x.ward, dr.physical !== undefined ? dr.physical : '—', dr.expiry || '—'];
+        })
+      );
+    };
+    document.getElementById('cnt-pdf').onclick = function () { exportCnt('pdf'); };
+    document.getElementById('cnt-word').onclick = function () { exportCnt('word'); };
+
+    var cur = TECH.items[countFocus] || TECH.items[0];
+    function setPhys(code, val) {
+      if (val === '' || val === null || isNaN(val) || val < 0) delete TECH.countDraft[code];
+      else TECH.countDraft[code] = { physical: Math.floor(Number(val)), expiry: (TECH.countDraft[code] && TECH.countDraft[code].expiry) || '' };
+      lastSavedAt = getGregorianNow().time;
+    }
+    function setExp(code, exp) {
+      var v = String(exp || '').trim();
+      if (v) lastExpiry = v;
+      if (!TECH.countDraft[code]) TECH.countDraft[code] = { physical: undefined, expiry: v };
+      else TECH.countDraft[code].expiry = v;
+      lastSavedAt = getGregorianNow().time;
+    }
+
+    var hideBox = document.getElementById('cnt-hide-box');
+    if (hideBox) hideBox.onclick = function () { showFocusBox = false; render(); };
+    var fcq = document.getElementById('fc-q'), fce = document.getElementById('fc-e');
+    if (fcq) {
+      fcq.oninput = function () { setPhys(cur.code, fcq.value.trim() === '' ? '' : Number(fcq.value)); };
+      fcq.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); countFocus = countFocus < TECH.items.length - 1 ? countFocus + 1 : 0; render(); } };
+    }
+    expBind(function (code, v) { setExp(code, v); render(); });
+    if (document.getElementById('q-zero')) document.getElementById('q-zero').onclick = function () { setPhys(cur.code, 0); render(); };
+    if (document.getElementById('q-plus5')) document.getElementById('q-plus5').onclick = function () { setPhys(cur.code, ((TECH.countDraft[cur.code] && TECH.countDraft[cur.code].physical) || 0) + 5); render(); };
+    if (document.getElementById('q-plus10')) document.getElementById('q-plus10').onclick = function () { setPhys(cur.code, ((TECH.countDraft[cur.code] && TECH.countDraft[cur.code].physical) || 0) + 10); render(); };
+    if (document.getElementById('q-last-exp')) document.getElementById('q-last-exp').onclick = function () { setExp(cur.code, lastExpiry); render(); };
+    if (document.getElementById('fc-prev')) document.getElementById('fc-prev').onclick = function () { if (countFocus > 0) { countFocus--; render(); } };
+    if (document.getElementById('fc-next')) document.getElementById('fc-next').onclick = function () { countFocus = countFocus < TECH.items.length - 1 ? countFocus + 1 : 0; render(); };
+
+    var cq = document.getElementById('cnt-q');
+    cq.oninput = function () { countSearch = cq.value.trim().toLowerCase(); var p = cq.selectionStart; render(); var n = document.getElementById('cnt-q'); n.focus(); try { n.setSelectionRange(p, p); } catch (e) {} };
+    document.querySelectorAll('[data-sel]').forEach(function (td) { td.onclick = function () { countFocus = Number(td.dataset.sel); showFocusBox = true; render(); }; });
+    document.querySelectorAll('input[data-cp]').forEach(function (inp) { inp.onchange = function () { setPhys(inp.dataset.cp, inp.value.trim() === '' ? '' : Number(inp.value)); render(); }; });
+
+
+    document.getElementById('cnt-save').onclick = function () {
+      var st = document.getElementById('cnt-status'); st.className = 'msg'; st.textContent = '…';
+      techSave().then(function (r) { lastSavedAt = 'محفوظ (' + r.saved + ') · ' + getGregorianNow().time; st.className = 'msg ok'; st.textContent = lastSavedAt; },
+        function (e) { st.className = 'msg err'; st.textContent = OrgUI.err(e); });
+    };
+    document.getElementById('cnt-approve').onclick = function () {
+      var btn = document.getElementById('cnt-approve');
+      if (!btn.dataset.ok) {
+        btn.dataset.ok = '1'; btn.textContent = 'تأكيد الاعتماد';
+        confirmZero = setTimeout(function () { delete btn.dataset.ok; btn.textContent = 'اعتماد'; }, 5000);
+        return;
+      }
+      clearTimeout(confirmZero); delete btn.dataset.ok; btn.disabled = true;
+      var st = document.getElementById('cnt-status'); st.className = 'msg'; st.textContent = '…';
+      techSave().then(function () { return AuthGate.run('adcCountApprove'); }).then(function (r) {
+        lastSavedAt = 'تم اعتماد جرد ' + r.closed; selectedYear = r.closed.slice(0, 4); selectedMonthNum = r.closed.slice(5); countFocus = 0;
+        return techLoad().then(render);
+      }, function (e) { btn.disabled = false; btn.textContent = 'اعتماد'; var c = String(e && e.message || e);
+        st.className = 'msg err'; st.textContent = /INCOMPLETE/.test(c) ? 'لم يكتمل جرد ' + c.split(':')[1] + ' صنف في كل الكابينات' : OrgUI.err(e); });
+    };
+  }
+
+  /* ---------- 4) السجلات ---------- */
+  function buildRecords() {
+    var years = (function () { var y = {}; y[selectedYear] = 1; y[String(new Date().getFullYear())] = 1; Object.keys(TECH.recordsByMonth).forEach(function (k) { y[k.slice(0, 4)] = 1; }); return Object.keys(y).sort(); })();
+    var ym = selectedYear + '-' + selectedMonthNum;
+    var monthRecord = TECH.recordsByMonth[ym];
+    var activeWards = monthRecord ? Object.keys(monthRecord.wards) : [];
+    if (selectedWardRecord && activeWards.indexOf(selectedWardRecord) === -1) selectedWardRecord = '';
+
+    var wardDetailHtml = '';
+    if (selectedWardRecord && monthRecord && monthRecord.wards[selectedWardRecord]) {
+      var wRows = monthRecord.wards[selectedWardRecord];
+      var wRefills = TECH.refillHistory.filter(function (r) { return r.period === ym && r.ward === selectedWardRecord; });
+      wardDetailHtml =
+        '<div class="card">' +
+          '<div class="toolbar">' +
+            '<div><b>' + E(selectedWardRecord) + ' · ' + E(monthLabel(ym)) + '</b><div class="muted">' + E(monthRecord.by) + ' · ' + wRows.length + '</div></div>' +
+            '<div class="btn-group">' +
+              '<button type="button" class="btn sec sm" id="rec-pdf">' + IC.file + ' PDF</button>' +
+              '<button type="button" class="btn sec sm" id="rec-word">' + IC.file + ' Word</button>' +
+              '<button type="button" class="btn sec sm" id="close-ward-detail">إغلاق</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="tw"><table>' +
+            '<thead><tr><th>#</th><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية</th><th>القسم</th><th>الانتهاء</th></tr></thead>' +
+            '<tbody>' + wRows.map(function (r, idx) {
+              return '<tr><td class="idx">' + (idx + 1) + '</td><td class="code">' + E(r.code) + '</td><td class="r"><b>' + E(r.name) + '</b></td><td>' + strengthCell(r.strength || 'n/a') + '</td><td>' + E(r.unit || '—') + '</td><td><b>' + r.physical + '</b></td><td><span class="ward-pill">' + E(selectedWardRecord) + '</span></td><td>' + E(r.expiry) + '</td></tr>';
+            }).join('') + '</tbody>' +
+          '</table></div>' +
+          (wRefills.length ?
+            '<div style="margin-top:14px"><b style="font-size:13.5px">' + E(selectedWardRecord) + '</b>' +
+            '<div class="tw" style="margin-top:6px"><table>' +
+              '<tr><th>الوقت</th><th class="r">الصنف</th><th>الكمية</th><th>الانتهاء</th></tr>' +
+              wRefills.map(function (rf) { return '<tr><td>' + E(rf.time) + '</td><td class="r">' + E(rf.item) + '</td><td><b>' + rf.qty + '</b></td><td>' + E(rf.exp) + '</td></tr>'; }).join('') +
+            '</table></div></div>' : '') +
+        '</div>';
+    }
+
+    return '<div class="card">' +
+      '<div class="toolbar">' +
+        '<b>السجلات</b>' +
+        '<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600">السنة ' +
+          '<select id="rec-year">' + years.map(function (y) { return '<option value="' + y + '"' + (y === selectedYear ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select>' +
+        '</label>' +
+      '</div>' +
+      '<div class="months-grid">' +
+        MONTHS_12.map(function (m) {
+          var key = selectedYear + '-' + m.num, rec = TECH.recordsByMonth[key], wList = rec ? Object.keys(rec.wards) : [], isSel = m.num === selectedMonthNum;
+          return '<button type="button" class="m-box' + (isSel ? ' active' : '') + (wList.length ? ' has-data' : '') + '" data-m="' + m.num + '"><b>' + E(m.ar) + '</b><span class="muted">' + (wList.length ? (wList.length + ' أقسام') : '—') + '</span></button>';
+        }).join('') +
+      '</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<div class="crumb"><span>السجلات</span><span>/</span><b>' + E(selectedYear) + '</b><span>/</span><b>' + E(monthLabel(ym)) + '</b></div>' +
+        '<b>الأقسام · ' + E(monthLabel(ym)) + '</b>' +
+        (activeWards.length ?
+          '<div class="wards-grid">' + activeWards.map(function (w) {
+            var cnt = monthRecord.wards[w].length, isW = selectedWardRecord === w;
+            return '<button type="button" class="w-box' + (isW ? ' selected' : '') + '" data-w="' + E(w) + '"><b>' + E(w) + '</b><span>' + cnt + '</span></button>';
+          }).join('') + '</div>' :
+          '<div class="muted" style="margin-top:8px">—</div>') +
+      '</div>' +
+      wardDetailHtml;
+  }
+
+  function bindRecords() {
+    document.getElementById('rec-year').onchange = function () { selectedYear = this.value; selectedWardRecord = ''; render(); };
+    document.querySelectorAll('.m-box').forEach(function (b) { b.onclick = function () { selectedMonthNum = b.dataset.m; selectedWardRecord = ''; render(); }; });
+    document.querySelectorAll('.w-box').forEach(function (b) { b.onclick = function () { selectedWardRecord = b.dataset.w; render(); }; });
+
+    var closeBtn = document.getElementById('close-ward-detail');
+    if (closeBtn) closeBtn.onclick = function () { selectedWardRecord = ''; render(); };
+
+    var ym = selectedYear + '-' + selectedMonthNum;
+    var monthRecord = TECH.recordsByMonth[ym];
+    if (selectedWardRecord && monthRecord && monthRecord.wards[selectedWardRecord]) {
+      var wRows = monthRecord.wards[selectedWardRecord];
+      var exportRec = function (fmt) {
+        exportReport(fmt,
+          { title: 'جرد قسم ' + selectedWardRecord, ref: ym, ward: selectedWardRecord, period: monthLabel(ym), by: monthRecord.by, fileName: 'Ward_' + selectedWardRecord + '_' + ym },
+          ['#', 'الرقم التشغيلي', 'اسم الدواء', 'التركيز', 'الشكل الدوائي', 'الكمية', 'الانتهاء'],
+          wRows.map(function (r, i) { return [i + 1, r.code, r.name, r.strength || 'n/a', r.unit || '', r.physical, r.expiry]; })
+        );
+      };
+      var rPdf = document.getElementById('rec-pdf');
+      var rWord = document.getElementById('rec-word');
+      if (rPdf) rPdf.onclick = function () { exportRec('pdf'); };
+      if (rWord) rWord.onclick = function () { exportRec('word'); };
+    }
+  }
+
+
+  /* ---------- data from the server (ADC technician) ---------- */
+  function ymToMmYyyy(v) { var m = /^(\d{4})-(\d{2})$/.exec(String(v || '')); return m ? m[2] + '/' + m[1] : ''; }
+  function mmYyyyToYm(v) { var m = /^(\d{1,2})\/(\d{4})$/.exec(String(v || '').trim()); return m ? m[2] + '-' + String(m[1]).padStart(2, '0') : ''; }
+  /* ward requests (floor stock / crash cart) of this technician's wards: New → pending, Preparing → my task, Ready/Delivered → done */
+  function techReqs(w, d) {
+    if (!w || !w.rows) return [];
+    var mine = (d.wards || []).map(function (x) { return String(x.ward).toLowerCase(); });
+    var rows = w.rows.filter(function (r) { return r.status !== 'Cancelled'; });
+    var hit = rows.filter(function (r) { return mine.indexOf(String(r.dept).toLowerCase()) > -1; });
+    if (hit.length || !mine.length) rows = hit.length ? hit : rows;
+    var ST = { New: 'pending', Preparing: 'task', Ready: 'done', Delivered: 'done' };
+    return rows.map(function (r) { var at = String(r.at || '');
+      return { id: r.id, ward: r.dept, date: at.slice(0, 10), time: at.slice(11, 16), status: ST[r.status] || 'done', returnNote: '', srv: r.status,
+        items: (r.items || []).map(function (it) { return { stockNo: it.no || '', name: it.name, strength: it.strength || 'n/a', form: it.form || '', reqQty: it.qty, prepQty: '', note: '' }; }) }; });
+  }
+  function techBuild(d, x, w) {
+    var dr = {}; Object.keys(d.draft || {}).forEach(function (c) { var k = d.draft[c]; dr[c] = { physical: k.physical === '' ? undefined : k.physical, expiry: ymToMmYyyy(k.expiry) }; });
+    var byCode = {}; d.items.forEach(function (i) { byCode[i.code] = i; });
+    var hist = [], recs = {};
+    (x && x.tx || []).forEach(function (r) {
+      if (String(r[4]) !== 'RECEIVED' || String(r[2]) !== d.period || !byCode[String(r[5])]) return;
+      hist.unshift({ time: String(r[1]).slice(11, 16), period: String(r[2]), ward: String(r[8] || ''), item: String(r[6]), qty: Number(r[11]) || 0, exp: '—', by: String(r[9] || '') });
+    });
+    (x && x.counts || []).forEach(function (c) {
+      var it = byCode[String(c[1])]; if (!it) return;
+      var mo = String(c[0]), rec = recs[mo] || (recs[mo] = { by: String(c[11] || '').replace(/\s*\(@.*$/, ''), wards: {} });
+      (rec.wards[it.ward] = rec.wards[it.ward] || []).push({ code: it.code, name: it.name, cat: it.abc || '', strength: it.strength || '', physical: Number(c[7]) || 0, unit: it.form || '', expiry: '—' });
+    });
+    Object.keys(recs).forEach(function (m) { Object.keys(recs[m].wards).forEach(function (w) { recs[m].wards[w].sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'en', { sensitivity: 'base' }); }); }); });
+    var nm = String(d.me || '');
+    return { loggedIn: true, name: nm, initials: nm.split(' ').slice(0, 2).map(function (s) { return s.charAt(0); }).join(' '), id: '', role: 'فني صيدلية',
+      period: d.period, cabinet: (d.clusters || []).map(function (c) { return c.split(' ')[0]; }).join(' · '),
+      wards: (d.wards || []).map(function (w) { return w.ward; }), canCount: !!(d.perms && d.perms.count), reminderDismissed: TECH ? TECH.reminderDismissed : false,
+      completedCountPeriods: {}, previewReminder: false,
+      items: d.items.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'en', { sensitivity: 'base' }); }).map(function (i) { return { code: i.code, name: i.name, cat: i.abc || '', strength: i.strength || '', form: i.form || '', ward: i.ward, stock: i.soh, nearestExp: (dr[i.code] && dr[i.code].expiry) || '' }; }),
+      requests: techReqs(w, d), reqNote: w && w.err ? w.err : '', refillHistory: hist, countDraft: dr, recordsByMonth: recs };
+  }
+  function techLoad() {
+    return Promise.all([AuthGate.run('adcGet'), AuthGate.run('adcExport').catch(function () { return null; }), AuthGate.run('wardQueue').catch(function (e) { return { err: OrgUI.err(e) }; })]).then(function (r) { D = r[0]; TECH = techBuild(r[0], r[1], r[2]); });
+  }
+  function techSave() {
+    var out = {}; TECH.items.forEach(function (x) { var k = TECH.countDraft[x.code]; out[x.code] = { physical: k && k.physical !== undefined ? k.physical : '', expiry: k ? mmYyyyToYm(k.expiry) : '' }; });
+    return AuthGate.run('adcCountSave', out);
+  }
+  function techStart(opts) {
+    if (opts && opts.ro) { RO = true; screen = 'count'; showFocusBox = false; }
+    var st = document.createElement('style'); st.textContent = TECH_CSS + '\n.tk-nav{display:flex!important;flex-direction:row!important;gap:6px;flex-wrap:wrap;margin:0 0 14px}.tk-nav .s-btn{width:auto}.banner{display:none!important}#tk-foot{position:sticky;bottom:0}#pr-edit-btn{display:none!important}';
+    document.head.appendChild(st);
+    if (!document.getElementById('modal-host')) { var mh = document.createElement('div'); mh.id = 'modal-host'; document.body.appendChild(mh); }
+    if (!document.getElementById('tk-foot')) { var f = document.createElement('div'); f.id = 'tk-foot'; f.className = 'foot'; f.hidden = true; document.getElementById('main').after(f); }
+    var n = new Date(); selectedYear = String(n.getFullYear()); selectedMonthNum = String(n.getMonth() + 1).padStart(2, '0');
+    return techLoad().then(function () { render(); setInterval(function () { try { updateClockDom(); } catch (e) {} }, 30000); });
+  }
+
+  return { start: techStart };
+})();
+
+  AuthGate.start({ accent: '#1c1c1c', bg: '#f6f5f2', barWidth: '1180px', page: 'adc', onReady: function () {
+    var main = document.getElementById('main');
+    load().then(function (d) {
+      if (d.perms.sup) { main.innerHTML = ''; TECHUI.start({ ro: true }).catch(function (e) { main.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; }); return; }
+      if (d.perms.refill && !d.perms.sup) { main.innerHTML = ''; TECHUI.start().catch(function (e) { main.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; }); return; }
+      var tabs = [];
+      if (d.perms.withdraw) tabs.push({ en: 'Withdraw', ar: 'السحب', render: withdraw });
+      if (d.perms.refill) tabs.push({ en: 'Daily refill', ar: 'التعبئة اليومية', render: refill });
+      if (d.perms.count) tabs.push({ en: 'Count & zeroing', ar: 'الجرد والتصفير', render: count });
+      if (d.perms.sup) tabs.push({ en: 'Supervisor view', ar: 'لوحة المشرف', render: sup });
+      if (d.scoped) { var bs = document.querySelector('.banner small'); if (bs) bs.textContent = d.clusters.length ? 'كابيناتك · Your cabinets: ' + d.clusters.join(' · ') : ''; }
+      if (d.scoped && !d.clusters.length) { main.innerHTML = '<div class="card msg err">لم تُسند إليك أي كابينة بعد — يُرجى مراجعة المشرف · No cabinet assigned to you yet</div>'; return; }
+      if (!tabs.length) { main.innerHTML = '<div class="card msg err">لا توجد صلاحية على الكابينات · No ADC permission</div>'; return; }
+      OrgUI.tabs(main, tabs);
+      countReminder(d, tabs);
+    }, function (e) { main.innerHTML = '<div class="card msg err">' + (/ADC_NOT_INSTALLED/.test(String(e && e.message)) ? 'وحدة الكابينات غير مثبّتة — يُرجى تشغيل adcInstall من المحرر' : OrgUI.err(e)) + '</div>'; });
+  } });
+</script>
+</body>
+</html>
