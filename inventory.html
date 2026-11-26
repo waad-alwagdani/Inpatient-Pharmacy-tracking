@@ -638,7 +638,7 @@ var AuthGate = (function () {
   };
   var NAV = { owner: ['Owner', 'لوحة المالك'], supervisor: ['Supervision', 'الإشراف'], dash: ['Dashboard', 'المؤشرات'], pack: ['Re-packaging', 'إعادة التغليف'],
     inventory: ['Inventory', 'المخزون'], invread: ['Inventory balance', 'رصيد المخزون'], labels: ['Labels', 'الليبلات'], adc: ['ADC cabinets', 'الكابينات'], ward: ['Ward requests', 'طلبات الأقسام'], wardreq: ['My requests', 'طلباتي'], quality: ['Quality', 'الجودة'], schedule: ['My tasks', 'مهامي'] };
-  var GROUPS = [['Management', 'الإدارة', ['quality', 'owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'invread', 'labels']], ['Me', 'حسابي', ['schedule']]];
+  var GROUPS = [['Management', 'الإدارة', ['quality', 'owner', 'supervisor', 'dash']], ['Work', 'العمل', ['wardreq', 'ward', 'adc', 'pack', 'inventory', 'labels']], ['Me', 'حسابي', ['schedule']]];
   var ROLE = { OWNER: ['Owner', 'المالك'], PHARMACY_SUPERVISOR: ['Pharmacy supervisor', 'مشرف الصيدلية'], DEPT_SUPERVISOR: ['Department supervisor', 'مشرف قسم'], PHARMACIST: ['Pharmacist', 'صيدلي'], NURSE: ['Nurse', 'تمريض'], QUALITY: ['Quality', 'الجودة'] };
   function L(p) { return LANG === 'en' ? p[0] : p[1]; }
   /* External links (open in a new tab): the inpatient pharmacy sheet for the owner and pharmacy / department supervisors.
