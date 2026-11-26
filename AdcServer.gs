@@ -157,7 +157,7 @@ function adcGet(token) {
   const ok = function (c) { return !sc || sc.indexOf(c) > -1; };
   // strength and dosage form come from the item lists (the ADC code is the item's serial number)
   const dm = {}; try { getData().drugs.forEach(function (d) { dm[d.no] = d; }); } catch (e) {}
-  const items = v.items.filter(function (x) { return ok(x.adc); }).map(function (x) { const d = dm[x.code]; x.strength = d ? d.strength : ''; x.form = d ? d.form : ''; return x; });
+  const items = v.items.filter(function (x) { return ok(x.adc); }).map(function (x) { const d = dm[x.code]; x.strength = d ? d.strength : ''; x.form = d ? d.form : ''; x.fexp = d ? d.expiry : ''; return x; });
   return { period: v.period, perms: a.p, items: items, priced: items.some(function (x) { return x.cost; }), wards: adcWards_().filter(function (w) { return ok(w.adc); }),
     clusters: all.filter(ok), scoped: !!sc, total: v.items.length,
     reasons: ADC.REASONS, draft: (a.p.count || a.p.sup) ? adcDraft_() : null, me: a.u.displayName,

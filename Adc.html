@@ -462,7 +462,7 @@ var TECHUI = (function () {
   };
 
   var TECH = null;
-  var screen = 'home', RO = false;
+  var screen = 'home', RO = false, roWard = '';
   var homeTab = 'inbox';
   var previewReqId = '';
   var editModeForReq = '';
@@ -706,6 +706,8 @@ var TECHUI = (function () {
       root.querySelectorAll('.s-btn').forEach(function (b) { if (b.dataset.s !== 'count' && b.dataset.s !== 'records') b.remove(); });
       root.querySelectorAll('.s-btn[data-s="count"] span span').forEach(function (x) { x.textContent = 'جرد الأقسام'; });
       if (screen === 'count') {
+        var rw = document.getElementById('ro-ward'); if (rw) rw.onchange = function () { roWard = rw.value; render(); };
+        if (!roWard) { var tb = root.querySelector('table'); if (tb) tb.insertAdjacentHTML('afterend', '<div class="muted" style="padding:18px;text-align:center">اختر القسم لعرض جرده</div>'); }
         root.querySelectorAll('table input, table select, .focus-box').forEach(function (x) { if (x.classList && x.classList.contains('focus-box')) x.remove(); else x.disabled = true; });
         ['cnt-save', 'cnt-approve'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
         foot.hidden = true;
@@ -1057,6 +1059,7 @@ var TECHUI = (function () {
     var cur = TECH.items[countFocus] || TECH.items[0];
     var curDr = TECH.countDraft[cur.code] || {};
     var rows = TECH.items.filter(function (x) { return !countSearch || (x.name + ' ' + x.code + ' ' + x.ward).toLowerCase().indexOf(countSearch) > -1; });
+    if (RO) rows = roWard ? rows.filter(function (x) { return x.ward === roWard; }) : [];
 
     return (showFocusBox ?
       '<div class="focus-box">' +
@@ -1081,6 +1084,7 @@ var TECHUI = (function () {
       '</div>' : '') +
       '<div class="card">' +
         '<div class="toolbar">' +
+          (RO ? '<select id="ro-ward" style="min-width:180px"><option value="">اختر القسم</option>' + TECH.items.map(function (x) { return x.ward; }).filter(function (w, i, a) { return w && a.indexOf(w) === i; }).sort().map(function (w) { return '<option' + (w === roWard ? ' selected' : '') + '>' + E(w) + '</option>'; }).join('') + '</select>' : '') +
           '<input type="search" id="cnt-q" value="' + E(countSearch) + '" placeholder="بحث…" style="min-width:200px;flex:1">' +
           '<div class="btn-group">' +
             '<button type="button" class="btn sec sm" id="cnt-pdf">' + IC.file + ' PDF</button>' +
@@ -1094,7 +1098,7 @@ var TECHUI = (function () {
             var realIdx = TECH.items.indexOf(x), dr = TECH.countDraft[x.code] || {}, has = dr.physical !== undefined;
             return '<tr class="' + (has ? 'done' : '') + '">' +
               '<td class="code">' + E(x.code) + '</td><td class="r" ' + (RO ? '' : 'style="cursor:pointer" data-sel="' + realIdx + '"') + '><b>' + E(x.name) + '</b></td><td>' + E(x.strength || '—') + '</td><td>' + E(x.form || '—') + '</td>' +
-              (RO ? '<td>' + E(x.ward || '—') + '</td><td><b>' + (has ? E(dr.physical) : '—') + '</b></td><td dir="ltr">' + E(dr.expiry || '—') + '</td>' :
+              (RO ? '<td><b>' + (has ? E(dr.physical) : '—') + '</b></td><td dir="ltr">' + E(x.fexp || '—') + '</td>' :
               '<td><input type="number" inputmode="numeric" min="0" step="1" class="qty-in" data-cp="' + E(x.code) + '" value="' + (has ? dr.physical : '') + '" placeholder="0"></td>' +
               '<td>' + expSel(x.code, dr.expiry) + '</td>') +
             '</tr>';
@@ -1309,7 +1313,7 @@ var TECHUI = (function () {
       period: d.period, cabinet: (d.clusters || []).map(function (c) { return c.split(' ')[0]; }).join(' · '),
       wards: (d.wards || []).map(function (w) { return w.ward; }), canCount: !!(d.perms && d.perms.count), reminderDismissed: TECH ? TECH.reminderDismissed : false,
       completedCountPeriods: {}, previewReminder: false,
-      items: d.items.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'en', { sensitivity: 'base' }); }).map(function (i) { return { code: i.code, name: i.name, cat: i.abc || '', strength: i.strength || '', form: i.form || '', ward: i.ward, stock: i.soh, nearestExp: (dr[i.code] && dr[i.code].expiry) || '' }; }),
+      items: d.items.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'en', { sensitivity: 'base' }); }).map(function (i) { return { code: i.code, name: i.name, cat: i.abc || '', strength: i.strength || '', form: i.form || '', fexp: i.fexp || '', ward: i.ward, stock: i.soh, nearestExp: (dr[i.code] && dr[i.code].expiry) || '' }; }),
       requests: techReqs(w, d), reqNote: w && w.err ? w.err : '', refillHistory: hist, countDraft: dr, recordsByMonth: recs };
   }
   function techLoad() {
