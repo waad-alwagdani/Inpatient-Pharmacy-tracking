@@ -1940,7 +1940,7 @@ var TECHUI = (function () {
   };
 
   var TECH = null;
-  var screen = 'home';
+  var screen = 'home', RO = false;
   var homeTab = 'inbox';
   var previewReqId = '';
   var editModeForReq = '';
@@ -2180,6 +2180,16 @@ var TECHUI = (function () {
     else if (screen === 'count') bindCount(foot);
     else bindRecords();
 
+    if (RO) {
+      root.querySelectorAll('.s-btn').forEach(function (b) { if (b.dataset.s !== 'count' && b.dataset.s !== 'records') b.remove(); });
+      root.querySelectorAll('.s-btn[data-s="count"] span span').forEach(function (x) { x.textContent = 'معاينة الكابينات'; });
+      if (screen === 'count') {
+        root.querySelectorAll('table input, table select, .focus-box').forEach(function (x) { if (x.classList && x.classList.contains('focus-box')) x.remove(); else x.disabled = true; });
+        ['cnt-save', 'cnt-approve'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
+        foot.hidden = true;
+      }
+      return;
+    }
     renderReminderModal();
   }
 
@@ -2786,7 +2796,8 @@ var TECHUI = (function () {
     var out = {}; TECH.items.forEach(function (x) { var k = TECH.countDraft[x.code]; out[x.code] = { physical: k && k.physical !== undefined ? k.physical : '', expiry: k ? mmYyyyToYm(k.expiry) : '' }; });
     return AuthGate.run('adcCountSave', out);
   }
-  function techStart() {
+  function techStart(opts) {
+    if (opts && opts.ro) { RO = true; screen = 'count'; showFocusBox = false; }
     var st = document.createElement('style'); st.textContent = TECH_CSS + '\n.tk-nav{display:flex!important;flex-direction:row!important;gap:6px;flex-wrap:wrap;margin:0 0 14px}.tk-nav .s-btn{width:auto}.banner{display:none!important}#tk-foot{position:sticky;bottom:0}#pr-edit-btn{display:none!important}';
     document.head.appendChild(st);
     if (!document.getElementById('modal-host')) { var mh = document.createElement('div'); mh.id = 'modal-host'; document.body.appendChild(mh); }
@@ -2801,6 +2812,7 @@ var TECHUI = (function () {
   AuthGate.start({ accent: '#1c1c1c', bg: '#f6f5f2', barWidth: '1180px', page: 'adc', onReady: function () {
     var main = document.getElementById('main');
     load().then(function (d) {
+      if (d.perms.sup) { main.innerHTML = ''; TECHUI.start({ ro: true }).catch(function (e) { main.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; }); return; }
       if (d.perms.refill && !d.perms.sup) { main.innerHTML = ''; TECHUI.start().catch(function (e) { main.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; }); return; }
       var tabs = [];
       if (d.perms.withdraw) tabs.push({ en: 'Withdraw', ar: 'السحب', render: withdraw });
