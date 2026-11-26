@@ -1128,12 +1128,13 @@ var OosUI = (function () {
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label style="display:block;font-size:12px;font-weight:700">التركيز<input type="text" data-es style="display:block;margin-top:4px;direction:ltr;width:100%" value="'+esc(r.strength)+'"></label>'+
         '<label style="display:block;font-size:12px;font-weight:700">الشكل الدوائي'+formSel('data-ef',r.form)+'</label></div>'+
         '<div style="font-size:12px;color:#71717a">الرقم التشغيلي #'+esc(no)+' ثابت، والليبل المطبوع يبقى صالحًا ويعرض البيانات الجديدة.</div>'+
-        '<div style="display:grid;grid-template-columns:1fr auto;gap:6px"><button class="btn" type="button" data-esave>حفظ التعديل</button><button class="btn2" type="button" data-edel style="color:#b91c1c;border-color:#fecaca">حذف الصنف</button></div></div>';
+        '<div style="display:grid;grid-template-columns:1fr auto auto;gap:6px"><button class="btn" type="button" data-esave>حفظ التعديل</button><button class="btn2" type="button" data-ecancel style="height:46px">إلغاء</button><button class="btn2" type="button" data-edel style="height:46px;color:#b91c1c;border-color:#fecaca">حذف الصنف</button></div></div>';
+      box.querySelector('[data-ecancel]').onclick=function(){box.innerHTML='';};
       box.querySelector('[data-edel]').onclick=function(){var m=document.createElement('div');
         m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:999';
-        m.innerHTML='<div style="background:#fff;border-radius:14px;padding:20px;max-width:380px;width:100%;direction:rtl;text-align:right">'+
+        m.innerHTML='<div style="box-sizing:border-box;background:#fff;border-radius:14px;padding:20px;max-width:380px;width:100%;direction:rtl;text-align:right">'+
           '<b style="font-size:16px">تنبيه</b><p style="margin:10px 0 16px;font-size:14px;line-height:1.7">أنت على وشك حذف الصنف <b dir="ltr">'+esc(r.name+' '+r.strength)+'</b> (#'+esc(no)+') من دليل الأدوية. لا يمكن التراجع عن هذا الإجراء. هل أنت متأكد؟</p>'+
-          '<div style="display:flex;gap:8px;justify-content:flex-start"><button class="btn" type="button" data-cdel style="background:#b91c1c">حذف</button><button class="btn2" type="button" data-cno>إلغاء</button></div></div>';
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn" type="button" data-cdel style="width:100%;margin:0;background:#b91c1c;color:#fff;opacity:1">حذف</button><button class="btn2" type="button" data-cno style="width:100%;margin:0;height:46px">إلغاء</button></div></div>';
         document.body.appendChild(m);
         m.querySelector('[data-cno]').onclick=function(){m.remove();};
         m.querySelector('[data-cdel]').onclick=function(){var b=this;b.disabled=true;
