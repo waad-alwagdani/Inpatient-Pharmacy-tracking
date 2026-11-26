@@ -2182,7 +2182,7 @@ var TECHUI = (function () {
 
     if (RO) {
       root.querySelectorAll('.s-btn').forEach(function (b) { if (b.dataset.s !== 'count' && b.dataset.s !== 'records') b.remove(); });
-      root.querySelectorAll('.s-btn[data-s="count"] span span').forEach(function (x) { x.textContent = 'معاينة الكابينات'; });
+      root.querySelectorAll('.s-btn[data-s="count"] span span').forEach(function (x) { x.textContent = 'جرد الأقسام'; });
       if (screen === 'count') {
         root.querySelectorAll('table input, table select, .focus-box').forEach(function (x) { if (x.classList && x.classList.contains('focus-box')) x.remove(); else x.disabled = true; });
         ['cnt-save', 'cnt-approve'].forEach(function (id) { var x = document.getElementById(id); if (x) x.style.display = 'none'; });
@@ -2567,13 +2567,14 @@ var TECHUI = (function () {
           '</div>' +
         '</div>' +
         '<div class="tw"><table>' +
-          '<tr><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th><th>الكمية المتوفرة</th><th>تاريخ الانتهاء</th></tr>' +
+          '<tr><th>الرقم التشغيلي</th><th class="r">اسم الدواء</th><th>التركيز</th><th>الشكل الدوائي</th>' + (RO ? '<th>القسم</th>' : '') + '<th>الكمية المتوفرة</th><th>تاريخ الانتهاء</th></tr>' +
           rows.map(function (x) {
             var realIdx = TECH.items.indexOf(x), dr = TECH.countDraft[x.code] || {}, has = dr.physical !== undefined;
             return '<tr class="' + (has ? 'done' : '') + '">' +
-              '<td class="code">' + E(x.code) + '</td><td class="r" style="cursor:pointer" data-sel="' + realIdx + '"><b>' + E(x.name) + '</b></td><td>' + E(x.strength || '—') + '</td><td>' + E(x.form || '—') + '</td>' +
+              '<td class="code">' + E(x.code) + '</td><td class="r" ' + (RO ? '' : 'style="cursor:pointer" data-sel="' + realIdx + '"') + '><b>' + E(x.name) + '</b></td><td>' + E(x.strength || '—') + '</td><td>' + E(x.form || '—') + '</td>' +
+              (RO ? '<td>' + E(x.ward || '—') + '</td><td><b>' + (has ? E(dr.physical) : '—') + '</b></td><td dir="ltr">' + E(dr.expiry || '—') + '</td>' :
               '<td><input type="number" inputmode="numeric" min="0" step="1" class="qty-in" data-cp="' + E(x.code) + '" value="' + (has ? dr.physical : '') + '" placeholder="0"></td>' +
-              '<td>' + expSel(x.code, dr.expiry) + '</td>' +
+              '<td>' + expSel(x.code, dr.expiry) + '</td>') +
             '</tr>';
           }).join('') +
         '</table></div>' +
