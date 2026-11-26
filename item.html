@@ -164,6 +164,7 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
   #app *{min-width:0;max-width:100%;overflow-wrap:anywhere}
   .edu p{word-break:break-word}
   #pl-sw,.pt-live,.stk .hd{display:none!important}
+  .ixbtn{display:flex;align-items:center;justify-content:center;margin-top:12px;height:42px;border-radius:12px;background:var(--navy,#1c1c1c);color:#fff!important;text-decoration:none;font-weight:700;font-size:14px;direction:ltr}
 </style>
 <!-- One language at a time across the whole system (Arabic only or English only) — Pharmacy Tracker by WaadAlwagdani -->
 <style>
@@ -307,7 +308,8 @@ window.google={script:{run:runner(null,null),url:{getLocation:function(cb){cb({p
     var eduBox= drug ? '<div class="edu"><div class="eh"><div class="t"><span class="ic">'+ICO.book+'</span><span><b>معلومة تثقيفية</b><small>Educational Info</small></span></div>'+
       (drug.edu?'<div class="lsw"><button type="button" id="eduEn" class="on">EN</button><button type="button" id="eduAr" aria-pressed="false">AR</button></div>':'')+'</div>'+
       '<div class="box"><p id="eduT" dir="ltr" style="text-align:left;margin:0">'+(drug.edu?esc(drug.edu):'—')+'</p></div>'+
-      '<div class="disc">'+ICO.info+B('للتثقيف فقط، لا يغني عن المرجع المعتمد')+'</div></div>' : '';
+      '<div class="disc">'+ICO.info+B('للتثقيف فقط، لا يغني عن المرجع المعتمد')+'</div>'+
+      '<a class="ixbtn" href="https://reference.medscape.com/drug-interactionchecker" target="_blank" rel="noopener">Check Interactions</a></div>' : '';
     var tail = '</div>' + eduBox + oosBox + '<button class="submit" id="go" type="button">'+SEND+'</button><div class="msg" id="msg"></div><div>';
     if(drug && drug.group==='other'){
       app.innerHTML = drugPart + '<div style="display:contents">' + tail + '</div>';
