@@ -1667,7 +1667,7 @@ var OrgUI = (function () {
       var picked = rows.filter(function (x) { return qty[x.code] > 0; }), units = picked.reduce(function (s, x) { return s + qty[x.code]; }, 0);
       el.innerHTML = '<div class="k"><div><b style="color:#b91c1c">' + n.STAT + '</b><span>🔴 تدخل عاجل · STAT</span></div><div><b style="color:#a16207">' + n.REORDER + '</b><span>🟡 تعبئة يومية · Reorder</span></div>' +
         '<div><b style="color:#15803d">' + n.OK + '</b><span>🟢 رصيد آمن · OK</span></div><div><b>' + units + '</b><span>وحدات التعبئة الحالية · Units to add</span></div></div>' +
-        '<div class="card"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div class="row" style="gap:10px;flex-wrap:wrap"><label>الكابينة · Cabinet<select id="r-cl"><option value="all">كل الكابينات · All</option>' + D.clusters.map(function (c) { return '<option' + (c === CL ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label>' +
+        '<div class="card"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div class="row" style="gap:10px;flex-wrap:wrap"><label>الكابينة · Cabinet<select id="r-cl"><option value="all">جميع الكابينات · All</option>' + D.clusters.map(function (c) { return '<option' + (c === CL ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label>' +
         '<input type="search" id="r-q" placeholder="بحث أو مسح · Search / scan" value="' + E(Q) + '" style="min-width:220px">' +
         '<label style="display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" id="r-only"' + (ONLY ? ' checked' : '') + '> الأصناف التي تحتاج تعبئة فقط</label></div>' +
         '<div class="row"><button class="btn sec" id="r-pick"' + (due.length ? '' : ' disabled') + '>قائمة التجهيز · Pick list</button><button class="btn" id="r-go"' + (picked.length ? '' : ' disabled') + '>تأكيد التعبئة · Confirm refill' + (picked.length ? ' (' + picked.length + ')' : '') + '</button></div></div>' +
@@ -1758,14 +1758,14 @@ var OrgUI = (function () {
   /* who is responsible for which cabinet — each employee then sees only their cabinet(s) */
   function assignCard() {
     if (!D.staff) return '';
-    return '<div class="card"><div class="row" style="justify-content:space-between"><b>المسؤولون عن الكابينات · Cabinet assignment</b><button class="btn" id="as-save">حفظ التعيين · Save</button></div>' +
-      '<div class="muted" style="margin:4px 0 10px">كل موظف يرى الكابينة المُسندة إليه فقط (السحب والتعبئة والجرد). المشرف يرى الكل.</div>' +
+    return '<div class="card"><div class="row" style="justify-content:space-between"><b>إسناد الكابينات · Cabinet assignment</b><button class="btn" id="as-save">حفظ التعيين · Save</button></div>' +
+      '<div class="muted" style="margin:4px 0 10px">يقتصر عرض كل موظف على الكابينة المُسندة إليه (السحب والتعبئة والجرد)، ويطّلع المشرف على جميع الكابينات.</div>' +
       (D.staff.length ? '<div class="tw"><table><tr><th class="l">الكابينة · Cabinet</th><th class="l">الموظفون المسؤولون · Responsible staff</th></tr>' +
         D.clusters.map(function (c) { var on = (D.assign && D.assign[c]) || [];
           return '<tr><td class="l"><b>' + E(c) + '</b></td><td class="l"><div class="row" style="gap:6px">' + D.staff.map(function (u) {
             return '<label style="flex-direction:row;align-items:center;gap:6px;border:1px solid #e7e4de;border-radius:999px;padding:4px 10px;font-weight:600"><input type="checkbox" data-as="' + E(c) + '" value="' + E(u.id) + '"' + (on.indexOf(u.id) > -1 ? ' checked' : '') + '>' + E(u.name) + '</label>';
           }).join('') + '</div></td></tr>'; }).join('') + '</table></div>'
-        : '<div class="muted">لا يوجد موظفون لديهم محطات الكابينات بعد — تُضاف المحطات من لوحة المالك · No staff with ADC stations yet</div>') +
+        : '<div class="muted">لا يوجد موظفون بصلاحية الكابينات حاليًا — تُضاف الصلاحيات من لوحة المالك · No staff with ADC stations yet</div>') +
       '<div class="msg" id="as-m"></div></div>';
   }
   function bindAssign(el) {
@@ -1787,16 +1787,16 @@ var OrgUI = (function () {
         F = d.from; T = d.to;
         var opt = function (v) { return d.months.map(function (m) { return '<option' + (m === v ? ' selected' : '') + '>' + E(m) + '</option>'; }).join(''); };
         var net = 0, zero = 0; d.rows.forEach(function (r) { net += r.variance; if (!r.variance) zero++; });
-        var prog = d.open.progress.map(function (p) { return '<div><b dir="ltr" style="text-align:right">' + p.counted + ' / ' + p.total + '</b><span>' + E(p.adc.slice(0, 6)) + ' · عُدّ في ' + E(d.open.period) + '</span></div>'; }).join('');
-        host.innerHTML = '<div class="card"><div class="row" style="justify-content:space-between"><b>الجرد الشهري — التفاصيل · Monthly count details</b>' +
+        var prog = d.open.progress.map(function (p) { return '<div><b dir="ltr" style="text-align:right">' + p.counted + ' / ' + p.total + '</b><span>' + E(p.adc.slice(0, 6)) + ' · جرد فترة ' + E(d.open.period) + '</span></div>'; }).join('');
+        host.innerHTML = '<div class="card"><div class="row" style="justify-content:space-between"><b>تفاصيل الجرد الشهري · Monthly count details</b>' +
           (d.months.length ? '<div class="row"><label>من · From<select id="cd-f">' + opt(F) + '</select></label><label>إلى · To<select id="cd-t">' + opt(T) + '</select></label></div>' : '') + '</div>' +
-          '<div class="muted" style="margin:8px 0">الجرد المفتوح الآن · Open count (' + E(d.open.period) + ')</div><div class="k">' + prog + '</div>' +
-          (d.rows.length ? '<div class="k"><div><b>' + d.rows.length + '</b><span>أصناف معدودة · Items</span></div><div><b>' + (d.rows.length ? Math.round(zero / d.rows.length * 1000) / 10 : 0) + '%</b><span>دقة الجرد · Accuracy</span></div><div><b style="color:' + (net < 0 ? '#b91c1c' : '#15803d') + '">' + net + '</b><span>صافي الفارق · Net variance</span></div></div>' +
-            '<div class="tw"><table><tr><th>الشهر · Month</th><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>الافتتاحي</th><th>المُدخل</th><th>المسحوب</th><th>الدفتري · System</th><th>الفعلي · Physical</th><th>الفارق · Var.</th>' + (D.priced ? '<th>SAR</th>' : '') + '<th class="l">السبب الجذري · Root cause</th><th>عدّه · Counted by</th></tr>' +
+          '<div class="muted" style="margin:8px 0">تقدم الجرد المفتوح حاليًا · Open count progress (' + E(d.open.period) + ')</div><div class="k">' + prog + '</div>' +
+          (d.rows.length ? '<div class="k"><div><b>' + d.rows.length + '</b><span>الأصناف المجرودة · Items</span></div><div><b>' + (d.rows.length ? Math.round(zero / d.rows.length * 1000) / 10 : 0) + '%</b><span>دقة الجرد · Accuracy</span></div><div><b style="color:' + (net < 0 ? '#b91c1c' : '#15803d') + '">' + net + '</b><span>صافي الفارق · Net variance</span></div></div>' +
+            '<div class="tw"><table><tr><th>الشهر · Month</th><th class="l">الصنف · Item</th><th>الكابينة · ADC</th><th>الافتتاحي</th><th>الوارد</th><th>المنصرف</th><th>الدفتري · System</th><th>الفعلي · Physical</th><th>الفارق · Var.</th>' + (D.priced ? '<th>SAR</th>' : '') + '<th class="l">السبب الجذري · Root cause</th><th>القائم بالجرد · Counted by</th></tr>' +
             d.rows.map(function (r) { return '<tr><td>' + E(r.month) + '</td><td class="l" dir="ltr"><b>' + E(r.name) + '</b> <span class="muted">' + E(r.code) + '</span></td><td class="muted">' + E(r.adc.slice(0, 6)) + '</td><td>' + r.opening + '</td><td>' + r.rec + '</td><td>' + r.out + '</td><td>' + r.system + '</td><td><b>' + r.physical + '</b></td>' +
               '<td style="font-weight:700;color:' + (r.variance < 0 ? '#b91c1c' : r.variance > 0 ? '#a16207' : '#15803d') + '">' + r.variance + '</td>' + (D.priced ? '<td>' + (r.sar === '' ? '' : sar(r.sar)) + '</td>' : '') +
               '<td class="l">' + E(r.cause) + '</td><td class="muted">' + E(r.by) + '</td></tr>'; }).join('') + '</table></div>'
-            : '<div class="muted" style="padding:10px 0">لا يوجد جرد معتمد بعد · No approved count yet</div>') + '</div>';
+            : '<div class="muted" style="padding:10px 0">لا يوجد جرد معتمد للفترة المحددة · No approved count yet</div>') + '</div>';
         var f = host.querySelector('#cd-f'), t = host.querySelector('#cd-t');
         if (f) { f.onchange = function () { F = f.value; go(); }; t.onchange = function () { T = t.value; go(); }; }
       }, function (e) { host.innerHTML = '<div class="card msg err">' + OrgUI.err(e) + '</div>'; });
@@ -1809,16 +1809,16 @@ var OrgUI = (function () {
       el.innerHTML = '<div class="card muted">…</div>';
       AuthGate.run('adcSummary', M, C).then(function (s) {
         var t = s.totals;
-        el.innerHTML = assignCard() + '<div id="cd"></div>' + '<div class="card"><div class="row" style="justify-content:space-between"><div class="row"><label>الفترة · Period<select id="s-m"><option value="all">كل الأشهر · All</option>' + s.months.map(function (m) { return '<option' + (m === M ? ' selected' : '') + '>' + E(m) + '</option>'; }).join('') + '</select></label>' +
-          '<label>الكابينة · Cabinet<select id="s-c"><option value="all">كل الكابينات · All</option>' + s.clusters.map(function (c) { return '<option' + (c === C ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label></div>' +
-          '<button class="btn" id="s-x">تصدير الإكسل المحدّث · Download master Excel</button></div><div class="msg" id="s-msg"></div></div>' +
-          '<div class="k"><div><b>' + t.rec + '</b><span>كم دخل · Received</span></div><div><b>' + t.scan + '</b><span>طلع بالباركود · Scanned out</span></div><div><b style="color:#b91c1c">' + t.over + '</b><span>طلع بدون مسح · Overrides</span></div>' +
-          (s.priced ? '<div><b>' + sar(t.outSAR) + '</b><span>قيمة المنصرف (المسعّر) · Out SAR</span></div>' : '') + '<div><b style="color:' + (t.bcma >= 95 ? '#15803d' : '#b91c1c') + '">' + t.bcma + '%</b><span>الامتثال للمسح · BCMA</span></div></div>' +
-          '<div class="card"><b>فين راح؟ · Consumption by ward</b><div class="tw"><table><tr><th class="l">القسم · Ward</th><th>الكابينة · ADC</th><th>دخل · In</th><th>باركود · Scanned</th><th>طارئ · Override</th>' + (s.priced ? '<th>SAR</th>' : '') + '<th>BCMA</th></tr>' +
+        el.innerHTML = assignCard() + '<div id="cd"></div>' + '<div class="card"><div class="row" style="justify-content:space-between"><div class="row"><label>الفترة · Period<select id="s-m"><option value="all">جميع الأشهر · All</option>' + s.months.map(function (m) { return '<option' + (m === M ? ' selected' : '') + '>' + E(m) + '</option>'; }).join('') + '</select></label>' +
+          '<label>الكابينة · Cabinet<select id="s-c"><option value="all">جميع الكابينات · All</option>' + s.clusters.map(function (c) { return '<option' + (c === C ? ' selected' : '') + '>' + E(c) + '</option>'; }).join('') + '</select></label></div>' +
+          '<button class="btn" id="s-x">تصدير ملف الإكسل · Download master Excel</button></div><div class="msg" id="s-msg"></div></div>' +
+          '<div class="k"><div><b>' + t.rec + '</b><span>الكمية الواردة · Received</span></div><div><b>' + t.scan + '</b><span>المنصرف بالباركود · Scanned out</span></div><div><b style="color:#b91c1c">' + t.over + '</b><span>الصرف الاستثنائي · Overrides</span></div>' +
+          (s.priced ? '<div><b>' + sar(t.outSAR) + '</b><span>قيمة المنصرف (المسعّر) · Out SAR</span></div>' : '') + '<div><b style="color:' + (t.bcma >= 95 ? '#15803d' : '#b91c1c') + '">' + t.bcma + '%</b><span>معدل الامتثال للمسح · BCMA</span></div></div>' +
+          '<div class="card"><b>الاستهلاك حسب القسم · Consumption by ward</b><div class="tw"><table><tr><th class="l">القسم · Ward</th><th>الكابينة · ADC</th><th>الوارد · In</th><th>بالباركود · Scanned</th><th>استثنائي · Override</th>' + (s.priced ? '<th>SAR</th>' : '') + '<th>BCMA</th></tr>' +
           s.wards.map(function (w) { return '<tr><td class="l"><b>' + E(w.ward) + '</b></td><td class="muted">' + E(w.adc.slice(0, 6)) + '</td><td>' + w.rec + '</td><td>' + w.scan + '</td><td style="color:' + (w.over ? '#b91c1c' : '') + '">' + w.over + '</td>' + (s.priced ? '<td>' + sar(w.outSAR) + '</td>' : '') + '<td>' + w.bcma + '%</td></tr>'; }).join('') + '</table></div></div>' +
-          '<div class="card"><b>مين سحب أو عبّأ؟ · Staff accountability</b><div class="tw"><table><tr><th class="l">الموظف · User</th><th>الصفة · Role</th><th>عبّأ · Refilled</th><th>باركود · Scanned</th><th>طارئ · Override</th><th>طارئ لدواء مراقب · Controlled overrides</th><th>BCMA</th></tr>' +
+          '<div class="card"><b>سجل عمليات الموظفين · Staff accountability</b><div class="tw"><table><tr><th class="l">الموظف · User</th><th>الدور الوظيفي · Role</th><th>التعبئة · Refilled</th><th>بالباركود · Scanned</th><th>استثنائي · Override</th><th>صرف استثنائي لأدوية مراقبة · Controlled overrides</th><th>BCMA</th></tr>' +
           s.staff.map(function (u) { return '<tr><td class="l">' + E(u.user) + '</td><td class="muted">' + E(u.role) + '</td><td>' + u.rec + '</td><td>' + u.scan + '</td><td style="color:' + (u.over ? '#b91c1c' : '') + '">' + u.over + '</td><td style="color:' + (u.ctrl ? '#5b21b6;font-weight:700' : '') + '">' + u.ctrl + '</td><td>' + u.bcma + '%</td></tr>'; }).join('') + '</table></div></div>' +
-          '<div class="card"><b>الجرد الشهري · Monthly reconciliation</b><div class="tw"><table><tr><th>الشهر · Month</th><th>الأصناف · Items</th><th>مطابق · Zero variance</th><th>دقة الجرد · Accuracy</th><th>صافي الفارق · Net</th>' + (s.priced ? '<th>SAR</th>' : '') + '</tr>' +
+          '<div class="card"><b>المطابقة والجرد الشهري · Monthly reconciliation</b><div class="tw"><table><tr><th>الشهر · Month</th><th>الأصناف · Items</th><th>مطابق · Zero variance</th><th>دقة الجرد · Accuracy</th><th>صافي الفارق · Net</th>' + (s.priced ? '<th>SAR</th>' : '') + '</tr>' +
           s.variance.map(function (v) { return '<tr><td>' + E(v.month) + '</td><td>' + v.items + '</td><td>' + v.zero + '</td><td>' + v.accuracy + '%</td><td style="color:' + (v.net < 0 ? '#b91c1c' : '') + '">' + v.net + '</td>' + (s.priced ? '<td>' + sar(v.sar) + '</td>' : '') + '</tr>'; }).join('') + '</table></div></div>';
         el.querySelector('#s-m').onchange = function () { M = this.value; go(); };
         el.querySelector('#s-c').onchange = function () { C = this.value; go(); };
@@ -1846,12 +1846,12 @@ var OrgUI = (function () {
     // supervisor summary — SUMIFS over the transactions sheet
     var s = wb.addWorksheet('ملخص مشرف الصيدلية', { views: [{ rightToLeft: true }] });
     s.getCell('A1').value = 'لوحة تحكم مشرف الصيدلية — Pharmacy Tracker by WaadAlwagdani'; s.getCell('A1').font = { bold: true, size: 14 };
-    head(s, 3, ['كم دخل (Received)', 'طلع بالباركود (Scanned Out)', 'طلع بدون مسح (Override)', 'قيمة المنصرف للأصناف المسعّرة (SAR)', 'الامتثال للمسح (BCMA %)']);
+    head(s, 3, ['الكمية الواردة (Received)', 'المنصرف بالباركود (Scanned Out)', 'الصرف الاستثنائي (Override)', 'قيمة المنصرف للأصناف المسعّرة (SAR)', 'معدل الامتثال للمسح (BCMA %)']);
     var T = "'" + TXN + "'!";
     s.getRow(4).values = [{ formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"RECEIVED")+SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"RETURN")' }, { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"SCANNED")' },
       { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$E:$E,"OVERRIDE")' }, { formula: 'SUMIFS(' + T + '$M:$M,' + T + '$E:$E,"SCANNED")+SUMIFS(' + T + '$M:$M,' + T + '$E:$E,"OVERRIDE")' }, { formula: 'IF((B4+C4)=0,1,B4/(B4+C4))' }];
     s.getCell('E4').numFmt = '0.0%';
-    head(s, 6, ['القسم (Ward)', 'الكابينة (ADC)', 'دخل (Received)', 'باركود (Scanned)', 'طارئ (Override)', 'القيمة (SAR)', 'BCMA %']);
+    head(s, 6, ['القسم (Ward)', 'الكابينة (ADC)', 'الوارد (Received)', 'بالباركود (Scanned)', 'استثنائي (Override)', 'القيمة (SAR)', 'BCMA %']);
     var wr = 7; D.wards.forEach(function (w) { var r = wr++;
       s.getRow(r).values = [w.ward, w.adc, { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"RECEIVED")' }, { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"SCANNED")' },
         { formula: 'SUMIFS(' + T + '$L:$L,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"OVERRIDE")' }, { formula: 'SUMIFS(' + T + '$M:$M,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"SCANNED")+SUMIFS(' + T + '$M:$M,' + T + '$I:$I,A' + r + ',' + T + '$E:$E,"OVERRIDE")' },
@@ -1888,8 +1888,8 @@ var OrgUI = (function () {
     });
     var g = wb.addWorksheet('الدليل والمعايير (SOP)', { views: [{ rightToLeft: true }] });
     head(g, 1, ['البند · Item', 'الصيغة · Formula', 'الأثر · Purpose']);
-    [['System Balance', 'Opening + Received − Scanned Out', 'الرصيد الدفتري المتوقع داخل الدرج'], ['Variance', 'Physical − System', 'السالب يعني صرفًا غير ممسوح أو فاقدًا'],
-     ['Zeroing', 'New Opening = Physical count', 'الجرد الفعلي يصبح رصيد بداية الشهر التالي'], ['Status', 'STAT ≤ max(1, round(ParMin×0.45)) · Reorder ≤ ParMin', 'أولوية التعبئة اليومية'],
+    [['System Balance', 'Opening + Received − Scanned Out', 'الرصيد الدفتري المتوقع داخل الدرج'], ['Variance', 'Physical − System', 'القيمة السالبة تشير إلى صرف غير ممسوح أو عجز'],
+     ['Zeroing', 'New Opening = Physical count', 'يُعتمد الجرد الفعلي رصيدًا افتتاحيًا للفترة التالية'], ['Status', 'STAT ≤ max(1, round(ParMin×0.45)) · Reorder ≤ ParMin', 'أولوية التعبئة اليومية'],
      ['Qty to Refill', 'Par Max − SOH when SOH ≤ Par Min', 'الكمية المطلوب تجهيزها من المستودع']].forEach(function (r, i) { g.getRow(i + 2).values = r; });
     g.columns = [{ width: 18 }, { width: 46 }, { width: 46 }];
     return wb.xlsx.writeBuffer().then(function (buf) {
