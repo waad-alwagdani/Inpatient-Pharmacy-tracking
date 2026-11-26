@@ -1093,7 +1093,7 @@ var OosUI = (function () {
         [['','الكل',F.rows.length]].concat(F.statuses.map(function(s){return [s,s,cnt(s)];})).map(function(o){return '<button type="button" class="btn2" data-fs="'+esc(o[0])+'" style="'+(FS===o[0]?'background:#0a0a0a;color:#fff;border-color:#0a0a0a':'')+'">'+esc(o[1])+' ('+o[2]+')</button>';}).join('')+
         '<button type="button" class="btn2" id="fadd" style="margin-inline-start:auto">+ إضافة صنف</button></div>'+
         '<div id="faddp" hidden></div>'+
-        '<input type="search" id="fq" placeholder="البحث باسم الصنف أو رقمه التسلسلي" value="'+esc(FQ)+'" style="width:100%;margin-bottom:8px">'+
+        '<input type="search" id="fq" placeholder="البحث باسم الصنف أو رقمه التشغيلي" value="'+esc(FQ)+'" style="width:100%;margin-bottom:8px">'+
         '<div class="msg" id="fmsg" role="status"></div>'+
         list.slice(0,300).map(function(r){var c=COL[r.status]||['#3f3f46','#f4f4f5'];
           return '<div class="frow"><div class="fi"><b>'+esc(r.name)+' <span>'+esc(r.strength)+'</span></b>'+
@@ -1112,13 +1112,23 @@ var OosUI = (function () {
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label style="font-size:12px;font-weight:700">التركيز<input type="text" data-es style="direction:ltr;width:100%" value="'+esc(r.strength)+'"></label>'+
         '<label style="font-size:12px;font-weight:700">الشكل الدوائي<input type="text" data-ef style="direction:ltr;width:100%" value="'+esc(r.form)+'"></label></div>'+
         '<div style="font-size:12px;color:#71717a">الرقم التشغيلي #'+esc(no)+' ثابت، والليبل المطبوع يبقى صالحًا ويعرض البيانات الجديدة.</div>'+
-        '<button class="btn" type="button" data-esave>حفظ التعديل</button></div>';
+        '<div style="display:grid;grid-template-columns:1fr auto;gap:6px"><button class="btn" type="button" data-esave>حفظ التعديل</button><button class="btn2" type="button" data-edel style="color:#b91c1c;border-color:#fecaca">حذف الصنف</button></div></div>';
+      box.querySelector('[data-edel]').onclick=function(){var m=document.createElement('div');
+        m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:999';
+        m.innerHTML='<div style="background:#fff;border-radius:14px;padding:20px;max-width:380px;width:100%;direction:rtl;text-align:right">'+
+          '<b style="font-size:16px">تنبيه</b><p style="margin:10px 0 16px;font-size:14px;line-height:1.7">أنت على وشك حذف الصنف <b dir="ltr">'+esc(r.name+' '+r.strength)+'</b> (#'+esc(no)+') من دليل الأدوية. لا يمكن التراجع عن هذا الإجراء. هل أنت متأكد؟</p>'+
+          '<div style="display:flex;gap:8px;justify-content:flex-start"><button class="btn" type="button" data-cdel style="background:#b91c1c">حذف</button><button class="btn2" type="button" data-cno>إلغاء</button></div></div>';
+        document.body.appendChild(m);
+        m.querySelector('[data-cno]').onclick=function(){m.remove();};
+        m.querySelector('[data-cdel]').onclick=function(){var b=this;b.disabled=true;
+          AuthGate.run('formDeleteItem',no).then(function(){m.remove();F.rows=F.rows.filter(function(x){return x.no!==no;});renderFrm();msg('fmsg','حُذف الصنف #'+no,true);},
+            function(e){m.remove();msg('fmsg',errText(e),false);});};};
       box.querySelector('[data-esave]').onclick=function(){var b=this,it={name:box.querySelector('[data-en]').value.trim(),strength:box.querySelector('[data-es]').value.trim(),form:box.querySelector('[data-ef]').value.trim()};
         if(it.name.length<2)return msg('fmsg','اسم الصنف مطلوب',false);
         b.disabled=true;AuthGate.run('formEditItem',no,it).then(function(){r.name=it.name;r.strength=it.strength;r.form=it.form;renderFrm();msg('fmsg','عُدّل الصنف #'+no,true);},function(e){b.disabled=false;msg('fmsg',errText(e),false);});};};});
     $('fadd').onclick=function(){var p=$('faddp');p.hidden=!p.hidden;if(p.hidden)return;
       p.innerHTML='<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;display:grid;gap:8px">'+
-        '<b>إضافة صنف — يُضاف في نهاية القائمة برقم تسلسلي جديد</b>'+
+        '<b>إضافة صنف — يُضاف في نهاية القائمة برقم تشغيلي جديد</b>'+
         '<label style="font-size:12px;font-weight:700">اسم الصنف *<input type="text" id="fnm" style="direction:ltr;text-align:left;width:100%"></label>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input type="text" id="fst" placeholder="التركيز (مثل 50 mg)" style="direction:ltr"><input type="text" id="ffm" placeholder="الشكل الدوائي (مثل Tablet)" style="direction:ltr"></div>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><label style="font-size:12px">تاريخ الانتهاء ١<input type="month" class="fex"></label><label style="font-size:12px">تاريخ الانتهاء ٢<input type="month" class="fex"></label><label style="font-size:12px">تاريخ الانتهاء ٣<input type="month" class="fex"></label></div>'+
@@ -1126,7 +1136,7 @@ var OosUI = (function () {
       $('fgo').onclick=function(){var b=this,it={sheet:'Pharmacy Items',name:$('fnm').value.trim(),strength:$('fst').value.trim(),form:$('ffm').value.trim(),
           exp:[].map.call(document.querySelectorAll('.fex'),function(i){return i.value;}).filter(Boolean)};
         if(it.name.length<2)return msg('fmsg','اسم الصنف مطلوب',false);
-        b.disabled=true;AuthGate.run('formAddItem',it).then(function(r){F=null;FQ=it.name.toLowerCase();renderFrm();setTimeout(function(){msg('fmsg','أُضيف الصنف بالرقم التسلسلي #'+r.no,true);},400);},
+        b.disabled=true;AuthGate.run('formAddItem',it).then(function(r){F=null;FQ=it.name.toLowerCase();renderFrm();setTimeout(function(){msg('fmsg','أُضيف الصنف بالرقم التشغيلي #'+r.no,true);},400);},
           function(e){b.disabled=false;msg('fmsg',errText(e),false);});};};
   }
   function render(){({bal:renderBal,rcv:renderRcv,cnt:renderCnt,exp:renderExp,frm:renderFrm,oos:function(){OosUI.panel($('app'),'inventory');}})[TAB]();}
